@@ -5,6 +5,7 @@
     "sourceMap": true,
     "experimentalDecorators": true,
     "emitDecoratorMetadata": true,
+    "declaration": true,
     "outDir": "dist"
   },
   "exclude": [
