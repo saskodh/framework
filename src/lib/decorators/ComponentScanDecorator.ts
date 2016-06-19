@@ -4,21 +4,25 @@ import * as path_module from "path";
 import {ConfigurationData, ConfigurationUtil} from "./ConfigurationDecorator";
 import {COMPONENT_DECORATOR_TOKEN} from "./ComponentDecorator";
 
-// todo revert the logic in the function to match it's name
 let getModulesStartingFrom = function* (path: string) {
-    let stat = fileSystem.lstatSync(path);
-    if (stat.isDirectory()) {
-        // we have a directory: do a tree walk
-        var files = fileSystem.readdirSync(path);
-        for (let file of files) {
-            // if it's JavaScript file load it
-            if (path_module.extname(file) === '.js') {
-                yield * getModulesStartingFrom(path_module.join(path, file));
-            }
+    if (!fileSystem.lstatSync(path).isDirectory()) {
+        throw new Error(`Given path must be a valid directory. Path: ${path}`);
+    }
+
+    var files = fileSystem.readdirSync(path);
+    for (let fileName of files) {
+        let filePath = path_module.join(path, fileName);
+        let lstat = fileSystem.lstatSync(filePath);
+
+        // if it's JavaScript file load it
+        if (lstat.isFile() && path_module.extname(fileName) === '.js') {
+            console.log(`Loading dynamically by @ComponentScan: ${fileName} (${filePath})`);
+            yield require(filePath);
         }
-    } else {
-        console.log('Loading dynamically by ComponentScan: ', path);
-        yield require(path);
+
+        if (lstat.isDirectory()) {
+            yield * getModulesStartingFrom(filePath);
+        }
     }
 };
 
