@@ -1,0 +1,10 @@
+# IntelliJ
+.idea
+*.iml
+
+# non source files
+node_modules
+typings
+dist
+
+npm-debug.log

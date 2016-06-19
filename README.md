@@ -1,0 +1,1 @@
+Lightweight web framework inspired by Spring framework.
