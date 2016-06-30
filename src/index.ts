@@ -1,3 +1,6 @@
+// NOTE: prototype for the ES7 Reflect API. Added for easier manipulating with metadata.
+require('reflect-metadata');
+
 export {Component} from "./lib/decorators/ComponentDecorator";
 export {ComponentScan} from "./lib/decorators/ComponentScanDecorator";
 export {Configuration} from "./lib/decorators/ConfigurationDecorator";
