@@ -12,11 +12,24 @@ export class InjectionData {
     }
 }
 
-export function Inject(dependency) {
+export function Inject(dependencyToken?: Symbol) {
     return function (target:any, fieldName: string) {
-        if (!ComponentUtil.isComponent(dependency)) throw new Error('Cannot inject dependency which is not a @Component!');
-        InjectUtil.initIfDoesntExist(target).dependencies.set(fieldName, ComponentUtil.getToken(dependency));
+        let token = dependencyToken;
+        if (!token) {
+            // fallback to field type
+            let type = (<any>Reflect).getMetadata('design:type', target, fieldName);
+            if (ComponentUtil.isComponent(type)) {
+                token = ComponentUtil.getToken(type);
+            } else {
+               throw new Error('Cannot inject dependency which is not a @Component!')
+            }
+        }
+        InjectUtil.initIfDoesntExist(target).dependencies.set(fieldName, token);
     }
+}
+
+export function Autowire() {
+    return Inject();
 }
 
 export function Value(preopertyKey) {
@@ -26,7 +39,7 @@ export function Value(preopertyKey) {
 }
 
 export class InjectUtil {
-    
+
     static getDependencies (target): Map<string, Symbol> {
         return this.initIfDoesntExist(target).dependencies;
     }
