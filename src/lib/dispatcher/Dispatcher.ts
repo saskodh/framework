@@ -4,6 +4,7 @@ import {Interceptor} from "../interceptors/InterceptorDecorator";
 import {Request, Response} from "express-serve-static-core";
 import {NextFunction} from "express-serve-static-core";
 import {RequestMappingUtil} from "../decorators/RequestMappingDecorator";
+import {RequestContext} from "../di/RequestContext";
 
 export class Dispatcher {
 
@@ -31,8 +32,16 @@ export class Dispatcher {
         for (let route of routerConfig.routes) {
             //console.log('Registering route: ', route);
             this.router[route.requestConfig.method](route.requestConfig.path, (request, response) => {
-                instance[route.methodHandler](request, response).then(function (result) {
-                    response.json(result);
+                let requestContext = new RequestContext(request, response);
+                requestContext.run(() => {
+                    instance[route.methodHandler](request, response).then(function (result) {
+                        response.json(result);
+                    }, function (error) {
+                        response.status(500).json({
+                            error: error,
+                            stacktrace: error.stack
+                        });
+                    });
                 });
             });
         }

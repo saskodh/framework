@@ -4,10 +4,12 @@ export const INJECT_DECORATOR_TOKEN = Symbol('injector_decorator_token');
 
 export class InjectionData {
     dependencies: Map<string, Symbol>;
+    dynamicDependencies: Map<string, Symbol>;
     properties: Map<string, string>;
 
     constructor() {
         this.dependencies = new Map();
+        this.dynamicDependencies = new Map();
         this.properties = new Map();
     }
 }
@@ -17,7 +19,7 @@ export function Inject(dependencyToken?: Symbol) {
         let token = dependencyToken;
         if (!token) {
             // fallback to field type
-            let type = (<any>Reflect).getMetadata('design:type', target, fieldName);
+            let type = Reflect.getMetadata('design:type', target, fieldName);
             if (ComponentUtil.isComponent(type)) {
                 token = ComponentUtil.getToken(type);
             } else {
@@ -35,6 +37,14 @@ export function Autowire() {
 export function Value(preopertyKey) {
     return function (target:any, fieldName: string) {
         InjectUtil.initIfDoesntExist(target).properties.set(fieldName, preopertyKey);
+    }
+}
+
+export function ThreadLocal() {
+    return function (target: any, fieldName: string) {
+        let className = target.constructor.name;
+        let token = Symbol(`thread-local:${className}#${fieldName}`);
+        InjectUtil.initIfDoesntExist(target).dynamicDependencies.set(fieldName, token);
     }
 }
 

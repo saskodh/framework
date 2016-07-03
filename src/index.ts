@@ -1,11 +1,13 @@
 // NOTE: prototype for the ES7 Reflect API. Added for easier manipulating with metadata.
-require('reflect-metadata');
+import "reflect-metadata";
+import "zone.js";
+import "zone.js/dist/long-stack-trace-zone.js";
 
 export {Component} from "./lib/decorators/ComponentDecorator";
 export {ComponentScan} from "./lib/decorators/ComponentScanDecorator";
 export {Configuration} from "./lib/decorators/ConfigurationDecorator";
 export {Controller} from "./lib/decorators/ControllerDecorator";
-export {Inject, Value, Autowire} from "./lib/decorators/InjectionDecorators";
+export {Inject, Value, Autowire, ThreadLocal} from "./lib/decorators/InjectionDecorators";
 export {Profile} from "./lib/decorators/ComponentDecorator";
 export {PropertySource} from "./lib/decorators/PropertySourceDecorator";
 export {RequestMapping, RequestMappingConfig, RequestMethod} from "./lib/decorators/RequestMappingDecorator";

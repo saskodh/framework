@@ -5,6 +5,7 @@ import {AsyncEngineComponentDefinitionPostProcessor} from "../processors/impl/As
 import {Dispatcher} from "../dispatcher/Dispatcher";
 import {Router} from "express";
 import * as _ from "lodash";
+import {DynamicDependencyResolver} from "./DynamicDependencyResolver";
 
 export class ApplicationContext {
 
@@ -54,6 +55,15 @@ export class ApplicationContext {
             let injectionData = ComponentUtil.getInjectionData(CompConstructor);
             injectionData.dependencies.forEach((dependencyToken, fieldName) => {
                 Reflect.set(instance, fieldName, this.injector.getComponent(dependencyToken));
+            });
+            injectionData.dynamicDependencies.forEach((token, fieldName) => {
+               let dynamicResolver = new DynamicDependencyResolver(token);
+                Object.defineProperty(instance, fieldName, {
+                    get: dynamicResolver.getFieldGetter(),
+                    set: dynamicResolver.getFieldSetter(),
+                    enumerable: true,
+                    configurable: true
+                });
             });
             injectionData.properties.forEach((propertyKey, fieldName) => {
                 Reflect.set(instance, fieldName, this.getConfigurationProperty(configurationData, propertyKey));
