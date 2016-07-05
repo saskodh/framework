@@ -1,7 +1,10 @@
+// NOTE: reference path is temporary workaround (see https://github.com/angular/zone.js/issues/297)
+///<reference path="../node_modules/zone.js/dist/zone.js.d.ts"/>
+require('zone.js');
+import "zone.js/dist/long-stack-trace-zone.js";
+
 // NOTE: prototype for the ES7 Reflect API. Added for easier manipulating with metadata.
 import "reflect-metadata";
-import "zone.js";
-import "zone.js/dist/long-stack-trace-zone.js";
 
 export {Component} from "./lib/decorators/ComponentDecorator";
 export {ComponentScan} from "./lib/decorators/ComponentScanDecorator";
