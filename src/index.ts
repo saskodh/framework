@@ -9,6 +9,8 @@ export {Inject, Value, Autowire} from "./lib/decorators/InjectionDecorators";
 export {Profile} from "./lib/decorators/ComponentDecorator";
 export {PropertySource} from "./lib/decorators/PropertySourceDecorator";
 export {RequestMapping, RequestMappingConfig, RequestMethod} from "./lib/decorators/RequestMappingDecorator";
+export {View} from "./lib/decorators/ViewDecorator";
+
 
 export {ApplicationContext} from "./lib/di/ApplicationContext";
 export {Dispatcher} from "./lib/dispatcher/Dispatcher";

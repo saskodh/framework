@@ -1,4 +1,5 @@
 import {Router} from "express";
+import * as _ from "lodash";
 import {ComponentUtil} from "../decorators/ComponentDecorator";
 import {Interceptor} from "../interceptors/InterceptorDecorator";
 import {Request, Response} from "express-serve-static-core";
@@ -32,7 +33,12 @@ export class Dispatcher {
             //console.log('Registering route: ', route);
             this.router[route.requestConfig.method](route.requestConfig.path, (request, response) => {
                 instance[route.methodHandler](request, response).then(function (result) {
-                    response.json(result);
+                    if(_.isUndefined(route.view)){
+                        response.json(result);
+                    }
+                    else {
+                        response.render(route.view,result);
+                    }
                 });
             });
         }
