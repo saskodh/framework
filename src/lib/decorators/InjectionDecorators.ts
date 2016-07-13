@@ -29,7 +29,7 @@ export function Inject(dependencyToken?:Symbol) {
         if (!token) {
             // fallback to field type
             if (ComponentUtil.isComponent(type)) {
-                token = ComponentUtil.getToken(type);
+                token = ComponentUtil.getClassToken(type);
             } else {
                 throw new Error('Cannot inject dependency which is not a @Component!')
             }
