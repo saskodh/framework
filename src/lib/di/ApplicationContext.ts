@@ -31,7 +31,7 @@ export class ApplicationContext {
     }
 
     getComponents <T> (componentClass): Array<T> {
-        return <Array<T>> this.injector.getComponents(ComponentUtil.getAliasToken(componentClass));
+        return <Array<T>> this.injector.getComponents(ComponentUtil.getClassToken(componentClass));
     }
 
     getComponentsWithToken <T> (token: Symbol): Array<T> {
@@ -54,8 +54,8 @@ export class ApplicationContext {
 
             let instance = new PostProcessedComponentConstructor();
             this.injector.register(componentData.classToken, instance);
-            if (componentData.aliasToken) {
-                this.injector.register(componentData.aliasToken, instance);
+            for (let token of componentData.aliasTokens) {
+                    this.injector.register(token, instance);
             }
         }
     }
