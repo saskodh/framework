@@ -55,7 +55,7 @@ export class ApplicationContext {
             let instance = new PostProcessedComponentConstructor();
             this.injector.register(componentData.classToken, instance);
             for (let token of componentData.aliasTokens) {
-                    this.injector.register(token, instance);
+                this.injector.register(token, instance);
             }
         }
     }
