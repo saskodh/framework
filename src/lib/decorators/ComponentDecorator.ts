@@ -3,12 +3,16 @@ import {CONTROLLER_DECORATOR_TOKEN} from "./ControllerDecorator";
 import {INTERCEPTOR_DECORATOR_TOKEN} from "../interceptors/InterceptorDecorator";
 
 export class ComponentData {
-    token: Symbol;
+    classToken: Symbol;
+    aliasToken: Symbol;
     injectionData: InjectionData;
     profile: string;
 
-    constructor (token?: Symbol) {
-        this.token = token || Symbol('di_token');
+    constructor(token?: Symbol) {
+        this.classToken = Symbol('classToken');
+        if (token) {
+            this.aliasToken = token;
+        }
         this.injectionData = new InjectionData();
     }
 }
@@ -40,8 +44,12 @@ export class ComponentUtil {
         return !!this.getComponentData(target);
     }
 
-    static getToken (target): Symbol {
-        return this.getComponentData(target).token;
+    static getClassToken (target): Symbol {
+        return this.getComponentData(target).classToken;
+    }
+
+    static getAliasToken (target): Symbol {
+        return this.getComponentData(target).aliasToken;
     }
 
     static getInjectionData (target): InjectionData {
