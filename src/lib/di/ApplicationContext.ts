@@ -5,13 +5,17 @@ import {AsyncEngineComponentDefinitionPostProcessor} from "../processors/impl/As
 import {Dispatcher} from "../dispatcher/Dispatcher";
 import {Router} from "express";
 import * as _ from "lodash";
+import {
+    CacheComponentDefinitionPostProcessor,
+    CACHE_COMPONENT_DEFINITION_POST_PROCESSOR
+} from "../Cache/CacheComponentDefinitionPostProcessor";
 
 export class ApplicationContext {
 
     private static ACTIVE_PROFILE_PROPERTY_KEY = 'application.profiles.active';
 
-    private injector: Injector;
-    private dispatcher: Dispatcher;
+    private injector:Injector;
+    private dispatcher:Dispatcher;
 
     constructor(configurationClass) {
         this.injector = new Injector();
@@ -20,6 +24,19 @@ export class ApplicationContext {
         let configurationData = ConfigurationUtil.getConfigurationData(configurationClass);
         this.initializeComponents(configurationData);
         this.wireComponents(configurationData);
+
+        this.registerCacheable(configurationData);
+    }
+
+    private registerCacheable(configurationData:ConfigurationData) {
+        let cache = this.injector.getComponent(CACHE_COMPONENT_DEFINITION_POST_PROCESSOR);
+        if (cache) {
+            // NOTE dao: works because when we change the definition of the method with CompConstructor.prototype
+            //it changes for all the instances of the class if that method was not overrided directly on the instance
+            for (let CompConstructor of this.getActiveComponents(configurationData)) {
+                (<CacheComponentDefinitionPostProcessor> cache).postProcessDefinition(CompConstructor);
+            }
+        }
     }
 
     getComponent <T> (componentClass): T {
@@ -34,11 +51,11 @@ export class ApplicationContext {
         return <Array<T>> this.injector.getComponents(token);
     }
 
-    getRouter(): Router {
+    getRouter():Router {
         return this.dispatcher.getRouter();
     }
 
-    private initializeComponents (configurationData: ConfigurationData) {
+    private initializeComponents(configurationData:ConfigurationData) {
         var asyncEngine = AsyncEngineComponentDefinitionPostProcessor.getInstance();
         for (let CompConstructor of this.getActiveComponents(configurationData)) {
             var componentData = ComponentUtil.getComponentData(CompConstructor);
@@ -56,7 +73,7 @@ export class ApplicationContext {
         }
     }
 
-    private wireComponents (configurationData: ConfigurationData) {
+    private wireComponents(configurationData:ConfigurationData) {
         for (let CompConstructor of this.getActiveComponents(configurationData)) {
             var componentData = ComponentUtil.getComponentData(CompConstructor);
             let injectionData = ComponentUtil.getInjectionData(CompConstructor);
@@ -77,7 +94,7 @@ export class ApplicationContext {
         }
     }
 
-    private getActiveComponents (configurationData: ConfigurationData) {
+    private getActiveComponents(configurationData:ConfigurationData) {
         let activeProfile = this.getActiveProfile(configurationData);
         return _.filter(configurationData.componentFactory.components, (CompConstructor) => {
             let profile = ComponentUtil.getComponentData(CompConstructor).profile;
@@ -86,11 +103,11 @@ export class ApplicationContext {
         })
     }
 
-    private getActiveProfile (configurationData: ConfigurationData): string {
+    private getActiveProfile(configurationData:ConfigurationData):string {
         return this.getConfigurationProperty(configurationData, ApplicationContext.ACTIVE_PROFILE_PROPERTY_KEY);
     }
 
-    private getConfigurationProperty (configurationData: ConfigurationData, propertyKey: string): string {
+    private getConfigurationProperty(configurationData:ConfigurationData, propertyKey:string):string {
         return process.env[propertyKey] || configurationData.properties.get(propertyKey);
     }
 }
