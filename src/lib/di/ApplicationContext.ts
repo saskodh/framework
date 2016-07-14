@@ -30,10 +30,6 @@ export class ApplicationContext {
         return <T> this.injector.getComponent(token);
     }
 
-    getComponents <T> (componentClass): Array<T> {
-        return <Array<T>> this.injector.getComponents(ComponentUtil.getAliasToken(componentClass));
-    }
-
     getComponentsWithToken <T> (token: Symbol): Array<T> {
         return <Array<T>> this.injector.getComponents(token);
     }
@@ -54,8 +50,8 @@ export class ApplicationContext {
 
             let instance = new PostProcessedComponentConstructor();
             this.injector.register(componentData.classToken, instance);
-            if (componentData.aliasToken) {
-                this.injector.register(componentData.aliasToken, instance);
+            for (let token of componentData.aliasTokens) {
+                this.injector.register(token, instance);
             }
         }
     }
@@ -64,22 +60,20 @@ export class ApplicationContext {
         for (let CompConstructor of this.getActiveComponents(configurationData)) {
             var componentData = ComponentUtil.getComponentData(CompConstructor);
             let injectionData = ComponentUtil.getInjectionData(CompConstructor);
+            var instance = this.injector.getComponent(componentData.classToken);
             
-            var instances = this.injector.getComponents(componentData.classToken);
-            for (let instance of instances) {
-                injectionData.dependencies.forEach((dependencyData, fieldName) => {
-                    let dependency = dependencyData.isArray ? this.injector.getComponents(dependencyData.token) :
-                        this.injector.getComponent(dependencyData.token);
-                    Reflect.set(instance, fieldName, dependency);
-                });
-                injectionData.properties.forEach((propertyKey, fieldName) => {
-                    Reflect.set(instance, fieldName, this.getConfigurationProperty(configurationData, propertyKey));
-                });
+            injectionData.dependencies.forEach((dependencyData, fieldName) => {
+                let dependency = dependencyData.isArray ? this.injector.getComponents(dependencyData.token) :
+                    this.injector.getComponent(dependencyData.token);
+                Reflect.set(instance, fieldName, dependency);
+            });
+            injectionData.properties.forEach((propertyKey, fieldName) => {
+                Reflect.set(instance, fieldName, this.getConfigurationProperty(configurationData, propertyKey));
+            });
 
-                this.dispatcher.processAfterInit(CompConstructor, instance);
+            this.dispatcher.processAfterInit(CompConstructor, instance);
 
-                // todo pass through the post processors configurationData.componentPostProcessorFactory
-            }
+            // todo pass through the post processors configurationData.componentPostProcessorFactory
         }
     }
 

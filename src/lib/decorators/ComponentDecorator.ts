@@ -4,24 +4,22 @@ import {INTERCEPTOR_DECORATOR_TOKEN} from "../interceptors/InterceptorDecorator"
 
 export class ComponentData {
     classToken: Symbol;
-    aliasToken: Symbol;
+    aliasTokens: Array<Symbol>;
     injectionData: InjectionData;
     profile: string;
 
-    constructor(token?: Symbol) {
+    constructor() {
         this.classToken = Symbol('classToken');
-        if (token) {
-            this.aliasToken = token;
-        }
+        this.aliasTokens = new Array<Symbol>();
         this.injectionData = new InjectionData();
     }
 }
 
 export const COMPONENT_DECORATOR_TOKEN = Symbol('component_decorator_token');
 
-export function Component (token?: Symbol) {
+export function Component () {
     return function (target) {
-        var componentData = new ComponentData(token);
+        var componentData = new ComponentData();
         componentData.injectionData = InjectUtil.initIfDoesntExist(target.prototype);
         target[COMPONENT_DECORATOR_TOKEN] = componentData;
     }
@@ -48,8 +46,8 @@ export class ComponentUtil {
         return this.getComponentData(target).classToken;
     }
 
-    static getAliasToken (target): Symbol {
-        return this.getComponentData(target).aliasToken;
+    static getAliasTokens (target): Array<Symbol> {
+        return this.getComponentData(target).aliasTokens;
     }
 
     static getInjectionData (target): InjectionData {
