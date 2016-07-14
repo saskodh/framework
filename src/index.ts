@@ -2,6 +2,7 @@
 require('reflect-metadata');
 
 export {Component} from "./lib/decorators/ComponentDecorator";
+export {Qualifier} from "./lib/decorators/QualifierDecorator";
 export {ComponentScan} from "./lib/decorators/ComponentScanDecorator";
 export {Configuration} from "./lib/decorators/ConfigurationDecorator";
 export {Controller} from "./lib/decorators/ControllerDecorator";
