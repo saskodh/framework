@@ -5,10 +5,12 @@ import {Inject} from "../decorators/InjectionDecorators";
 import {Component} from "../decorators/ComponentDecorator";
 import {CacheEvictUtil, CacheEvictConfigItem} from "../decorators/CacheEvictDecorator";
 import * as hash from "object-hash";
+import {Qualifier} from "../decorators/QualifierDecorator";
 
 export const CACHE_COMPONENT_DEFINITION_POST_PROCESSOR = Symbol('cache_component_definition_post_processor');
 
-@Component(CACHE_COMPONENT_DEFINITION_POST_PROCESSOR)
+@Qualifier(CACHE_COMPONENT_DEFINITION_POST_PROCESSOR)
+@Component()
 export class CacheComponentDefinitionPostProcessor {
 
     @Inject(I_CACHE_PROVIDER_TOKEN)
