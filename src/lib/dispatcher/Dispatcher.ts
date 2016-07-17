@@ -1,4 +1,5 @@
 import {Router} from "express";
+import * as _ from "lodash";
 import {ComponentUtil} from "../decorators/ComponentDecorator";
 import {Interceptor} from "../interceptors/InterceptorDecorator";
 import {Request, Response} from "express-serve-static-core";
@@ -28,14 +29,17 @@ export class Dispatcher {
     }
 
     private registerController (clazz, instance) {
-        let routerConfig = RequestMappingUtil.getRouterConfig(clazz);
-        for (let route of routerConfig.routes) {
+        for (let route of RequestMappingUtil.getValidRoutes(clazz)) {
             //console.log('Registering route: ', route);
             this.router[route.requestConfig.method](route.requestConfig.path, (request, response) => {
                 let requestContext = new RequestContext(request, response);
                 requestContext.run(() => {
                     instance[route.methodHandler](request, response).then(function (result) {
-                        response.json(result);
+                        if (_.isUndefined(route.view)){
+                            response.json(result);
+                        } else {
+                            response.render(route.view, result);
+                        }
                     }, function (error) {
                         response.status(500).json({
                             error: error,

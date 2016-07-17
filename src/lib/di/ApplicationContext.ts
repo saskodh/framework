@@ -24,7 +24,15 @@ export class ApplicationContext {
     }
 
     getComponent <T> (componentClass): T {
-        return <T> this.injector.getComponent(ComponentUtil.getToken(componentClass));
+        return <T> this.injector.getComponent(ComponentUtil.getClassToken(componentClass));
+    }
+
+    getComponentWithToken <T> (token: Symbol): T {
+        return <T> this.injector.getComponent(token);
+    }
+
+    getComponentsWithToken <T> (token: Symbol): Array<T> {
+        return <Array<T>> this.injector.getComponents(token);
     }
 
     getRouter(): Router {
@@ -42,19 +50,23 @@ export class ApplicationContext {
             var PostProcessedComponentConstructor = asyncEngine.postProcessDefinition(CompConstructor);
 
             let instance = new PostProcessedComponentConstructor();
-            this.injector.register(componentData.token, instance);
+            this.injector.register(componentData.classToken, instance);
+            for (let token of componentData.aliasTokens) {
+                this.injector.register(token, instance);
+            }
         }
     }
 
     private wireComponents (configurationData: ConfigurationData) {
         for (let CompConstructor of this.getActiveComponents(configurationData)) {
             var componentData = ComponentUtil.getComponentData(CompConstructor);
-            var instance = this.injector.getComponent(componentData.token);
-
-            // todo throw if injections fails => early failure
             let injectionData = ComponentUtil.getInjectionData(CompConstructor);
-            injectionData.dependencies.forEach((dependencyToken, fieldName) => {
-                Reflect.set(instance, fieldName, this.injector.getComponent(dependencyToken));
+            var instance = this.injector.getComponent(componentData.classToken);
+            
+            injectionData.dependencies.forEach((dependencyData, fieldName) => {
+                let dependency = dependencyData.isArray ? this.injector.getComponents(dependencyData.token) :
+                    this.injector.getComponent(dependencyData.token);
+                Reflect.set(instance, fieldName, dependency);
             });
             injectionData.dynamicDependencies.forEach((token, fieldName) => {
                let dynamicResolver = new DynamicDependencyResolver(token);
@@ -72,7 +84,6 @@ export class ApplicationContext {
             this.dispatcher.processAfterInit(CompConstructor, instance);
 
             // todo pass through the post processors configurationData.componentPostProcessorFactory
-            this.injector.register(componentData.token, instance);
         }
     }
 

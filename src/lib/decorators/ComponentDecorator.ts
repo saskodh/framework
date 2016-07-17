@@ -1,22 +1,25 @@
 import {InjectUtil, InjectionData} from "./InjectionDecorators";
 import {CONTROLLER_DECORATOR_TOKEN} from "./ControllerDecorator";
 import {INTERCEPTOR_DECORATOR_TOKEN} from "../interceptors/InterceptorDecorator";
+
 export class ComponentData {
-    token: Symbol;
+    classToken: Symbol;
+    aliasTokens: Array<Symbol>;
     injectionData: InjectionData;
     profile: string;
 
-    constructor (token?: Symbol) {
-        this.token = token || Symbol('di_token');
+    constructor() {
+        this.classToken = Symbol('classToken');
+        this.aliasTokens = new Array<Symbol>();
         this.injectionData = new InjectionData();
     }
 }
 
 export const COMPONENT_DECORATOR_TOKEN = Symbol('component_decorator_token');
 
-export function Component (token?: Symbol) {
+export function Component () {
     return function (target) {
-        var componentData = new ComponentData(token);
+        var componentData = new ComponentData();
         componentData.injectionData = InjectUtil.initIfDoesntExist(target.prototype);
         target[COMPONENT_DECORATOR_TOKEN] = componentData;
     }
@@ -39,8 +42,12 @@ export class ComponentUtil {
         return !!this.getComponentData(target);
     }
 
-    static getToken (target): Symbol {
-        return this.getComponentData(target).token;
+    static getClassToken (target): Symbol {
+        return this.getComponentData(target).classToken;
+    }
+
+    static getAliasTokens (target): Array<Symbol> {
+        return this.getComponentData(target).aliasTokens;
     }
 
     static getInjectionData (target): InjectionData {
