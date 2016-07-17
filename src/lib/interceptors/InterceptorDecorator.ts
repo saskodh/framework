@@ -7,9 +7,9 @@ export interface Interceptor {
 
 export const INTERCEPTOR_DECORATOR_TOKEN = Symbol('interceptor_decorator_token');
 
-export function Interceptor (token?: Symbol) {
+export function Interceptor () {
     return function (target) {
-        Component(token)(target);
+        Component()(target);
         target[INTERCEPTOR_DECORATOR_TOKEN] = true;
     }
 }
