@@ -2,14 +2,18 @@
 require('reflect-metadata');
 
 export {Component} from "./lib/decorators/ComponentDecorator";
+export {Qualifier} from "./lib/decorators/QualifierDecorator";
 export {ComponentScan} from "./lib/decorators/ComponentScanDecorator";
+export {Import} from "./lib/decorators/ImportDecorator";
 export {Configuration} from "./lib/decorators/ConfigurationDecorator";
 export {Controller} from "./lib/decorators/ControllerDecorator";
 export {Inject, Value, Autowire} from "./lib/decorators/InjectionDecorators";
+export {PostConstruct, PreDestroy} from "./lib/decorators/LifeCycleHooksDecorators"
 export {Profile} from "./lib/decorators/ComponentDecorator";
 export {PropertySource} from "./lib/decorators/PropertySourceDecorator";
+export {View} from "./lib/decorators/ViewDecorator";
 export {RequestMapping, RequestMappingConfig, RequestMethod} from "./lib/decorators/RequestMappingDecorator";
-export {PostConstruct, PreDestroy} from "./lib/decorators/LifeCycleHooksDecorators"
+
 
 export {ApplicationContext} from "./lib/di/ApplicationContext";
 export {Dispatcher} from "./lib/dispatcher/Dispatcher";
