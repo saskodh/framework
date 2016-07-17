@@ -1,20 +1,16 @@
 import * as _ from "lodash";
-import {RequestMappingUtil} from "../decorators/RequestMappingDecorator";
-import {DecoratorException} from "../exceptions/DecoratorException";
+import {RequestMappingUtil, RouterConfigItem} from "../decorators/RequestMappingDecorator";
 
 export function View(name?:string) {
     return function (target, methodName) {
-        let viewName = name;
-        if(_.isUndefined(viewName)) {
-            viewName = methodName;
-        }
+        let viewName = name || methodName;
         let routerConfig = RequestMappingUtil.initRouterConfigIfDoesntExist(target);
-        for (let route of routerConfig.routes) {
-            if(route.methodHandler === methodName){
-                route.view = viewName;
-                return;
-            }
+        let routeConfig = _.find(routerConfig.routes, { methodHandler: methodName });
+        if (!routeConfig) {
+            // NOTE: in case when @View is before @RequestMapping
+            routeConfig = new RouterConfigItem(null, methodName);
+            routerConfig.routes.push(routeConfig);
         }
-        throw new DecoratorException("View", `No route set for ${methodName} (@View has to be above @RequestMapping)`);
+        routeConfig.view = viewName;
     }
 }

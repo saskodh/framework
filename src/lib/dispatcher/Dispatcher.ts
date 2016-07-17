@@ -28,8 +28,7 @@ export class Dispatcher {
     }
 
     private registerController (clazz, instance) {
-        let routerConfig = RequestMappingUtil.getRouterConfig(clazz);
-        for (let route of routerConfig.routes) {
+        for (let route of RequestMappingUtil.getValidRoutes(clazz)) {
             //console.log('Registering route: ', route);
             this.router[route.requestConfig.method](route.requestConfig.path, (request, response) => {
                 instance[route.methodHandler](request, response).then(function (result) {

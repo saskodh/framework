@@ -22,9 +22,14 @@ export class RouterConfigItem {
     requestConfig: RequestMappingConfig;
     methodHandler: string;
     view: string;
+
     constructor(requestConfig: RequestMappingConfig, handler: string) {
         this.requestConfig = requestConfig;
         this.methodHandler = handler;
+    }
+
+    isValid() {
+        return this.requestConfig && this.methodHandler;
     }
 }
 
@@ -35,14 +40,20 @@ export class RouterConfig {
 export function RequestMapping(config: RequestMappingConfig) {
     return function (target, method) {
         let routerConfig = RequestMappingUtil.initRouterConfigIfDoesntExist(target);
-        routerConfig.routes.push(new RouterConfigItem(config, method));
+        let routeConfig = _.find(routerConfig.routes, { methodHandler: method });
+        if (routeConfig) {
+            routeConfig.requestConfig = config;
+        } else {
+            routerConfig.routes.push(new RouterConfigItem(config, method));
+        }
     }
 }
 
 export class RequestMappingUtil {
 
-    static getRouterConfig(target): RouterConfig {
-        return target.prototype[ROUTER_CONFIG] || new RouterConfig();
+    static getValidRoutes(target): Array<RouterConfigItem> {
+        let routerConfig = this.initRouterConfigIfDoesntExist(target.prototype);
+        return _.filter(routerConfig.routes, (route) => route.isValid());
     }
 
     static initRouterConfigIfDoesntExist(target): RouterConfig {
