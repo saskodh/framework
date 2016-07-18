@@ -30,7 +30,9 @@ export class Dispatcher {
     private registerController (clazz, instance) {
         for (let route of RequestMappingUtil.getValidRoutes(clazz)) {
             //console.log('Registering route: ', route);
-            this.router[route.requestConfig.method](route.requestConfig.path, (request, response) => {
+            let controllerMappingPath = RequestMappingUtil.getControllerRequestMappingPath(clazz);
+            let fullPath = controllerMappingPath+route.requestConfig.path;
+            this.router[route.requestConfig.method](fullPath, (request, response) => {
                 instance[route.methodHandler](request, response).then(function (result) {
                     if(_.isUndefined(route.view)){
                         response.json(result);

@@ -61,7 +61,7 @@ export class ApplicationContext {
             var componentData = ComponentUtil.getComponentData(CompConstructor);
             let injectionData = ComponentUtil.getInjectionData(CompConstructor);
             var instance = this.injector.getComponent(componentData.classToken);
-            
+
             injectionData.dependencies.forEach((dependencyData, fieldName) => {
                 let dependency = dependencyData.isArray ? this.injector.getComponents(dependencyData.token) :
                     this.injector.getComponent(dependencyData.token);
