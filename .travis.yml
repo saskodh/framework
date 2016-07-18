@@ -1,0 +1,20 @@
+# Travis CI config
+# http://docs.travis-ci.com/user/languages/javascript-with-nodejs/
+
+sudo: false
+
+language: node_js
+node_js:
+  - 6
+
+install:
+  - npm install
+  - typings install
+
+script:
+  - npm run build
+
+branches:
+  only:
+    - master            # only run CI on the master branch
+    - /^FR /            # also build pull requests
