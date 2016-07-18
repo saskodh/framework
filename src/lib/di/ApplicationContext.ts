@@ -22,7 +22,7 @@ export class ApplicationContext {
     private injector:Injector;
     private dispatcher:Dispatcher;
     private configurationData:ConfigurationData;
-    private unregisterExitLixtenerCallback:Function;
+    private unRegisterExitListenerCallback:Function;
 
     constructor(configurationClass) {
         this.state = ApplicationContextState.NOT_INITIALIZED;
@@ -75,8 +75,8 @@ export class ApplicationContext {
         }
         this.dispatcher = null;
         this.injector = null;
-        if (_.isFunction(this.unregisterExitLixtenerCallback)) {
-            this.unregisterExitLixtenerCallback();
+        if (_.isFunction(this.unRegisterExitListenerCallback)) {
+            this.unRegisterExitListenerCallback();
         }
         this.state = ApplicationContextState.NOT_INITIALIZED;
     }
@@ -86,9 +86,7 @@ export class ApplicationContext {
      * Registers process.exit() on process SIGINT event.
      */
     registerExitHook() {
-        this.unregisterExitLixtenerCallback = ProcessHandler.getInstance().registerOnExitListener(() => {
-            this.destroy();
-        });
+        this.unRegisterExitListenerCallback = ProcessHandler.getInstance().registerOnExitListener(() => this.destroy());
     }
 
     private initializeComponents() {

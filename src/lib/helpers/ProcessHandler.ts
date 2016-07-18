@@ -1,21 +1,14 @@
 import * as _ from "lodash";
 
 export class ProcessHandler {
-    listenersOnExit:Array<Function>;
+
     private static instance:ProcessHandler;
 
+    private onExitListeners:Array<Function>;
+
     constructor() {
-        this.listenersOnExit = new Array<Function>();
-        process.on('exit', (code) => {
-            this.listenersOnExit.forEach((callback) => {
-                if (_.isFunction(callback)) {
-                    callback();
-                }
-            })
-        });
-        process.on('SIGINT', () => {
-            process.exit();
-        });
+        this.onExitListeners = [];
+        this.registerProcessExitEvents();
     }
 
     static getInstance() {
@@ -24,11 +17,20 @@ export class ProcessHandler {
     }
 
     registerOnExitListener(callback:Function) {
-        this.listenersOnExit.push(callback);
+        if (!_.isFunction(callback)) {
+            throw new Error('Passed callback must be a function!');
+        }
+
+        this.onExitListeners.push(callback);
         return () => {
-            _.remove(this.listenersOnExit, function (val) {
+            _.remove(this.onExitListeners, function (val) {
                 return val === callback;
             });
         }
+    }
+
+    private registerProcessExitEvents() {
+        process.on('exit', () => this.onExitListeners.forEach((callback) => callback()));
+        process.on('SIGINT', () => process.exit());
     }
 }
