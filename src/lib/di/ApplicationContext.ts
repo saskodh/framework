@@ -6,6 +6,7 @@ import {Dispatcher} from "../dispatcher/Dispatcher";
 import {Router} from "express";
 import * as _ from "lodash";
 import {LifeCycleHooksUtil} from "../decorators/LifeCycleHooksDecorators";
+import {ProcessHandler} from "../helpers/ProcessHandler";
 
 class ApplicationContextState {
     static NOT_INITIALIZED = 'NOT_INITIALIZED';
@@ -17,10 +18,11 @@ export class ApplicationContext {
 
     private static ACTIVE_PROFILE_PROPERTY_KEY = 'application.profiles.active';
 
-    private state: ApplicationContextState;
+    private state:ApplicationContextState;
     private injector:Injector;
     private dispatcher:Dispatcher;
     private configurationData:ConfigurationData;
+    private unregisterExitLixtenerCallback:Function;
 
     constructor(configurationClass) {
         this.state = ApplicationContextState.NOT_INITIALIZED;
@@ -73,15 +75,18 @@ export class ApplicationContext {
         }
         this.dispatcher = null;
         this.injector = null;
+        if (_.isFunction(this.unregisterExitLixtenerCallback)) {
+            this.unregisterExitLixtenerCallback();
+        }
         this.state = ApplicationContextState.NOT_INITIALIZED;
     }
 
     /**
      * Registers hook on process exit event for destroying the application context.
+     * Registers process.exit() on process SIGINT event.
      */
     registerExitHook() {
-        process.on('exit', (code) => {
-            console.log(`Process is exiting with code: ${code}, running pre destruction...`);
+        this.unregisterExitLixtenerCallback = ProcessHandler.getInstance().registerOnExitListener(() => {
             this.destroy();
         });
     }
