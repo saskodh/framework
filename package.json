@@ -8,7 +8,12 @@
   "scripts": {
     "clean": "rm -rf dist",
     "build": "npm run clean && tsc && npm run test && npm run prepare",
-    "test": "tsc && mocha --recursive ./dist/test",
+    "test:clean": "rm -rf coverage",
+    "test:run": "istanbul cover node_modules/mocha/bin/_mocha --report none -- --recursive ./dist",
+    "test:coverage:lcov": "remap-istanbul -i ./coverage/coverage.json -o ./coverage/lcov.info -t lcovonly",
+    "test:coverage:html": "remap-istanbul -i ./coverage/coverage.json -o ./coverage/html-report -t html",
+    "test:coverage": "npm run test:coverage:lcov && npm run test:coverage:html",
+    "test": "tsc && npm run test:clean && npm run test:run && npm run test:coverage",
     "prepare": "cp package.json typings.json README.md ./dist/src",
     "_prepublish": "typings install && npm run build"
   },
@@ -22,7 +27,10 @@
   },
   "devDependencies": {
     "chai": "3.5.0",
+    "coveralls": "^2.11.11",
+    "istanbul": "0.4.4",
     "mocha": "2.5.3",
+    "remap-istanbul": "^0.6.4",
     "sinon": "1.17.4",
     "ts-node": "0.9.1",
     "typescript": "1.8.10"

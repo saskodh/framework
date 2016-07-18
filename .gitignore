@@ -6,5 +6,6 @@
 node_modules
 typings
 dist
+coverage
 
 npm-debug.log
