@@ -1,6 +1,6 @@
-import {InjectUtil, InjectionData} from "./InjectionDecorators";
-import {CONTROLLER_DECORATOR_TOKEN} from "./ControllerDecorator";
-import {INTERCEPTOR_DECORATOR_TOKEN} from "../interceptors/InterceptorDecorator";
+import { InjectUtil, InjectionData } from "./InjectionDecorators";
+import { CONTROLLER_DECORATOR_TOKEN } from "./ControllerDecorator";
+import { INTERCEPTOR_DECORATOR_TOKEN } from "../interceptors/InterceptorDecorator";
 
 export class ComponentData {
     classToken: Symbol;
@@ -10,57 +10,59 @@ export class ComponentData {
 
     constructor() {
         this.classToken = Symbol('classToken');
-        this.aliasTokens = new Array<Symbol>();
+        this.aliasTokens = [];
         this.injectionData = new InjectionData();
     }
 }
 
 const COMPONENT_DECORATOR_TOKEN = Symbol('component_decorator_token');
 
-export function Component () {
+export function Component() {
     return function (target) {
-        var componentData = new ComponentData();
+        let componentData = new ComponentData();
         componentData.injectionData = InjectUtil.initIfDoesntExist(target.prototype);
         target[COMPONENT_DECORATOR_TOKEN] = componentData;
-    }
+    };
 }
 
-export function Profile (profile: string) {
+export function Profile(profile: string) {
     return function (target) {
-        if (!ComponentUtil.isComponent(target)) throw new Error('@Profile can be set only on @Component!');
+        if (!ComponentUtil.isComponent(target)) {
+            throw new Error('@Profile can be set only on @Component!');
+        }
         ComponentUtil.getComponentData(target).profile = profile;
-    }
+    };
 }
 
 export class ComponentUtil {
 
-    static getComponentData (target): ComponentData {
+    static getComponentData(target): ComponentData {
         if (target) {
             return target[COMPONENT_DECORATOR_TOKEN];
         }
     }
 
-    static isComponent (target): boolean {
+    static isComponent(target): boolean {
         return !!this.getComponentData(target);
     }
 
-    static getClassToken (target): Symbol {
+    static getClassToken(target): Symbol {
         return this.getComponentData(target).classToken;
     }
 
-    static getAliasTokens (target): Array<Symbol> {
+    static getAliasTokens(target): Array<Symbol> {
         return this.getComponentData(target).aliasTokens;
     }
 
-    static getInjectionData (target): InjectionData {
+    static getInjectionData(target): InjectionData {
         return this.getComponentData(target).injectionData;
     }
 
-    static isController (target): boolean {
+    static isController(target): boolean {
         return !!target[CONTROLLER_DECORATOR_TOKEN];
     }
 
-    static isInterceptor (target): boolean {
+    static isInterceptor(target): boolean {
         return !!target[INTERCEPTOR_DECORATOR_TOKEN];
     }
 }

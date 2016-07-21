@@ -1,4 +1,4 @@
-import {ComponentUtil} from "./ComponentDecorator";
+import { ComponentUtil } from "./ComponentDecorator";
 
 export function Qualifier(token: Symbol) {
     return function (target) {
@@ -6,5 +6,5 @@ export function Qualifier(token: Symbol) {
             throw new Error('@Qualifier can be used only on @Component classes');
         }
         ComponentUtil.getAliasTokens(target).push(token);
-    }
+    };
 }

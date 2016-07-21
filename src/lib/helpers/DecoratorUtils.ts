@@ -8,7 +8,7 @@ export class DecoratorType {
 
 export class DecoratorUtil {
 
-    static getType(args):string {
+    static getType(args): string {
         if (args.length === 1) {
             return DecoratorType.CLASS;
         } else if (args.length === 2) {
@@ -20,12 +20,12 @@ export class DecoratorUtil {
             } else if (typeof args[2] === "undefined") {
                 return DecoratorType.PROPERTY;
             } else {
-                return DecoratorType.METHOD
+                return DecoratorType.METHOD;
             }
         }
     }
 
-    static isType(decoratorType, args):boolean {
+    static isType(decoratorType, args): boolean {
         return this.getType(args) === decoratorType;
     }
 }
