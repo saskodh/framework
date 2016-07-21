@@ -21,7 +21,6 @@
         "one-line": [ true, "check-open-brace", "check-whitespace" ],
         "semicolon": true,
         "variable-name": [ true, "ban-keywords" ],
-        "jsdoc-format": true,
         "max-line-length": [ true, 120 ],
         "typedef-whitespace": true,
         "whitespace": [
