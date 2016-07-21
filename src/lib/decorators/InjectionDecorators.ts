@@ -1,7 +1,7 @@
 import {ComponentUtil} from "./ComponentDecorator";
 import {TypeUtils} from "../helpers/TypeUtils";
 
-export const INJECT_DECORATOR_TOKEN = Symbol('injector_decorator_token');
+const INJECT_DECORATOR_TOKEN = Symbol('injector_decorator_token');
 
 export class DependencyData {
     token: Symbol;
