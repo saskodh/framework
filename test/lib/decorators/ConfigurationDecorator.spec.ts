@@ -20,11 +20,14 @@ describe('ConfigurationDecorator', function () {
 
     it('should throw error when @Configuration is used more than once on the same class', function () {
         //given
-        @Configuration()
-        class A {}
+        let createConfiguration = () => {
+            @Configuration()
+            @Configuration()
+            class A {}
+        };
 
         // when / then
-        expect(Configuration().bind(this, A)).to.throw(Error);
+        expect(createConfiguration).to.throw(Error);
     });
 });
 

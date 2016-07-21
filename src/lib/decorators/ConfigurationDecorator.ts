@@ -22,7 +22,7 @@ export class ConfigurationData {
 export function Configuration() {
     return function (target) {
         if (target[CONFIGURATION_HOLDER_TOKEN]) {
-            new Error('Duplicate @Configuration decorator');
+            throw new Error('Duplicate @Configuration decorator');
         }
         target[CONFIGURATION_HOLDER_TOKEN] = new ConfigurationData();
 
