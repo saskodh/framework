@@ -1,4 +1,4 @@
-import {ConfigurationUtil} from "./ConfigurationDecorator";
+import { ConfigurationUtil } from "./ConfigurationDecorator";
 
 /**
  * Decorator used for composing configuration classes by importing other configuration classes.
@@ -7,9 +7,9 @@ import {ConfigurationUtil} from "./ConfigurationDecorator";
  * @returns ClassDecorator for composing configuration classes
  * */
 export function Import(...configurationClasses) {
-    return function(targetConfigurationClass) {
+    return function (targetConfigurationClass) {
         let targetConfigurationData = ConfigurationUtil.getConfigurationData(targetConfigurationClass);
-        for(let configurationClass of configurationClasses) {
+        for (let configurationClass of configurationClasses) {
             let configurationData = ConfigurationUtil.getConfigurationData(configurationClass);
             for (let component of configurationData.componentFactory.components) {
                 targetConfigurationData.componentFactory.components.push(component);
@@ -24,5 +24,5 @@ export function Import(...configurationClasses) {
                 targetConfigurationData.properties.set(key, value);
             });
         }
-    }
+    };
 }

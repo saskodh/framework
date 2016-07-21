@@ -1,15 +1,15 @@
 import * as _ from "lodash";
 import * as fileSystem from "fs";
 import * as path_module from "path";
-import {ConfigurationData, ConfigurationUtil} from "./ConfigurationDecorator";
-import {COMPONENT_DECORATOR_TOKEN} from "./ComponentDecorator";
+import { ConfigurationData, ConfigurationUtil } from "./ConfigurationDecorator";
+import { COMPONENT_DECORATOR_TOKEN } from "./ComponentDecorator";
 
-let getModulesStartingFrom = function* (path: string) {
+let getModulesStartingFrom = function*(path: string) {
     if (!fileSystem.lstatSync(path).isDirectory()) {
         throw new Error(`Given path must be a valid directory. Path: ${path}`);
     }
 
-    var files = fileSystem.readdirSync(path);
+    let files = fileSystem.readdirSync(path);
     for (let fileName of files) {
         let filePath = path_module.join(path, fileName);
         let lstat = fileSystem.lstatSync(filePath);
@@ -38,11 +38,13 @@ let loadComponents = function (path: string, configurationData: ConfigurationDat
     }
 };
 
-export function ComponentScan (path) {
+export function ComponentScan(path) {
     return function (target) {
-        var configurationData = ConfigurationUtil.getConfigurationData(target);
-        if (!configurationData) throw '@ComponentScan is allowed on @Configuration classes only!';
+        let configurationData = ConfigurationUtil.getConfigurationData(target);
+        if (!configurationData) {
+            throw '@ComponentScan is allowed on @Configuration classes only!';
+        }
 
         loadComponents(path, configurationData);
-    }
+    };
 }

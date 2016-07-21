@@ -2,9 +2,9 @@ import * as _ from "lodash";
 
 export class ProcessHandler {
 
-    private static instance:ProcessHandler;
+    private static instance: ProcessHandler;
 
-    private onExitListeners:Array<Function>;
+    private onExitListeners: Array<Function>;
 
     constructor() {
         this.onExitListeners = [];
@@ -12,11 +12,13 @@ export class ProcessHandler {
     }
 
     static getInstance() {
-        if (this.instance === undefined) this.instance = new ProcessHandler();
+        if (this.instance === undefined) {
+            this.instance = new ProcessHandler();
+        }
         return this.instance;
     }
 
-    registerOnExitListener(callback:Function) {
+    registerOnExitListener(callback: Function) {
         if (!_.isFunction(callback)) {
             throw new Error('Passed callback must be a function!');
         }
@@ -26,7 +28,7 @@ export class ProcessHandler {
             _.remove(this.onExitListeners, function (val) {
                 return val === callback;
             });
-        }
+        };
     }
 
     private registerProcessExitEvents() {
