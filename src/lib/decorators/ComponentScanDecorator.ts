@@ -2,7 +2,7 @@ import * as _ from "lodash";
 import * as fileSystem from "fs";
 import * as path_module from "path";
 import { ConfigurationData, ConfigurationUtil } from "./ConfigurationDecorator";
-import { COMPONENT_DECORATOR_TOKEN } from "./ComponentDecorator";
+import { ComponentUtil } from "./ComponentDecorator";
 
 let getModulesStartingFrom = function*(path: string) {
     if (!fileSystem.lstatSync(path).isDirectory()) {
