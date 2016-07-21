@@ -6,8 +6,8 @@ export class Injector {
     constructor() {
         this.components = new Map();
     }
-    
-    register (token: Symbol, component: Object) {
+
+    register(token: Symbol, component: Object) {
         if (!this.components.has(token)) {
             this.components.set(token, []);
         }
@@ -15,18 +15,18 @@ export class Injector {
     }
 
     // TODO: user should know for which type the error is thrown
-    getComponent (token: Symbol): Object {
+    getComponent(token: Symbol): Object {
         let components = this.components.get(token);
-        if(_.isUndefined(components)){
+        if (_.isUndefined(components)) {
             throw new Error('No such component');
         }
-        if(components.length > 1){
+        if (components.length > 1) {
             throw new Error(`Ambiguous injection. ${components.length} components found in the injector.`);
         }
         return components[0];
     }
-    
-    getComponents (token: Symbol): Array<Object> {
+
+    getComponents(token: Symbol): Array<Object> {
         return this.components.get(token) || [];
     }
 }

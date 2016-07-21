@@ -9,9 +9,9 @@ export class ReflectUtils {
     }
 
     static getClassHierarchy(clazz): Array<any> {
-        var prototypeChain = [];
+        let prototypeChain = [];
 
-        var currentType = clazz;
+        let currentType = clazz;
         while (currentType.name !== '') {
             prototypeChain.push(currentType);
             currentType = Reflect.getPrototypeOf(currentType);

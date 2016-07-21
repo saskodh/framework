@@ -1,12 +1,14 @@
-import {ConfigurationUtil, ConfigurationData} from "../decorators/ConfigurationDecorator";
-import {ComponentUtil} from "../decorators/ComponentDecorator";
-import {Injector} from "./Injector";
-import {AsyncEngineComponentDefinitionPostProcessor} from "../processors/impl/AsyncEngineComponentDefinitionPostProcessor";
-import {Dispatcher} from "../dispatcher/Dispatcher";
-import {Router} from "express";
+import { ConfigurationUtil, ConfigurationData } from "../decorators/ConfigurationDecorator";
+import { ComponentUtil } from "../decorators/ComponentDecorator";
+import { Injector } from "./Injector";
+import {
+    AsyncEngineComponentDefinitionPostProcessor
+} from "../processors/impl/AsyncEngineComponentDefinitionPostProcessor";
+import { Dispatcher } from "../dispatcher/Dispatcher";
+import { Router } from "express";
 import * as _ from "lodash";
-import {LifeCycleHooksUtil} from "../decorators/LifeCycleHooksDecorators";
-import {ProcessHandler} from "../helpers/ProcessHandler";
+import { LifeCycleHooksUtil } from "../decorators/LifeCycleHooksDecorators";
+import { ProcessHandler } from "../helpers/ProcessHandler";
 
 class ApplicationContextState {
     static NOT_INITIALIZED = 'NOT_INITIALIZED';
@@ -18,11 +20,11 @@ export class ApplicationContext {
 
     private static ACTIVE_PROFILE_PROPERTY_KEY = 'application.profiles.active';
 
-    private state:ApplicationContextState;
-    private injector:Injector;
-    private dispatcher:Dispatcher;
-    private configurationData:ConfigurationData;
-    private unRegisterExitListenerCallback:Function;
+    private state: ApplicationContextState;
+    private injector: Injector;
+    private dispatcher: Dispatcher;
+    private configurationData: ConfigurationData;
+    private unRegisterExitListenerCallback: Function;
 
     constructor(configurationClass) {
         this.state = ApplicationContextState.NOT_INITIALIZED;
@@ -31,22 +33,22 @@ export class ApplicationContext {
         this.configurationData = ConfigurationUtil.getConfigurationData(configurationClass);
     }
 
-    getComponent <T>(componentClass):T {
+    getComponent <T>(componentClass): T {
         this.verifyContextReady();
         return <T> this.injector.getComponent(ComponentUtil.getClassToken(componentClass));
     }
 
-    getComponentWithToken <T>(token:Symbol):T {
+    getComponentWithToken <T>(token: Symbol): T {
         this.verifyContextReady();
         return <T> this.injector.getComponent(token);
     }
 
-    getComponentsWithToken <T>(token:Symbol):Array<T> {
+    getComponentsWithToken <T>(token: Symbol): Array<T> {
         this.verifyContextReady();
         return <Array<T>> this.injector.getComponents(token);
     }
 
-    getRouter():Router {
+    getRouter(): Router {
         this.verifyContextReady();
         return this.dispatcher.getRouter();
     }
@@ -90,14 +92,14 @@ export class ApplicationContext {
     }
 
     private initializeComponents() {
-        var asyncEngine = AsyncEngineComponentDefinitionPostProcessor.getInstance();
+        let asyncEngine = AsyncEngineComponentDefinitionPostProcessor.getInstance();
         for (let CompConstructor of this.getActiveComponents()) {
-            var componentData = ComponentUtil.getComponentData(CompConstructor);
+            let componentData = ComponentUtil.getComponentData(CompConstructor);
 
             // todo pass the comp constructor through the registered definition post processors
             // configurationData.componentDefinitionPostProcessorFactory
 
-            var PostProcessedComponentConstructor = asyncEngine.postProcessDefinition(CompConstructor);
+            let PostProcessedComponentConstructor = asyncEngine.postProcessDefinition(CompConstructor);
 
             let instance = new PostProcessedComponentConstructor();
             this.injector.register(componentData.classToken, instance);
@@ -109,9 +111,9 @@ export class ApplicationContext {
 
     private wireComponents() {
         for (let CompConstructor of this.getActiveComponents()) {
-            var componentData = ComponentUtil.getComponentData(CompConstructor);
+            let componentData = ComponentUtil.getComponentData(CompConstructor);
             let injectionData = ComponentUtil.getInjectionData(CompConstructor);
-            var instance = this.injector.getComponent(componentData.classToken);
+            let instance = this.injector.getComponent(componentData.classToken);
 
             injectionData.dependencies.forEach((dependencyData, fieldName) => {
                 let dependency = dependencyData.isArray ? this.injector.getComponents(dependencyData.token) :
@@ -131,7 +133,7 @@ export class ApplicationContext {
     private async executePostConstruction() {
         let postConstructInvocations = [];
         for (let CompConstructor of this.getActiveComponents()) {
-            var componentData = ComponentUtil.getComponentData(CompConstructor);
+            let componentData = ComponentUtil.getComponentData(CompConstructor);
             let postConstructMethod = LifeCycleHooksUtil.getConfig(CompConstructor).postConstructMethod;
             if (postConstructMethod) {
                 let instance = this.injector.getComponent(componentData.classToken);
@@ -148,7 +150,7 @@ export class ApplicationContext {
     private async executePreDestruction() {
         let preDestroyInvocations = [];
         for (let CompConstructor of this.getActiveComponents()) {
-            var componentData = ComponentUtil.getComponentData(CompConstructor);
+            let componentData = ComponentUtil.getComponentData(CompConstructor);
             let preDestroyMethod = LifeCycleHooksUtil.getConfig(CompConstructor).preDestroyMethod;
             if (preDestroyMethod) {
                 let instance = this.injector.getComponent(componentData.classToken);
@@ -166,16 +168,19 @@ export class ApplicationContext {
         let activeProfile = this.getActiveProfile();
         return _.filter(this.configurationData.componentFactory.components, (CompConstructor) => {
             let profile = ComponentUtil.getComponentData(CompConstructor).profile;
-            if (profile) return profile === activeProfile;
+            if (profile) {
+
+                return profile === activeProfile;
+            }
             return true;
-        })
+        });
     }
 
-    private getActiveProfile():string {
+    private getActiveProfile(): string {
         return this.getConfigurationProperty(ApplicationContext.ACTIVE_PROFILE_PROPERTY_KEY);
     }
 
-    private getConfigurationProperty(propertyKey:string):string {
+    private getConfigurationProperty(propertyKey: string): string {
         return process.env[propertyKey] || this.configurationData.properties.get(propertyKey);
     }
 
