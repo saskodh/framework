@@ -20,6 +20,12 @@ export function Import(...configurationClasses) {
             for (let component of configurationData.componentPostProcessorFactory.components) {
                 targetConfigurationData.componentPostProcessorFactory.components.push(component);
             }
+            for (let componentScanPath of configurationData.componentScanPaths) {
+                ConfigurationUtil.addComponentScanPath(targetConfigurationClass, componentScanPath);
+            }
+            for (let propertySourcePaths of configurationData.propertySourcePaths) {
+                ConfigurationUtil.addPropertySourcePath(targetConfigurationClass, propertySourcePaths);
+            }
             configurationData.properties.forEach((value, key) => {
                 targetConfigurationData.properties.set(key, value);
             });

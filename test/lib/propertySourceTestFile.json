@@ -1,0 +1,8 @@
+{
+  "key": "val",
+  "keyObj": {
+    "objKey": "objVal",
+    "objKeyArr": ["objValArrOne", "objValArrTwo"]
+  },
+  "keyArr": ["arrValOne", "arrValTwo"]
+}

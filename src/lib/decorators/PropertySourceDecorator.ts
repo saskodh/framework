@@ -1,17 +1,14 @@
 import { ConfigurationUtil } from "./ConfigurationDecorator";
-import * as _ from "lodash";
-import { GeneralUtils } from "../helpers/GeneralUtils";
 
-function parseProperties(properties): Map<string, string> {
-    if (_.isObject(properties)) {
-        return GeneralUtils.flattenObject(properties);
-    }
-    return new Map();
-}
-
-export function PropertySource(properties) {
+/**
+ * A decorator for defining a JSON property source for the configuration properties.
+ * May only be put on @Configuration() classes.
+ * @param path to the property source. (For relative paths use __dirname)
+ * @returns {(target:any)=>undefined} nothing
+ * @constructor
+ */
+export function PropertySource(path: string) {
     return function (target) {
-        let configurationData = ConfigurationUtil.getConfigurationData(target);
-        parseProperties(properties).forEach((value, prop) => configurationData.properties.set(prop, value));
+        ConfigurationUtil.addPropertySourcePath(target, path);
     };
 }
