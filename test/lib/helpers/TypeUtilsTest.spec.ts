@@ -21,7 +21,7 @@ describe('TypeUtils', function () {
         private c:string = 'c';
     }
 
-    it('should throw if the given type is ', function () {
+    it('should throw if the given type is undefined', function () {
         // given / when / then
         expect(assertIsA(undefined, Array)).to.throw(Error);
         expect(assertIsA(Array, undefined)).to.throw(Error);

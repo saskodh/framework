@@ -36,8 +36,7 @@ export class Dispatcher {
                 instance[route.methodHandler](request, response).then(function (result) {
                     if (_.isUndefined(route.view)) {
                         response.json(result);
-                    }
-                    else {
+                    } else {
                         response.render(route.view, result);
                     }
                 });
@@ -47,8 +46,10 @@ export class Dispatcher {
 
     private registerInterceptor(interceptor: Interceptor) {
         this.router.use((request: Request, response: Response, next: NextFunction) => {
+            // TODO: add proper error handling
             interceptor.preHandle(request, response)
-                .then(next).catch((error) => console.log(error));
+                .then(next)
+                .catch((error) => console.log(error));
         });
     }
 }
