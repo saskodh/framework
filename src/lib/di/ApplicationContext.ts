@@ -10,7 +10,7 @@ import * as _ from "lodash";
 import { LifeCycleHooksUtil } from "../decorators/LifeCycleHooksDecorators";
 import { ProcessHandler } from "../helpers/ProcessHandler";
 
-class ApplicationContextState {
+export class ApplicationContextState {
     static NOT_INITIALIZED = 'NOT_INITIALIZED';
     static INITIALIZING = 'INITIALIZING';
     static READY = 'READY';
@@ -169,7 +169,6 @@ export class ApplicationContext {
         return _.filter(this.configurationData.componentFactory.components, (CompConstructor) => {
             let profile = ComponentUtil.getComponentData(CompConstructor).profile;
             if (profile) {
-
                 return profile === activeProfile;
             }
             return true;
