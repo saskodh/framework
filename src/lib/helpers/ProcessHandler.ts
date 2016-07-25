@@ -6,6 +6,9 @@ export class ProcessHandler {
 
     private onExitListeners: Array<Function>;
 
+    /**
+     * It is recommended to have only one instance per application. Use getInstance() to get a singleton.
+     */
     constructor() {
         this.onExitListeners = [];
         this.registerProcessExitEvents();

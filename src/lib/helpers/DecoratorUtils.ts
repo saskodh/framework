@@ -3,6 +3,10 @@ export class DecoratorType {
     static METHOD = 'method';
     static PROPERTY = 'property';
     static PARAMETER = 'parameter';
+
+    static getAllTypes (): Array<string> {
+        return [this.CLASS, this.METHOD, this.PROPERTY, this.PARAMETER];
+    }
 }
 
 

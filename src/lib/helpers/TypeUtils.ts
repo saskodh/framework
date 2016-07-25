@@ -10,7 +10,7 @@ export class TypeUtils {
      * @returns Boolean
      * @throws Error if any of the arguments is undefined
      * */
-    static isA(givenType, comparisonType) {
+    static isA(givenType, comparisonType): boolean {
         Preconditions.assertDefined(givenType);
         Preconditions.assertDefined(comparisonType);
 
