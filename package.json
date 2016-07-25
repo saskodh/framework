@@ -7,7 +7,8 @@
   "keywords": [],
   "scripts": {
     "clean": "rm -rf dist",
-    "build": "npm run clean && tsc && npm run lint && npm run test && npm run prepare",
+    "typings": "typings install",
+    "build": "npm run clean && npm run typings &&  tsc && npm run lint && npm run test && npm run prepare",
     "test:clean": "rm -rf coverage",
     "test:run": "istanbul cover node_modules/mocha/bin/_mocha --report none -- --recursive ./dist",
     "test:coverage:lcov": "remap-istanbul -i ./coverage/coverage.json -o ./coverage/lcov.info -t lcovonly",
@@ -16,7 +17,7 @@
     "test": "tsc && npm run test:clean && npm run test:run && npm run test:coverage",
     "lint": "tslint ./src/**/*.ts",
     "prepare": "cp package.json typings.json README.md ./dist/src",
-    "_prepublish": "typings install && npm run build"
+    "prepublish": "npm run build"
   },
   "engines": {
     "node": ">=6.0.0"

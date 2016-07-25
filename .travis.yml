@@ -7,12 +7,8 @@ language: node_js
 node_js:
   - 6
 
-before_install:
-  - npm install typings --global
-
 install:
   - npm install
-  - typings install
 
 script:
   - npm run build
