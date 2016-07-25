@@ -31,26 +31,37 @@ describe('ApplicationContext', function () {
     @Controller()
     class ControllerClassA {}
 
+    @Configuration()
+    class AppConfig {}
+
+    ConfigurationUtil.getConfigurationData(AppConfig).componentFactory.components.push(ComponentClassA);
+    ConfigurationUtil.getConfigurationData(AppConfig).componentFactory.components.push(ComponentClassB);
+    ConfigurationUtil.getConfigurationData(AppConfig).componentFactory.components.push(ControllerClassA);
+    ConfigurationUtil.getConfigurationData(AppConfig).properties.set('application.profiles.active', 'dev');
+
     beforeEach(() => {
-
-        @Configuration()
-        class AppConfig {}
-
-        ConfigurationUtil.getConfigurationData(AppConfig).componentFactory.components.push(ComponentClassA);
-        ConfigurationUtil.getConfigurationData(AppConfig).componentFactory.components.push(ComponentClassB);
-        ConfigurationUtil.getConfigurationData(AppConfig).componentFactory.components.push(ControllerClassA);
-        ConfigurationUtil.getConfigurationData(AppConfig).properties.set('application.profiles.active', 'dev');
-
         appContext = new ApplicationContext(AppConfig);
         localAppContext = <any> appContext;
     });
 
     it('should initialize properly', function () {
-        // given / when / then
+        // given
+        let spyOnLoadAllProperties = spy(ConfigurationData.prototype, 'loadAllProperties');
+        let spyOnLoadAllComponents = spy(ConfigurationData.prototype, 'loadAllComponents');
+
+        // when
+        localAppContext = <any> new ApplicationContext(AppConfig);
+
+        // then
         expect(localAppContext.state).to.be.eq(ApplicationContextState.NOT_INITIALIZED);
         expect(localAppContext.injector).to.be.instanceOf(Injector);
         expect(localAppContext.dispatcher).to.be.instanceOf(Dispatcher);
         expect(localAppContext.configurationData).to.be.instanceOf(ConfigurationData);
+        expect(spyOnLoadAllProperties.called).to.be.true;
+        expect(spyOnLoadAllComponents.called).to.be.true;
+
+        spyOnLoadAllProperties.restore();
+        spyOnLoadAllProperties.restore();
     });
 
     it('should throw error if appContext.start() is not called first', function () {
@@ -151,7 +162,7 @@ describe('ApplicationContext', function () {
         // then
         expect(spyOnGetComponents.calledWith(token)).to.be.true;
         expect(components.length).to.be.eq(2);
-        expect(components).to.include.members([componentClassA, componentClassB])
+        expect(components).to.include.members([componentClassA, componentClassB]);
     });
 
     it('should return router', async function () {

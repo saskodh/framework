@@ -7,14 +7,11 @@ import { ComponentUtil } from "./ComponentDecorator";
 /**
  *A decorator for setting up project files to be component-scanned.
  * May only be put on @Configuration() classes.
- * @param Path for the root directory. (For relative paths use __dirname)
+ * @param path for the root directory. (For relative paths use __dirname)
  */
 export function ComponentScan(path) {
     return function (target) {
-        let configurationData;
-        try {
-            configurationData = ConfigurationUtil.getConfigurationData(target);
-        } catch (error) {
+        if (!ConfigurationUtil.isConfigurationClass(target)) {
             throw new Error('@ComponentScan is allowed on @Configuration classes only!');
         }
         ConfigurationUtil.addComponentScanPath(target, path);

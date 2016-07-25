@@ -4,6 +4,56 @@ import {
     Configuration, ConfigurationUtil,
     ConfigurationData
 } from "../../../src/lib/decorators/ConfigurationDecorator";
+import { PropertySourceUtil } from "../../../src/lib/decorators/PropertySourceDecorator";
+import { ComponentScanUtil } from "../../../src/lib/decorators/ComponentScanDecorator";
+
+describe('ConfigurationData', function () {
+
+    it('should load properties', function () {
+        // given
+        let configurationData = new ConfigurationData();
+        configurationData.propertySourcePaths.push('somePath');
+        let map = new Map();
+        map.set('key', 'val');
+        let stubOnGetPropertiesFromPaths = stub(PropertySourceUtil, 'getPropertiesFromPaths').returns(map);
+
+        // when
+        configurationData.loadAllProperties();
+
+        // then
+        expect(configurationData.properties.get('key')).is.eql('val');
+        expect(stubOnGetPropertiesFromPaths.calledWith('somePath')).to.be.true;
+
+        stubOnGetPropertiesFromPaths.restore();
+    });
+
+    it('should load components', function () {
+        // given
+        let configurationData = new ConfigurationData();
+        configurationData.componentScanPaths.push('somePath');
+        let stubOnLoadAllComponents = stub(ComponentScanUtil, 'loadAllComponents');
+
+        // when
+        configurationData.loadAllComponents();
+
+        // then
+        expect(stubOnLoadAllComponents.calledWith(configurationData)).to.be.true;
+
+        stubOnLoadAllComponents.restore();
+    });
+
+    it('should throw error when @Configuration is used more than once on the same class', function () {
+        // given
+        let createConfiguration = () => {
+            @Configuration()
+            @Configuration()
+            class A {}
+        };
+
+        // when / then
+        expect(createConfiguration).to.throw(Error);
+    });
+});
 
 describe('ConfigurationDecorator', function () {
 
@@ -39,7 +89,7 @@ describe('ConfigurationUtil', function () {
         class A {}
 
         // when / then
-        expect(ConfigurationUtil.getConfigurationData.bind(this, A)).to.throw(Error);
+        expect(ConfigurationUtil.getConfigurationData.bind(ConfigurationUtil, A)).to.throw(Error);
     });
 
     it('should add path for component scan', function () {
@@ -70,29 +120,5 @@ describe('ConfigurationUtil', function () {
             .to.include.members(['somePath', 'someOtherPath']);
     });
 
-    it('should set properties from path', function () {
-        // given
-        // the first line is to be used while manually running, the second while building.
-        // let propertiesPath = __dirname + "/../propertySourceTestFile.json";
-        let propertiesPath = __dirname + "/../../../../test/lib/propertySourceTestFile.json";
 
-        @Configuration()
-        class A { }
-
-        let configurationDataA = ConfigurationUtil.getConfigurationData(A);
-        configurationDataA.propertySourcePaths.push(propertiesPath);
-        configurationDataA.propertySourcePaths.push("wrongPath");
-        configurationDataA.properties.set('key3', 'val3');
-        let consoleErrorStub = stub(console, 'error');
-
-        console.log('path ' + propertiesPath);
-        // when / then
-        expect(ConfigurationUtil.setPropertiesFromPath.bind(ConfigurationUtil, configurationDataA)).to.throw(Error);
-        expect(configurationDataA.properties.get('key')).to.be.eq('val');
-        expect(configurationDataA.properties.get('keyObj.objKey')).to.be.eq("objVal");
-        expect(configurationDataA.properties.get('keyObj.objKeyArr')).to.be.eq('objValArrOne,objValArrTwo');
-        expect(configurationDataA.properties.get('keyArr')).to.be.eq('arrValOne,arrValTwo');
-        expect(configurationDataA.properties.get('key3')).to.be.eq('val3');
-        expect(consoleErrorStub.called).to.be.true;
-    });
 });

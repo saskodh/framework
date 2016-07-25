@@ -9,7 +9,6 @@ import { Router } from "express";
 import * as _ from "lodash";
 import { LifeCycleHooksUtil } from "../decorators/LifeCycleHooksDecorators";
 import { ProcessHandler } from "../helpers/ProcessHandler";
-import { ComponentScanUtil } from "../decorators/ComponentScanDecorator";
 
 export class ApplicationContextState {
     static NOT_INITIALIZED = 'NOT_INITIALIZED';
@@ -32,8 +31,8 @@ export class ApplicationContext {
         this.injector = new Injector();
         this.dispatcher = new Dispatcher();
         this.configurationData = ConfigurationUtil.getConfigurationData(configurationClass);
-        ComponentScanUtil.loadAllComponents(this.configurationData);
-        ConfigurationUtil.setPropertiesFromPath(this.configurationData);
+        this.configurationData.loadAllProperties();
+        this.configurationData.loadAllComponents();
     }
 
     getComponent <T>(componentClass): T {

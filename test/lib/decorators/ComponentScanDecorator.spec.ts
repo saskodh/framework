@@ -18,8 +18,7 @@ describe('ComponentScanDecorator', function () {
         class A {}
 
         // then
-        expect(addComponentScanPathStub.calledOnce).to.be.true;
-        expect(addComponentScanPathStub.args).to.be.eql([[ A, 'somePath']]);
+        expect(addComponentScanPathStub.calledWith(A, 'somePath')).to.be.true;
 
         addComponentScanPathStub.restore();
     });
@@ -29,7 +28,7 @@ describe('ComponentScanDecorator', function () {
         class A {}
 
         // when / then
-        expect(ComponentScan('somePath').bind(this, A)).to.throw(Error);
+        expect(ComponentScan('somePath').bind(null, A)).to.throw(Error);
     });
 });
 
@@ -41,6 +40,7 @@ describe('ComponentScanUtil', function () {
         configData.componentScanPaths.push('pathOne');
         configData.componentScanPaths.push('pathTwo');
         let loadComponentsFromPathStub = stub(ComponentScanUtil, 'loadComponentsFromPath');
+
         // when
         ComponentScanUtil.loadAllComponents(configData);
 
@@ -50,4 +50,6 @@ describe('ComponentScanUtil', function () {
 
         loadComponentsFromPathStub.restore();
     });
+
+    // TODO: add unit test for private methods
 });
