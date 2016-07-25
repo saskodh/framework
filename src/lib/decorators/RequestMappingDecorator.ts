@@ -17,8 +17,8 @@ export interface RequestMappingConfig {
     method?: string;
 }
 
-export const ROUTER_CONFIG = Symbol('router_config');
-export const CLASS_ROUTER_CONFIG = Symbol('class_router_config');
+const ROUTER_CONFIG = Symbol('router_config');
+const CLASS_ROUTER_CONFIG = Symbol('class_router_config');
 
 export class RouterConfigItem {
     requestConfig: RequestMappingConfig;

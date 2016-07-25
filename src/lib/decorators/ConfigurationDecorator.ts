@@ -1,6 +1,6 @@
 import { ComponentFactory } from "../di/ComponentFactory";
 
-export const CONFIGURATION_HOLDER_TOKEN = Symbol('configuration_holder_token');
+const CONFIGURATION_HOLDER_TOKEN = Symbol('configuration_holder_token');
 
 export class ConfigurationData {
 
@@ -22,7 +22,7 @@ export class ConfigurationData {
 export function Configuration() {
     return function (target) {
         if (target[CONFIGURATION_HOLDER_TOKEN]) {
-            throw 'Duplicate @Configuration decorator';
+            throw new Error('Duplicate @Configuration decorator');
         }
         target[CONFIGURATION_HOLDER_TOKEN] = new ConfigurationData();
 

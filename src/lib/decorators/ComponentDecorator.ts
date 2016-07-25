@@ -15,7 +15,7 @@ export class ComponentData {
     }
 }
 
-export const COMPONENT_DECORATOR_TOKEN = Symbol('component_decorator_token');
+const COMPONENT_DECORATOR_TOKEN = Symbol('component_decorator_token');
 
 export function Component() {
     return function (target) {
@@ -28,7 +28,7 @@ export function Component() {
 export function Profile(profile: string) {
     return function (target) {
         if (!ComponentUtil.isComponent(target)) {
-            throw '@Profile can be set only on @Component!';
+            throw new Error('@Profile can be set only on @Component!');
         }
         ComponentUtil.getComponentData(target).profile = profile;
     };
@@ -37,7 +37,9 @@ export function Profile(profile: string) {
 export class ComponentUtil {
 
     static getComponentData(target): ComponentData {
-        return target[COMPONENT_DECORATOR_TOKEN];
+        if (target) {
+            return target[COMPONENT_DECORATOR_TOKEN];
+        }
     }
 
     static isComponent(target): boolean {
