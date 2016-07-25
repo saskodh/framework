@@ -1,9 +1,6 @@
 import { ConfigurationUtil, ConfigurationData } from "../decorators/ConfigurationDecorator";
 import { ComponentUtil } from "../decorators/ComponentDecorator";
 import { Injector } from "./Injector";
-import {
-    AsyncEngineComponentDefinitionPostProcessor
-} from "../processors/impl/AsyncEngineComponentDefinitionPostProcessor";
 import { Dispatcher } from "../dispatcher/Dispatcher";
 import { Router } from "express";
 import * as _ from "lodash";
@@ -94,16 +91,12 @@ export class ApplicationContext {
     }
 
     private initializeComponents() {
-        let asyncEngine = AsyncEngineComponentDefinitionPostProcessor.getInstance();
         for (let CompConstructor of this.getActiveComponents()) {
             let componentData = ComponentUtil.getComponentData(CompConstructor);
 
             // todo pass the comp constructor through the registered definition post processors
             // configurationData.componentDefinitionPostProcessorFactory
-
-            let PostProcessedComponentConstructor = asyncEngine.postProcessDefinition(CompConstructor);
-
-            let instance = new PostProcessedComponentConstructor();
+            let instance = new CompConstructor();
             this.injector.register(componentData.classToken, instance);
             for (let token of componentData.aliasTokens) {
                 this.injector.register(token, instance);
