@@ -55,6 +55,7 @@ export class ComponentScanUtil {
     private static loadComponentsFromPath(path: string, configurationData: ConfigurationData) {
         for (let module of this.getModulesStartingFrom(path)) {
             for (let component of this.getComponentsFromModule(module)) {
+                // TODO: fix the implementation to allow registering Post Processors
                 configurationData.componentFactory.components.push(component);
             }
         }

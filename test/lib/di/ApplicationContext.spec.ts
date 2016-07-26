@@ -12,6 +12,12 @@ import { Injector } from "../../../src/lib/di/Injector";
 import { Dispatcher } from "../../../src/lib/dispatcher/Dispatcher";
 import { spy, stub, match } from "sinon";
 import { ProcessHandler } from "../../../src/lib/helpers/ProcessHandler";
+import {
+    ComponentDefinitionPostProcessor,
+    IComponentDefinitionPostProcessor
+} from "../../../src/lib/processors/ComponentDefinitionPostProcessor";
+import { IComponentPostProcessor } from "../../../src/lib/processors/ComponentPostProcessor";
+import { Order } from "../../../src/lib/decorators/OrderDecorator";
 
 describe('ApplicationContext', function () {
 
@@ -31,12 +37,38 @@ describe('ApplicationContext', function () {
     @Controller()
     class ControllerClassA {}
 
+    @Order(2)
+    @ComponentDefinitionPostProcessor()
+    class DefinitionPostProcessorClassA implements  IComponentDefinitionPostProcessor {
+        postProcessDefinition(componentConstructor) { /* console.log("Definition2");*/ };
+    }
+
+    @Order(3)
+    @ComponentDefinitionPostProcessor()
+    class DefinitionPostProcessorClassB implements  IComponentDefinitionPostProcessor {
+        postProcessDefinition(componentConstructor) { /* console.log("Definition1");*/ };
+    }
+
+    @ComponentDefinitionPostProcessor()
+    class PostProcessorClassA implements  IComponentPostProcessor {
+        postProcessBeforeInit(componentConstructor) {/* console.log("postprocessbefore");*/ };
+        postProcessAfterInit(componentConstructor) {/* console.log("postprocessafter");*/ };
+    }
+
     @Configuration()
     class AppConfig {}
 
     ConfigurationUtil.getConfigurationData(AppConfig).componentFactory.components.push(ComponentClassA);
     ConfigurationUtil.getConfigurationData(AppConfig).componentFactory.components.push(ComponentClassB);
     ConfigurationUtil.getConfigurationData(AppConfig).componentFactory.components.push(ControllerClassA);
+
+    ConfigurationUtil.getConfigurationData(AppConfig).componentDefinitionPostProcessorFactory.components
+        .push(DefinitionPostProcessorClassA);
+    ConfigurationUtil.getConfigurationData(AppConfig).componentDefinitionPostProcessorFactory.components
+        .push(DefinitionPostProcessorClassB);
+    ConfigurationUtil.getConfigurationData(AppConfig).componentPostProcessorFactory.components
+        .push(PostProcessorClassA);
+
     ConfigurationUtil.getConfigurationData(AppConfig).properties.set('application.profiles.active', 'dev');
 
     beforeEach(() => {
@@ -124,15 +156,25 @@ describe('ApplicationContext', function () {
         let componentClassA = appContext.getComponent(ComponentClassA);
         let componentClassB = appContext.getComponent(ComponentClassB);
         let controllerClassA = appContext.getComponent(ControllerClassA);
+        let definitionPostProcessorClassA = appContext.getComponent(DefinitionPostProcessorClassA);
+        let definitionPostProcessorClassB = appContext.getComponent(DefinitionPostProcessorClassB);
+        let postProcessorClassA = appContext.getComponent(PostProcessorClassA);
 
         // then
         expect(spyOnGetComponent.calledWith(ComponentUtil.getClassToken(ComponentClassA))).to.be.true;
         expect(spyOnGetComponent.calledWith(ComponentUtil.getClassToken(ComponentClassB))).to.be.true;
         expect(spyOnGetComponent.calledWith(ComponentUtil.getClassToken(ControllerClassA))).to.be.true;
+        expect(spyOnGetComponent.calledWith(ComponentUtil.getClassToken(DefinitionPostProcessorClassA))).to.be.true;
+        expect(spyOnGetComponent.calledWith(ComponentUtil.getClassToken(DefinitionPostProcessorClassB))).to.be.true;
+        expect(spyOnGetComponent.calledWith(ComponentUtil.getClassToken(PostProcessorClassA))).to.be.true;
+
 
         expect(componentClassA).to.be.instanceOf(ComponentClassA);
         expect(componentClassB).to.be.instanceOf(ComponentClassB);
         expect(controllerClassA).to.be.instanceOf(ControllerClassA);
+        expect(definitionPostProcessorClassA).to.be.instanceOf(DefinitionPostProcessorClassA);
+        expect(definitionPostProcessorClassB).to.be.instanceOf(DefinitionPostProcessorClassB);
+        expect(postProcessorClassA).to.be.instanceOf(PostProcessorClassA);
     });
 
     it('should return Component with token', async function () {
@@ -175,5 +217,44 @@ describe('ApplicationContext', function () {
         // then
         expect(router).to.be.of.isPrototypeOf(Router);
         expect(router).to.be.equal(localAppContext.dispatcher.getRouter());
+    });
+
+    it('should start the app context', async function () {
+        // given
+        let initializeDefinitionPostProcessorsStub = stub(appContext, 'initializeDefinitionPostProcessors')
+            .returns(Promise.resolve('resolved'));
+        let initializePostProcessorsStub = stub(appContext, 'initializePostProcessors')
+            .returns(Promise.resolve('resolved'));
+        let postProcessDefinitionStub = stub(appContext, 'postProcessDefinition').returns(Promise.resolve('resolved'));
+
+        let initializeComponentsStub = stub(appContext, 'initializeComponents').returns(Promise.resolve('resolved'));
+        let wireComponentsStub = stub(appContext, 'wireComponents').returns(Promise.resolve('resolved'));
+
+        let postProcessBeforeInitStub = stub(appContext, 'postProcessBeforeInit').returns(Promise.resolve('resolved'));
+        let executePostConstructionStub = stub(appContext, 'executePostConstruction')
+            .returns(Promise.resolve('resolved'));
+        let postProcessAfterInitStub = stub(appContext, 'postProcessAfterInit').returns(Promise.resolve('resolved'));
+
+        // when
+        await appContext.start();
+
+        // then
+        expect(initializeDefinitionPostProcessorsStub.called).to.be.true;
+        expect(initializePostProcessorsStub.called).to.be.true;
+        expect(postProcessDefinitionStub.called).to.be.true;
+        expect(initializeComponentsStub.called).to.be.true;
+        expect(wireComponentsStub.called).to.be.true;
+        expect(postProcessBeforeInitStub.called).to.be.true;
+        expect(executePostConstructionStub.called).to.be.true;
+        expect(postProcessAfterInitStub.called).to.be.true;
+
+        initializeDefinitionPostProcessorsStub.restore();
+        initializePostProcessorsStub.restore();
+        postProcessDefinitionStub.restore();
+        initializeComponentsStub.restore();
+        wireComponentsStub.restore();
+        postProcessBeforeInitStub.restore();
+        executePostConstructionStub.restore();
+        postProcessAfterInitStub.restore();
     });
 });
