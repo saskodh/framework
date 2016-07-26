@@ -1,7 +1,8 @@
-import {expect} from "chai";
-import {spy} from "sinon";
-import {Configuration, ConfigurationUtil} from "../../../src/lib/decorators/ConfigurationDecorator";
+import { expect } from "chai";
+import { spy, stub } from "sinon";
+import { Configuration, ConfigurationUtil } from "../../../src/lib/decorators/ConfigurationDecorator";
 import { PropertySource, PropertySourceUtil } from "../../../src/lib/decorators/PropertySourceDecorator";
+import { RequireUtils } from "../../../src/lib/helpers/RequireUtils";
 
 describe('PropertySourceDecorator', function () {
 
@@ -36,19 +37,26 @@ describe('PropertySourceUtil', function () {
 
     it('should get properties from path', function () {
         // given
-        // todo: put require in util (so it is mockable) and adjust source and tests accordingly
-        // the first line is to be used while manually running, the second while building.
-        // let propertiesPath = __dirname + "/../propertySourceTestFile.json";
-        let propertiesPath = __dirname + "/../../../../test/lib/propertySourceTestFile.json";
+        let stubOnRequire = stub(RequireUtils, 'require').returns({
+            "key": "val",
+            "keyObj": {
+                "objKey": "objVal",
+                "objKeyArr": ["objValArrOne", "objValArrTwo"]
+            },
+            "keyArr": ["arrValOne", "arrValTwo"]
+        });
 
         // when
-        let resultProperties = PropertySourceUtil.getPropertiesFromPaths(propertiesPath);
+        let resultProperties = PropertySourceUtil.getPropertiesFromPaths('somePath');
 
         // then
         expect(resultProperties.get('key')).to.be.eq('val');
         expect(resultProperties.get('keyObj.objKey')).to.be.eq("objVal");
         expect(resultProperties.get('keyObj.objKeyArr')).to.be.eq('objValArrOne,objValArrTwo');
         expect(resultProperties.get('keyArr')).to.be.eq('arrValOne,arrValTwo');
+        expect(stubOnRequire.calledWith('somePath')).to.be.true;
+
+        stubOnRequire.restore();
     });
 
     it('should throw on wrong path', function () {
