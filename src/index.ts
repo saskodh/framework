@@ -20,3 +20,4 @@ export {Dispatcher} from "./lib/dispatcher/Dispatcher";
 export {Interceptor} from "./lib/interceptors/InterceptorDecorator";
 export {ComponentDefinitionPostProcessor} from "./lib/processors/ComponentDefinitionPostProcessor";
 export {ComponentPostProcessor} from "./lib/processors/ComponentPostProcessor";
+export {Order} from "./lib/decorators/OrderDecorator";
