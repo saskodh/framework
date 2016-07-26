@@ -3,6 +3,7 @@ import * as fileSystem from "fs";
 import * as path_module from "path";
 import { ConfigurationData, ConfigurationUtil } from "./ConfigurationDecorator";
 import { ComponentUtil } from "./ComponentDecorator";
+import { RequireUtils } from "../helpers/RequireUtils";
 
 /**
  *A decorator for setting up project files to be component-scanned.
@@ -38,7 +39,7 @@ export class ComponentScanUtil {
             // if it's JavaScript file load it
             if (lstat.isFile() && path_module.extname(fileName) === '.js') {
                 console.log(`Loading dynamically by @ComponentScan: ${fileName} (${filePath})`);
-                yield require(filePath);
+                yield RequireUtils.require(filePath);
             }
 
             if (lstat.isDirectory()) {
