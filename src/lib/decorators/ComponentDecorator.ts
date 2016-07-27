@@ -69,10 +69,10 @@ export class ComponentUtil {
     }
 
     static isComponentDefinitionPostProcessor(target): boolean {
-        return !!target[COMPONENT_DEFINITION_POST_PROCESSOR_DECORATOR_TOKEN];
-    }
+    return !!target[COMPONENT_DEFINITION_POST_PROCESSOR_DECORATOR_TOKEN];
+}
 
-    static isPostProcessor(target): boolean {
+    static isComponentPostProcessor(target): boolean {
         return !!target[COMPONENT_POST_PROCESSOR_DECORATOR_TOKEN];
     }
 }

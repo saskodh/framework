@@ -221,40 +221,72 @@ describe('ApplicationContext', function () {
 
     it('should start the app context', async function () {
         // given
-        let initializeDefinitionPostProcessorsStub = stub(appContext, 'initializeDefinitionPostProcessors')
-            .returns(Promise.resolve('resolved'));
-        let initializePostProcessorsStub = stub(appContext, 'initializePostProcessors')
-            .returns(Promise.resolve('resolved'));
-        let postProcessDefinitionStub = stub(appContext, 'postProcessDefinition').returns(Promise.resolve('resolved'));
+        let initializeDefinitionPostProcessorsSpy = spy(appContext, 'initializeDefinitionPostProcessors');
+        let initializePostProcessorsSpy = spy(appContext, 'initializePostProcessors');
+        let postProcessDefinitionSpy = spy(appContext, 'postProcessDefinition');
 
-        let initializeComponentsStub = stub(appContext, 'initializeComponents').returns(Promise.resolve('resolved'));
-        let wireComponentsStub = stub(appContext, 'wireComponents').returns(Promise.resolve('resolved'));
+        let initializeComponentsSpy = spy(appContext, 'initializeComponents');
+        let wireComponentsSpy = spy(appContext, 'wireComponents');
 
-        let postProcessBeforeInitStub = stub(appContext, 'postProcessBeforeInit').returns(Promise.resolve('resolved'));
-        let executePostConstructionStub = stub(appContext, 'executePostConstruction')
-            .returns(Promise.resolve('resolved'));
-        let postProcessAfterInitStub = stub(appContext, 'postProcessAfterInit').returns(Promise.resolve('resolved'));
+        let postProcessBeforeInitSpy = spy(appContext, 'postProcessBeforeInit');
+        let executePostConstructionSpy = spy(appContext, 'executePostConstruction');
+        let postProcessAfterInitSpy = spy(appContext, 'postProcessAfterInit');
 
         // when
         await appContext.start();
 
         // then
-        expect(initializeDefinitionPostProcessorsStub.called).to.be.true;
-        expect(initializePostProcessorsStub.called).to.be.true;
-        expect(postProcessDefinitionStub.called).to.be.true;
-        expect(initializeComponentsStub.called).to.be.true;
-        expect(wireComponentsStub.called).to.be.true;
-        expect(postProcessBeforeInitStub.called).to.be.true;
-        expect(executePostConstructionStub.called).to.be.true;
-        expect(postProcessAfterInitStub.called).to.be.true;
+        expect(initializeDefinitionPostProcessorsSpy.called).to.be.true;
+        expect(initializePostProcessorsSpy.called).to.be.true;
+        expect(postProcessDefinitionSpy.called).to.be.true;
+        expect(initializeComponentsSpy.called).to.be.true;
+        expect(wireComponentsSpy.called).to.be.true;
+        expect(postProcessBeforeInitSpy.called).to.be.true;
+        expect(executePostConstructionSpy.called).to.be.true;
+        expect(postProcessAfterInitSpy.called).to.be.true;
 
-        initializeDefinitionPostProcessorsStub.restore();
-        initializePostProcessorsStub.restore();
-        postProcessDefinitionStub.restore();
-        initializeComponentsStub.restore();
-        wireComponentsStub.restore();
-        postProcessBeforeInitStub.restore();
-        executePostConstructionStub.restore();
-        postProcessAfterInitStub.restore();
+        initializeDefinitionPostProcessorsSpy.restore();
+        initializePostProcessorsSpy.restore();
+        postProcessDefinitionSpy.restore();
+        initializeComponentsSpy.restore();
+        wireComponentsSpy.restore();
+        postProcessBeforeInitSpy.restore();
+        executePostConstructionSpy.restore();
+        postProcessAfterInitSpy.restore();
+    });
+
+    it('should apply method implemented in the post processors', async function () {
+        // given
+        let spyOnDefinitionPostProcessorClassAPostProcessDefinition =
+            spy(DefinitionPostProcessorClassA.prototype, 'postProcessDefinition');
+        let spyOnDefinitionPostProcessorClassBPostProcessDefinition =
+            spy(DefinitionPostProcessorClassB.prototype, 'postProcessDefinition');
+        let spyOnPostProcessorClassAPostProcessBeforeInit = spy(PostProcessorClassA.prototype, 'postProcessBeforeInit');
+        let spyOnPostProcessorClassAPostProcessAfterInit = spy(PostProcessorClassA.prototype, 'postProcessAfterInit');
+
+        // when
+        await appContext.start();
+        let componentClassAInstance = appContext.getComponent(ComponentClassA);
+        let componentClassBInstance = appContext.getComponent(ComponentClassB);
+        let controllerClassAInstance = appContext.getComponent(ControllerClassA);
+
+        // then
+        expect(spyOnDefinitionPostProcessorClassAPostProcessDefinition.calledWith(ComponentClassA)).to.be.true;
+        expect(spyOnDefinitionPostProcessorClassAPostProcessDefinition.calledWith(ComponentClassB)).to.be.true;
+        expect(spyOnDefinitionPostProcessorClassAPostProcessDefinition.calledWith(ControllerClassA)).to.be.true;
+        expect(spyOnDefinitionPostProcessorClassBPostProcessDefinition.calledWith(ComponentClassA)).to.be.true;
+        expect(spyOnDefinitionPostProcessorClassBPostProcessDefinition.calledWith(ComponentClassB)).to.be.true;
+        expect(spyOnDefinitionPostProcessorClassBPostProcessDefinition.calledWith(ControllerClassA)).to.be.true;
+        expect(spyOnPostProcessorClassAPostProcessBeforeInit.calledWith(componentClassAInstance)).to.be.true;
+        expect(spyOnPostProcessorClassAPostProcessBeforeInit.calledWith(componentClassBInstance)).to.be.true;
+        expect(spyOnPostProcessorClassAPostProcessBeforeInit.calledWith(controllerClassAInstance)).to.be.true;
+        expect(spyOnPostProcessorClassAPostProcessAfterInit.calledWith(componentClassAInstance)).to.be.true;
+        expect(spyOnPostProcessorClassAPostProcessAfterInit.calledWith(componentClassBInstance)).to.be.true;
+        expect(spyOnPostProcessorClassAPostProcessAfterInit.calledWith(controllerClassAInstance)).to.be.true;
+
+        spyOnDefinitionPostProcessorClassAPostProcessDefinition.restore();
+        spyOnDefinitionPostProcessorClassBPostProcessDefinition.restore();
+        spyOnPostProcessorClassAPostProcessBeforeInit.restore();
+        spyOnPostProcessorClassAPostProcessAfterInit.restore();
     });
 });

@@ -6,6 +6,8 @@ import {
 import { InjectionData } from "../../../src/lib/decorators/InjectionDecorators";
 import { Controller } from "../../../src/lib/decorators/ControllerDecorator";
 import { Interceptor } from "../../../src/lib/interceptors/InterceptorDecorator";
+import { ComponentPostProcessor } from "../../../src/lib/processors/ComponentPostProcessor";
+import { ComponentDefinitionPostProcessor } from "../../../src/lib/processors/ComponentDefinitionPostProcessor";
 
 describe('ComponentDecorator', function () {
 
@@ -138,5 +140,37 @@ describe('ComponentUtil', function () {
         expect(ComponentUtil.isInterceptor(A)).to.be.true;
         expect(ComponentUtil.isInterceptor(B)).to.be.false;
         expect(ComponentUtil.isInterceptor(C)).to.be.false;
+    });
+
+    it('should return if instance is definition post processor', function () {
+        // given
+        @ComponentDefinitionPostProcessor()
+        class A {}
+
+        @Controller()
+        class B {}
+
+        class C {}
+
+        // when / then
+        expect(ComponentUtil.isComponentDefinitionPostProcessor(A)).to.be.true;
+        expect(ComponentUtil.isComponentDefinitionPostProcessor(B)).to.be.false;
+        expect(ComponentUtil.isComponentDefinitionPostProcessor(C)).to.be.false;
+    });
+
+    it('should return if instance is post processor', function () {
+        // given
+        @ComponentPostProcessor()
+        class A {}
+
+        @Controller()
+        class B {}
+
+        class C {}
+
+        // when / then
+        expect(ComponentUtil.isComponentPostProcessor(A)).to.be.true;
+        expect(ComponentUtil.isComponentPostProcessor(B)).to.be.false;
+        expect(ComponentUtil.isComponentPostProcessor(C)).to.be.false;
     });
 });
