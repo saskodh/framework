@@ -1,6 +1,7 @@
 import { ComponentFactory } from "../di/ComponentFactory";
 import { PropertySourceUtil } from "./PropertySourceDecorator";
 import { ComponentScanUtil } from "./ComponentScanDecorator";
+import { ComponentUtil } from "./ComponentDecorator";
 
 const CONFIGURATION_HOLDER_TOKEN = Symbol('configuration_holder_token');
 
@@ -31,7 +32,16 @@ export class ConfigurationData {
     }
 
     loadAllComponents() {
-        ComponentScanUtil.loadAllComponents(this);
+        ComponentScanUtil.getComponentsFromPaths(this.componentScanPaths)
+            .forEach((component) => {
+                if (ComponentUtil.isComponentDefinitionPostProcessor(component)) {
+                    this.componentDefinitionPostProcessorFactory.components.push(component);
+                } else if (ComponentUtil.isComponentPostProcessor(component)) {
+                    this.componentPostProcessorFactory.components.push(component);
+                } else {
+                    this.componentFactory.components.push(component);
+                }
+            });
     }
 }
 

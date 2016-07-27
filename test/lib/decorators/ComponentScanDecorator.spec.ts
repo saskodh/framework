@@ -8,6 +8,7 @@ import {
 } from "../../../src/lib/decorators/ConfigurationDecorator";
 import { ComponentScanUtil, ComponentScan } from "../../../src/lib/decorators/ComponentScanDecorator";
 import { RequireUtils } from "../../../src/lib/helpers/RequireUtils";
+import { ComponentUtil } from "../../../src/lib/decorators/ComponentDecorator";
 
 describe('ComponentScanDecorator', function () {
 
@@ -53,21 +54,39 @@ describe('ComponentScanUtil', function () {
         }
     }
 
-    it('should load all components', function () {
+    it('should get all components', function () {
         // given
         let configData = new ConfigurationData();
         configData.componentScanPaths.push('pathOne');
         configData.componentScanPaths.push('pathTwo');
-        let loadComponentsFromPathStub = stub(ComponentScanUtil, 'loadComponentsFromPath');
+        let module1 = 'module1';
+        let module2 = 'module2';
+        let component1 = 'component1';
+        let component2 = 'component2';
+        let component3 = 'component3';
+        let stubOnGetModulesStartingFrom = stub(ComponentScanUtil, 'getModulesStartingFrom');
+        stubOnGetModulesStartingFrom.withArgs('pathOne').returns([module1]);
+        stubOnGetModulesStartingFrom.withArgs('pathTwo').returns([module2]);
+        let stubOnGetComponentsFromModule = stub(ComponentScanUtil, 'getComponentsFromModule');
+        stubOnGetComponentsFromModule.withArgs(module1).returns([component1, component2]);
+        stubOnGetComponentsFromModule.withArgs(module2).returns([component3]);
 
         // when
-        ComponentScanUtil.loadAllComponents(configData);
+        let components = ComponentScanUtil.getComponentsFromPaths(configData.componentScanPaths);
 
         // then
-        expect(loadComponentsFromPathStub.calledTwice).to.be.true;
-        expect(loadComponentsFromPathStub.args).to.be.eql([['pathOne', configData], ['pathTwo', configData]]);
+        expect(stubOnGetModulesStartingFrom.calledWith('pathOne')).to.be.true;
+        expect(stubOnGetModulesStartingFrom.calledWith('pathTwo')).to.be.true;
+        expect(stubOnGetComponentsFromModule.calledWith(module1)).to.be.true;
+        expect(stubOnGetComponentsFromModule.calledWith(module2)).to.be.true;
+        expect(components.size).to.be.eq(3);
+        expect(components.has(component1)).to.be.true;
+        expect(components.has(component2)).to.be.true;
+        expect(components.has(component3)).to.be.true;
 
-        loadComponentsFromPathStub.restore();
+        // cleanup
+        stubOnGetModulesStartingFrom.restore();
+        stubOnGetComponentsFromModule.restore();
     });
 
     it('should get modules from path', function () {
@@ -139,5 +158,25 @@ describe('ComponentScanUtil', function () {
         expect(hasThrown).to.be.true;
 
         stubOnLstatSync.restore();
+    });
+
+    it('should get components from module', function () {
+        // given
+        let MyComponentScanUtil = <any> ComponentScanUtil;
+        let module = ['component1', 'notComponent', 'component3'];
+        let stubOnComponentUtilIsComponent = stub(ComponentUtil, 'isComponent');
+        stubOnComponentUtilIsComponent.withArgs('component1').returns(true);
+        stubOnComponentUtilIsComponent.withArgs('notComponent').returns(false);
+        stubOnComponentUtilIsComponent.withArgs('component3').returns(true);
+
+        // when
+        let componentsFromModule = MyComponentScanUtil.getComponentsFromModule(module);
+
+        // then
+        expect(componentsFromModule.length).to.be.eq(2);
+        expect(componentsFromModule).to.include.members(['component1', 'component3']);
+
+        // cleanup
+        stubOnComponentUtilIsComponent.restore();
     });
 });
