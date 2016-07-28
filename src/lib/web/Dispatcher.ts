@@ -1,17 +1,18 @@
 import { Router } from "express";
 import * as _ from "lodash";
 import { ComponentUtil } from "../decorators/ComponentDecorator";
-import { Interceptor } from "../interceptors/InterceptorDecorator";
-import { Request, Response } from "express-serve-static-core";
-import { NextFunction } from "express-serve-static-core";
+import { InterceptorHandler } from "./InterceptorHandler";
 import { RequestMappingUtil } from "../decorators/RequestMappingDecorator";
 
 export class Dispatcher {
 
     private router: Router;
+    private interceptorHandler: InterceptorHandler;
 
     constructor() {
         this.router = Router();
+        this.interceptorHandler = new InterceptorHandler();
+        this.interceptorHandler.registerPreHandleMiddleware(this.router);
     }
 
     getRouter() {
@@ -20,11 +21,17 @@ export class Dispatcher {
 
     processAfterInit(clazz, instance) {
         if (ComponentUtil.isInterceptor(clazz)) {
-            this.registerInterceptor(instance);
+            this.interceptorHandler.registerInterceptor(clazz, instance);
         }
         if (ComponentUtil.isController(clazz)) {
             this.registerController(clazz, instance);
         }
+    }
+
+    postConstruct() {
+        this.interceptorHandler.sort();
+        this.interceptorHandler.registerPostHandleMiddleware(this.router);
+        this.router.use(this.resolveResponse);
     }
 
     private registerController(clazz, instance) {
@@ -32,24 +39,24 @@ export class Dispatcher {
             // console.log('Registering route: ', route);
             let controllerMappingPath = RequestMappingUtil.getControllerRequestMappingPath(clazz);
             let fullPath = controllerMappingPath + route.requestConfig.path;
-            this.router[route.requestConfig.method](fullPath, (request, response) => {
+            this.router[route.requestConfig.method](fullPath, (request, response, next) => {
                 instance[route.methodHandler](request, response).then(function (result) {
-                    if (_.isUndefined(route.view)) {
-                        response.json(result);
-                    } else {
-                        response.render(route.view, result);
+                    if (!_.isUndefined(route.view)) {
+                        response.view = route.view;
                     }
+                    response.result = result;
+                    next();
                 });
             });
         }
     }
 
-    private registerInterceptor(interceptor: Interceptor) {
-        this.router.use((request: Request, response: Response, next: NextFunction) => {
-            // TODO: add proper error handling
-            interceptor.preHandle(request, response)
-                .then(next)
-                .catch((error) => console.log(error));
-        });
+    private resolveResponse(req, res, next) {
+        if (_.isUndefined(res.view)) {
+            res.json(res.result);
+        } else {
+            res.render(res.view, res.result);
+        }
+        next();
     }
 }

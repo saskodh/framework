@@ -1,4 +1,4 @@
-import { Component } from "../decorators/ComponentDecorator";
+import { Component } from "./ComponentDecorator";
 
 export interface Interceptor {
     preHandle (request, response);

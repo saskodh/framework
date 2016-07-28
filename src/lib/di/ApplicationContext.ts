@@ -1,7 +1,7 @@
 import { ConfigurationUtil, ConfigurationData } from "../decorators/ConfigurationDecorator";
 import { ComponentUtil } from "../decorators/ComponentDecorator";
 import { Injector } from "./Injector";
-import { Dispatcher } from "../dispatcher/Dispatcher";
+import { Dispatcher } from "../web/Dispatcher";
 import { Router } from "express";
 import * as _ from "lodash";
 import { LifeCycleHooksUtil } from "../decorators/LifeCycleHooksDecorators";
@@ -64,6 +64,7 @@ export class ApplicationContext {
         await this.initializeComponents();
         await this.wireComponents();
         await this.executePostConstruction();
+        await this.dispatcher.postConstruct();
         this.state = ApplicationContextState.READY;
     }
 

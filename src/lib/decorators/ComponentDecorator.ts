@@ -1,6 +1,6 @@
 import { InjectUtil, InjectionData } from "./InjectionDecorators";
 import { CONTROLLER_DECORATOR_TOKEN } from "./ControllerDecorator";
-import { INTERCEPTOR_DECORATOR_TOKEN } from "../interceptors/InterceptorDecorator";
+import { INTERCEPTOR_DECORATOR_TOKEN } from "./InterceptorDecorator";
 
 export class ComponentData {
     classToken: Symbol;

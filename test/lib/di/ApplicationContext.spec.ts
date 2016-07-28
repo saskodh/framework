@@ -9,7 +9,7 @@ import { Controller } from "../../../src/lib/decorators/ControllerDecorator";
 import { Qualifier } from "../../../src/lib/decorators/QualifierDecorator";
 import { Router } from "express";
 import { Injector } from "../../../src/lib/di/Injector";
-import { Dispatcher } from "../../../src/lib/dispatcher/Dispatcher";
+import { Dispatcher } from "../../../src/lib/web/Dispatcher";
 import { spy, stub, match } from "sinon";
 import { ProcessHandler } from "../../../src/lib/helpers/ProcessHandler";
 
@@ -175,5 +175,28 @@ describe('ApplicationContext', function () {
         // then
         expect(router).to.be.of.isPrototypeOf(Router);
         expect(router).to.be.equal(localAppContext.dispatcher.getRouter());
+    });
+
+    it('should start the app context', async function () {
+        // given
+
+        let initializeComponentsStub = stub(appContext, 'initializeComponents');
+        let wireComponentsStub = stub(appContext, 'wireComponents');
+        let executePostConstructionStub = stub(appContext, 'executePostConstruction');
+        let dispatcherPostConstructStub = stub((<any> appContext).dispatcher, 'postConstruct');
+
+        // when
+        await appContext.start();
+
+        // then
+        expect(initializeComponentsStub.called).to.be.true;
+        expect(wireComponentsStub.called).to.be.true;
+        expect(executePostConstructionStub.called).to.be.true;
+        expect(dispatcherPostConstructStub.called).to.be.true;
+
+        initializeComponentsStub.restore();
+        wireComponentsStub.restore();
+        executePostConstructionStub.restore();
+        dispatcherPostConstructStub.restore();
     });
 });
