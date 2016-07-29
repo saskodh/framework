@@ -15,6 +15,7 @@ import {
     ComponentPostProcessorUtil
 } from "../../../src/lib/processors/ComponentPostProcessor";
 import { OrderUtil } from "../../../src/lib/decorators/OrderDecorator";
+import { LifeCycleHooksUtil } from "../../../src/lib/decorators/LifeCycleHooksDecorators";
 
 describe('ApplicationContext', function () {
 
@@ -50,90 +51,6 @@ describe('ApplicationContext', function () {
         stubOnGetConfigurationData.restore();
         stubOnLoadAllProperties.restore();
         stubOnLoadAllComponents.restore();
-    });
-
-    it('should destroy appContext when context state is READY', async function () {
-        // given
-        await appContext.start();
-        let stubOnExecutePreDestruction = stub(appContext, 'executePreDestruction');
-
-        // when
-        await appContext.destroy();
-
-        // / then
-        expect(localAppContext.state).to.be.eq(ApplicationContextState.NOT_INITIALIZED);
-        expect(localAppContext.injector).to.be.null;
-        expect(localAppContext.dispatcher).to.be.null;
-        expect(localAppContext.state).to.be.eq(ApplicationContextState.NOT_INITIALIZED);
-        expect(stubOnExecutePreDestruction.calledOnce).to.be.true;
-        // cleanup
-        stubOnExecutePreDestruction.restore();
-    });
-
-    it('should destroy appContext when context state is not READY', async function () {
-        // given
-        let stubOnExecutePreDestruction = stub(appContext, 'executePreDestruction');
-
-        // when
-        await appContext.destroy();
-
-        // / then
-        expect(localAppContext.state).to.be.eq(ApplicationContextState.NOT_INITIALIZED);
-        expect(localAppContext.injector).to.be.null;
-        expect(localAppContext.dispatcher).to.be.null;
-        expect(localAppContext.state).to.be.eq(ApplicationContextState.NOT_INITIALIZED);
-        expect(stubOnExecutePreDestruction.called).to.be.false;
-        // cleanup
-        stubOnExecutePreDestruction.restore();
-    });
-
-    it('should destroy appContext when context state is READY-1', async function () {
-        // given
-        await appContext.start();
-        let stubOnExecutePreDestruction = stub(appContext, 'executePreDestruction');
-        let testSpy = spy();
-        localAppContext.unRegisterExitListenerCallback = () => { testSpy(); };
-
-        // when
-        await appContext.destroy();
-
-        // / then
-        expect(localAppContext.state).to.be.eq(ApplicationContextState.NOT_INITIALIZED);
-        expect(localAppContext.injector).to.be.null;
-        expect(localAppContext.dispatcher).to.be.null;
-        expect(stubOnExecutePreDestruction.calledOnce).to.be.true;
-        expect(testSpy.called).to.be.true;
-        // cleanup
-        stubOnExecutePreDestruction.restore();
-    });
-
-    it('should register exit hook', async function () {
-        // given
-        let stubOnDestroy = stub(appContext, 'destroy');
-        let processHandler = ProcessHandler.getInstance();
-        let stubOnRegisterOnExitListener = stub(processHandler, 'registerOnExitListener').returns('unRegisterCallback');
-
-        // when
-        appContext.registerExitHook();
-        let exitListener = stubOnRegisterOnExitListener.args[0][0];
-        exitListener();
-
-        // / then
-        expect(stubOnDestroy.calledOnce).to.be.true;
-        expect(stubOnRegisterOnExitListener.calledWith(match.func)).to.be.true;
-        expect(localAppContext.unRegisterExitListenerCallback).to.be.eq('unRegisterCallback');
-
-        // cleanup
-        stubOnDestroy.restore();
-        stubOnRegisterOnExitListener.restore();
-    });
-
-    it('should throw context already initialized error if start is called more than once', async function () {
-        // given
-        await appContext.start();
-
-        // when / then
-        expect(appContext.start.bind).to.throw(Error);
     });
 
     it('should return Component with class token', async function () {
@@ -213,6 +130,14 @@ describe('ApplicationContext', function () {
         stubOnGetRouter.restore();
     });
 
+    it('should throw context already initialized error if start is called more than once', async function () {
+        // given
+        await appContext.start();
+
+        // when / then
+        expect(appContext.start.bind).to.throw(Error);
+    });
+
     it('should start the app context', async function () {
         // given
         let stubOnInitializeDefinitionPostProcessors = stub(appContext, 'initializeDefinitionPostProcessors');
@@ -248,6 +173,82 @@ describe('ApplicationContext', function () {
         stubOnPostProcessBeforeInit.restore();
         stubOnExecutePostConstruction.restore();
         stubOnPostProcessAfterInit.restore();
+    });
+
+    it('should destroy appContext when context state is READY', async function () {
+        // given
+        await appContext.start();
+        let stubOnExecutePreDestruction = stub(appContext, 'executePreDestruction');
+
+        // when
+        await appContext.destroy();
+
+        // / then
+        expect(localAppContext.state).to.be.eq(ApplicationContextState.NOT_INITIALIZED);
+        expect(localAppContext.injector).to.be.null;
+        expect(localAppContext.dispatcher).to.be.null;
+        expect(localAppContext.state).to.be.eq(ApplicationContextState.NOT_INITIALIZED);
+        expect(stubOnExecutePreDestruction.calledOnce).to.be.true;
+        // cleanup
+        stubOnExecutePreDestruction.restore();
+    });
+
+    it('should destroy appContext when context state is not READY', async function () {
+        // given
+        let stubOnExecutePreDestruction = stub(appContext, 'executePreDestruction');
+
+        // when
+        await appContext.destroy();
+
+        // / then
+        expect(localAppContext.state).to.be.eq(ApplicationContextState.NOT_INITIALIZED);
+        expect(localAppContext.injector).to.be.null;
+        expect(localAppContext.dispatcher).to.be.null;
+        expect(localAppContext.state).to.be.eq(ApplicationContextState.NOT_INITIALIZED);
+        expect(stubOnExecutePreDestruction.called).to.be.false;
+        // cleanup
+        stubOnExecutePreDestruction.restore();
+    });
+
+    it('should destroy appContext when context state is READY-1', async function () {
+        // given
+        await appContext.start();
+        let stubOnExecutePreDestruction = stub(appContext, 'executePreDestruction');
+        let testSpy = spy();
+        localAppContext.unRegisterExitListenerCallback = () => { testSpy(); };
+
+        // when
+        await appContext.destroy();
+
+        // / then
+        expect(localAppContext.state).to.be.eq(ApplicationContextState.NOT_INITIALIZED);
+        expect(localAppContext.injector).to.be.null;
+        expect(localAppContext.dispatcher).to.be.null;
+        expect(stubOnExecutePreDestruction.calledOnce).to.be.true;
+        expect(testSpy.called).to.be.true;
+        // cleanup
+        stubOnExecutePreDestruction.restore();
+    });
+
+    it('should register exit hook', async function () {
+        // given
+        let stubOnDestroy = stub(appContext, 'destroy');
+        let processHandler = ProcessHandler.getInstance();
+        let stubOnRegisterOnExitListener = stub(processHandler, 'registerOnExitListener').returns('unRegisterCallback');
+
+        // when
+        appContext.registerExitHook();
+        let exitListener = stubOnRegisterOnExitListener.args[0][0];
+        exitListener();
+
+        // / then
+        expect(stubOnDestroy.calledOnce).to.be.true;
+        expect(stubOnRegisterOnExitListener.calledWith(match.func)).to.be.true;
+        expect(localAppContext.unRegisterExitListenerCallback).to.be.eq('unRegisterCallback');
+
+        // cleanup
+        stubOnDestroy.restore();
+        stubOnRegisterOnExitListener.restore();
     });
 
     it('should initialize components', async function () {
@@ -350,6 +351,124 @@ describe('ApplicationContext', function () {
         stubOnProcessAfterInit.restore();
     });
 
+    it('should execute post construction', async function () {
+        // given
+        let testSpy = spy();
+        let stubOnGetActiveComponents = stub (appContext, 'getActiveComponents')
+            .returns(['componentOne', 'componentTwo']);
+        let stubOnGetComponentData = stub(ComponentUtil, 'getComponentData');
+        stubOnGetComponentData.withArgs('componentOne').returns({classToken: 'firstToken'});
+        stubOnGetComponentData.withArgs('componentTwo').returns({classToken: 'secondToken'});
+        let stubOnGetConfig = stub(LifeCycleHooksUtil, 'getConfig');
+        stubOnGetConfig.withArgs('componentOne').returns({});
+        stubOnGetConfig.withArgs('componentTwo').returns({postConstructMethod: 'testSpy'});
+        let stubOnGetComponent = stub(Injector.prototype, 'getComponent');
+        stubOnGetComponent.withArgs('firstToken').returns({testSpy});
+        stubOnGetComponent.withArgs('secondToken').returns({testSpy});
+
+
+        // when
+        await localAppContext.executePostConstruction();
+
+        // then
+        expect(testSpy.calledOnce).to.be.true;
+        expect(stubOnGetConfig.calledTwice).to.be.true;
+        expect(stubOnGetConfig.args).to.be.eql([['componentOne'], ['componentTwo']]);
+
+        // cleanup
+        stubOnGetActiveComponents.restore();
+        stubOnGetComponentData.restore();
+        stubOnGetConfig.restore();
+        stubOnGetComponent.restore();
+    });
+
+    it('should throw on execute post construction when postConstructMethod is not a method', async function () {
+        // given
+        let stubOnGetActiveComponents = stub (appContext, 'getActiveComponents')
+            .returns(['component']);
+        let stubOnGetComponentData = stub(ComponentUtil, 'getComponentData');
+        stubOnGetComponentData.withArgs('component').returns({classToken: 'token'});
+        let stubOnGetConfig = stub(LifeCycleHooksUtil, 'getConfig');
+        stubOnGetConfig.withArgs('component').returns({postConstructMethod: 'someObject'});
+        let stubOnGetComponent = stub(Injector.prototype, 'getComponent');
+        stubOnGetComponent.withArgs('token').returns({someObject: 'value'});
+        let hasThrown = false;
+
+
+        // when / then
+        try {
+            await localAppContext.executePostConstruction();
+        } catch (error) {
+            hasThrown = true;
+        }
+        expect(hasThrown).to.be.true;
+
+        // cleanup
+        stubOnGetActiveComponents.restore();
+        stubOnGetComponentData.restore();
+        stubOnGetConfig.restore();
+        stubOnGetComponent.restore();
+    });
+
+    it('should execute pre destruction', async function () {
+        // given
+        let testSpy = spy();
+        let stubOnGetActiveComponents = stub (appContext, 'getActiveComponents')
+            .returns(['componentOne', 'componentTwo']);
+        let stubOnGetComponentData = stub(ComponentUtil, 'getComponentData');
+        stubOnGetComponentData.withArgs('componentOne').returns({classToken: 'firstToken'});
+        stubOnGetComponentData.withArgs('componentTwo').returns({classToken: 'secondToken'});
+        let stubOnGetConfig = stub(LifeCycleHooksUtil, 'getConfig');
+        stubOnGetConfig.withArgs('componentOne').returns({});
+        stubOnGetConfig.withArgs('componentTwo').returns({preDestroyMethod: 'testSpy'});
+        let stubOnGetComponent = stub(Injector.prototype, 'getComponent');
+        stubOnGetComponent.withArgs('firstToken').returns({testSpy});
+        stubOnGetComponent.withArgs('secondToken').returns({testSpy});
+
+
+        // when
+        await localAppContext.executePreDestruction();
+
+        // then
+        expect(testSpy.calledOnce).to.be.true;
+        expect(stubOnGetConfig.calledTwice).to.be.true;
+        expect(stubOnGetConfig.args).to.be.eql([['componentOne'], ['componentTwo']]);
+
+        // cleanup
+        stubOnGetActiveComponents.restore();
+        stubOnGetComponentData.restore();
+        stubOnGetConfig.restore();
+        stubOnGetComponent.restore();
+    });
+
+    it('should throw on execute post construction when postConstructMethod is not a method', async function () {
+        // given
+        let stubOnGetActiveComponents = stub (appContext, 'getActiveComponents')
+            .returns(['component']);
+        let stubOnGetComponentData = stub(ComponentUtil, 'getComponentData');
+        stubOnGetComponentData.withArgs('component').returns({classToken: 'token'});
+        let stubOnGetConfig = stub(LifeCycleHooksUtil, 'getConfig');
+        stubOnGetConfig.withArgs('component').returns({preDestroyMethod: 'someObject'});
+        let stubOnGetComponent = stub(Injector.prototype, 'getComponent');
+        stubOnGetComponent.withArgs('token').returns({someObject: 'value'});
+        let hasThrown = false;
+
+
+        // when / then
+        try {
+            await localAppContext.executePreDestruction();
+        } catch (error) {
+            hasThrown = true;
+        }
+        expect(hasThrown).to.be.true;
+
+        // cleanup
+        stubOnGetActiveComponents.restore();
+        stubOnGetComponentData.restore();
+        stubOnGetConfig.restore();
+        stubOnGetComponent.restore();
+    });
+
     it('should get active components', async function () {
         // given
         let data1 = {
@@ -381,6 +500,21 @@ describe('ApplicationContext', function () {
         stubOnGetComponentData.restore();
     });
 
+    it('should get active profile', async function () {
+        // given
+        (<any> ApplicationContext).ACTIVE_PROFILE_PROPERTY_KEY = 'dev';
+        let stubOnGetConfigurationProperty = stub(appContext, 'getConfigurationProperty').returns('dev profile');
+
+        // when
+        let profile = localAppContext.getActiveProfile();
+
+        // then
+        expect(stubOnGetConfigurationProperty.calledWith('dev')).to.be.true;
+        expect(profile).to.be.eq('dev profile');
+        // cleanup
+        stubOnGetConfigurationProperty.restore();
+    });
+
     it('should verify if context is ready', async function () {
         // given
         localAppContext.state = ApplicationContextState.READY;
@@ -398,21 +532,6 @@ describe('ApplicationContext', function () {
 
         // when / then
         expect(localAppContext.verifyContextReady.bind(localAppContext)).to.throw(Error);
-    });
-
-    it('should get active profile', async function () {
-        // given
-        (<any> ApplicationContext).ACTIVE_PROFILE_PROPERTY_KEY = 'dev';
-        let stubOnGetConfigurationProperty = stub(appContext, 'getConfigurationProperty').returns('dev profile');
-
-        // when
-        let profile = localAppContext.getActiveProfile();
-
-        // then
-        expect(stubOnGetConfigurationProperty.calledWith('dev')).to.be.true;
-        expect(profile).to.be.eq('dev profile');
-        // cleanup
-        stubOnGetConfigurationProperty.restore();
     });
 });
 
