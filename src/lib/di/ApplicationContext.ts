@@ -110,8 +110,6 @@ export class ApplicationContext {
         for (let CompConstructor of this.getActiveComponents()) {
             let componentData = ComponentUtil.getComponentData(CompConstructor);
 
-            // todo pass the comp constructor through the registered definition post processors
-            // configurationData.componentDefinitionPostProcessorFactory
             let instance = new CompConstructor();
             this.injector.register(componentData.classToken, instance);
             for (let token of componentData.aliasTokens) {
@@ -136,8 +134,6 @@ export class ApplicationContext {
             });
 
             this.dispatcher.processAfterInit(CompConstructor, instance);
-
-            // todo pass through the post processors configurationData.componentPostProcessorFactory
         }
     }
 

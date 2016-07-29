@@ -22,6 +22,8 @@ describe('PropertySourceDecorator', function () {
         expect(configurationDataA.propertySourcePaths.length).to.be.eq(2);
         expect(configurationDataA.propertySourcePaths).to.include.members([propertiesPath, "propertiesPathTwo"]);
         expect(configurationUtilSpy.called).to.be.true;
+        // cleanup
+        configurationUtilSpy.restore();
     });
 
     it('should throw when not on @Configuration', function () {
