@@ -12,6 +12,7 @@ import { Injector } from "../../../src/lib/di/Injector";
 import { Dispatcher } from "../../../src/lib/dispatcher/Dispatcher";
 import { spy, stub, match } from "sinon";
 import { ProcessHandler } from "../../../src/lib/helpers/ProcessHandler";
+import {OrderUtil} from "../../../src/lib/decorators/OrderDecorator";
 
 describe('ApplicationContext', function () {
 
@@ -175,5 +176,48 @@ describe('ApplicationContext', function () {
         // then
         expect(router).to.be.of.isPrototypeOf(Router);
         expect(router).to.be.equal(localAppContext.dispatcher.getRouter());
+    });
+
+    it('should get aspects', async function () {
+        // given
+        let data1 = {
+            profile: 'dev'
+        };
+        let data2 = {
+            profile: 'other'
+        };
+
+        let data3 = {};
+        localAppContext.configurationData.componentFactory.components = ['comp1', 'comp2', 'comp3'];
+        let stubOnGetActiveProfile = stub(appContext, 'getActiveProfile').returns('dev');
+        let stubOnGetComponentData = stub(ComponentUtil, 'getComponentData');
+        stubOnGetComponentData.withArgs('comp1').returns(data1);
+        stubOnGetComponentData.withArgs('comp2').returns(data2);
+        stubOnGetComponentData.withArgs('comp3').returns(data3);
+        let stubOnOrderList = stub(OrderUtil, 'orderList').returns(['comp3']);
+        let stubOnComponentUtilIsAspect = stub(ComponentUtil, 'isAspect');
+        stubOnComponentUtilIsAspect.withArgs('comp1').returns(false);
+        stubOnComponentUtilIsAspect.withArgs('comp2').returns(true);
+        stubOnComponentUtilIsAspect.withArgs('comp3').returns(true);
+
+        // when
+        let aspects = localAppContext.getAspects();
+
+        // then
+        expect(aspects).to.be.eql(['comp3']);
+        expect(stubOnOrderList.calledWith(['comp3'])).to.be.true;
+        expect(stubOnGetComponentData.callCount).to.be.eq(3);
+        expect(stubOnGetComponentData.calledWith('comp1')).to.be.true;
+        expect(stubOnGetComponentData.calledWith('comp2')).to.be.true;
+        expect(stubOnGetComponentData.calledWith('comp3')).to.be.true;
+        expect(stubOnComponentUtilIsAspect.callCount).to.be.eq(3);
+        expect(stubOnComponentUtilIsAspect.calledWith('comp1')).to.be.true;
+        expect(stubOnComponentUtilIsAspect.calledWith('comp2')).to.be.true;
+        expect(stubOnComponentUtilIsAspect.calledWith('comp3')).to.be.true;
+        // cleanup
+        stubOnGetActiveProfile.restore();
+        stubOnGetComponentData.restore();
+        stubOnOrderList.restore();
+        stubOnComponentUtilIsAspect.restore();
     });
 });

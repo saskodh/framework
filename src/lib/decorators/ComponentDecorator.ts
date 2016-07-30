@@ -1,6 +1,7 @@
 import { InjectUtil, InjectionData } from "./InjectionDecorators";
 import { CONTROLLER_DECORATOR_TOKEN } from "./ControllerDecorator";
 import { INTERCEPTOR_DECORATOR_TOKEN } from "../interceptors/InterceptorDecorator";
+import {ASPECT_DECORATOR_TOKEN} from "./AspectDecorator";
 
 export class ComponentData {
     classToken: Symbol;
@@ -64,5 +65,9 @@ export class ComponentUtil {
 
     static isInterceptor(target): boolean {
         return !!target[INTERCEPTOR_DECORATOR_TOKEN];
+    }
+
+    static isAspect(target): boolean {
+        return !!target[ASPECT_DECORATOR_TOKEN];
     }
 }

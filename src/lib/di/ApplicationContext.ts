@@ -6,6 +6,8 @@ import { Router } from "express";
 import * as _ from "lodash";
 import { LifeCycleHooksUtil } from "../decorators/LifeCycleHooksDecorators";
 import { ProcessHandler } from "../helpers/ProcessHandler";
+import {AspectDefinitionPostProcessor} from "../decorators/aspect/AspectDefinitionPostProcessor";
+import {OrderUtil} from "../decorators/OrderDecorator";
 
 export class ApplicationContextState {
     static NOT_INITIALIZED = 'NOT_INITIALIZED';
@@ -65,6 +67,26 @@ export class ApplicationContext {
         await this.wireComponents();
         await this.executePostConstruction();
         this.state = ApplicationContextState.READY;
+        this.createAspects();
+    }
+
+    private createAspects() {
+        let aspectDefinitionPostProcessor = new AspectDefinitionPostProcessor();
+        aspectDefinitionPostProcessor.createAspects(this.getAspects(), this);
+    }
+
+    private getAspects() {
+        let activeProfile = this.getActiveProfile();
+        let aspects =  _.filter(this.configurationData.componentFactory.components, (CompConstructor) => {
+            let profile = ComponentUtil.getComponentData(CompConstructor).profile;
+            if (!ComponentUtil.isAspect(CompConstructor)) { return false; }
+            if (profile) {
+
+                return profile === activeProfile;
+            }
+            return true;
+        });
+        return aspects = OrderUtil.orderList(aspects);
     }
 
     /**
