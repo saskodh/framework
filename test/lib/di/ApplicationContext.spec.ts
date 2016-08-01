@@ -4,7 +4,7 @@ import {
     Configuration, ConfigurationUtil,
     ConfigurationData
 } from "../../../src/lib/decorators/ConfigurationDecorator";
-import { Component, ComponentUtil, Profile } from "../../../src/lib/decorators/ComponentDecorator";
+import { Component, ComponentUtil } from "../../../src/lib/decorators/ComponentDecorator";
 import { Controller } from "../../../src/lib/decorators/ControllerDecorator";
 import { Qualifier } from "../../../src/lib/decorators/QualifierDecorator";
 import { Router } from "express";
@@ -12,6 +12,7 @@ import { Injector } from "../../../src/lib/di/Injector";
 import { Dispatcher } from "../../../src/lib/dispatcher/Dispatcher";
 import { spy, stub, match } from "sinon";
 import { ProcessHandler } from "../../../src/lib/helpers/ProcessHandler";
+import { Profile } from "../../../src/lib/decorators/ProfileDecorators";
 
 describe('ApplicationContext', function () {
 
@@ -175,5 +176,84 @@ describe('ApplicationContext', function () {
         // then
         expect(router).to.be.of.isPrototypeOf(Router);
         expect(router).to.be.equal(localAppContext.dispatcher.getRouter());
+    });
+
+    it('should get active components', async function () {
+        // given
+        let data1 = {
+            profiles: ['dev']
+        };
+        let data2 = {
+            profiles: ['other', '!dev']
+        };
+        let data3 = {
+            profiles: []
+        };
+        let data4 = {
+            profiles: ['other', '!mongo']
+        };
+        localAppContext.configurationData.componentFactory.components = ['comp1', 'comp2', 'comp3', 'comp4'];
+        let stubOnGetActiveProfile = stub(appContext, 'getActiveProfiles').returns(['dev']);
+        let stubOnGetComponentData = stub(ComponentUtil, 'getComponentData');
+        stubOnGetComponentData.withArgs('comp1').returns(data1);
+        stubOnGetComponentData.withArgs('comp2').returns(data2);
+        stubOnGetComponentData.withArgs('comp3').returns(data3);
+        stubOnGetComponentData.withArgs('comp4').returns(data4);
+
+        // when
+        let activeComponents = localAppContext.getActiveComponents();
+
+        // then
+        expect(activeComponents).to.be.eql(['comp1', 'comp3', 'comp4']);
+        expect(stubOnGetComponentData.callCount).to.be.eq(4);
+        expect(stubOnGetComponentData.calledWith('comp1')).to.be.true;
+        expect(stubOnGetComponentData.calledWith('comp2')).to.be.true;
+        expect(stubOnGetComponentData.calledWith('comp3')).to.be.true;
+        expect(stubOnGetComponentData.calledWith('comp4')).to.be.true;
+
+        // cleanup
+        stubOnGetActiveProfile.restore();
+        stubOnGetComponentData.restore();
+    });
+
+    it('should get active profile', async function () {
+        // given
+        let keyActive = (<any> ApplicationContext).ACTIVE_PROFILES_PROPERTY_KEY;
+        let keyDefault = (<any> ApplicationContext).DEFAULT_PROFILES_PROPERTY_KEY;
+        let stubOnGetConfigurationProperty = stub(appContext, 'getConfigurationProperty').returns('dev profile');
+        stubOnGetConfigurationProperty.withArgs(keyActive).returns('someProfile,activeProfile');
+        stubOnGetConfigurationProperty.withArgs(keyDefault).returns('defaultProfile');
+
+        // when
+        let profiles = localAppContext.getActiveProfiles();
+
+        // then
+        expect(stubOnGetConfigurationProperty.calledWith(keyActive)).to.be.true;
+        expect(profiles.length).to.be.eq(2);
+        expect(profiles).to.include.members(['activeProfile', 'someProfile']);
+
+        // cleanup
+        stubOnGetConfigurationProperty.restore();
+    });
+
+    it('should get default profile', async function () {
+        // given
+        let keyActive = (<any> ApplicationContext).ACTIVE_PROFILES_PROPERTY_KEY;
+        let keyDefault = (<any> ApplicationContext).DEFAULT_PROFILES_PROPERTY_KEY;
+        let stubOnGetConfigurationProperty = stub(appContext, 'getConfigurationProperty').returns('dev profile');
+        stubOnGetConfigurationProperty.withArgs(keyActive).returns(undefined);
+        stubOnGetConfigurationProperty.withArgs(keyDefault).returns('someProfile,defaultProfile');
+
+        // when
+        let profiles = localAppContext.getActiveProfiles();
+
+        // then
+        expect(stubOnGetConfigurationProperty.calledWith(keyActive)).to.be.true;
+        expect(stubOnGetConfigurationProperty.calledWith(keyDefault)).to.be.true;
+        expect(profiles.length).to.be.eq(2);
+        expect(profiles).to.include.members(['defaultProfile', 'someProfile']);
+
+        // cleanup
+        stubOnGetConfigurationProperty.restore();
     });
 });

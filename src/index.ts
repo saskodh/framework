@@ -9,7 +9,7 @@ export {Configuration} from "./lib/decorators/ConfigurationDecorator";
 export {Controller} from "./lib/decorators/ControllerDecorator";
 export {Inject, Value, Autowire} from "./lib/decorators/InjectionDecorators";
 export {PostConstruct, PreDestroy} from "./lib/decorators/LifeCycleHooksDecorators"
-export {Profile} from "./lib/decorators/ComponentDecorator";
+export {Profile, ActiveProfiles} from "./lib/decorators/ProfileDecorators";
 export {PropertySource} from "./lib/decorators/PropertySourceDecorator";
 export {View} from "./lib/decorators/ViewDecorator";
 export {RequestMapping, RequestMappingConfig, RequestMethod} from "./lib/decorators/RequestMappingDecorator";

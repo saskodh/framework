@@ -15,7 +15,8 @@ export class ApplicationContextState {
 
 export class ApplicationContext {
 
-    private static ACTIVE_PROFILE_PROPERTY_KEY = 'application.profiles.active';
+    private static ACTIVE_PROFILES_PROPERTY_KEY = 'application.profiles.active';
+    private static DEFAULT_PROFILES_PROPERTY_KEY = 'application.profiles.default';
 
     private state: ApplicationContextState;
     private injector: Injector;
@@ -160,18 +161,25 @@ export class ApplicationContext {
     }
 
     private getActiveComponents() {
-        let activeProfile = this.getActiveProfile();
+        let activeProfiles = this.getActiveProfiles();
         return _.filter(this.configurationData.componentFactory.components, (CompConstructor) => {
-            let profile = ComponentUtil.getComponentData(CompConstructor).profile;
-            if (profile) {
-                return profile === activeProfile;
+            let profiles = ComponentUtil.getComponentData(CompConstructor).profiles;
+            if (profiles[0]) {
+                let notUsedProfiles = _.map(_.filter(profiles, (profile) => (profile[0] === '!')),
+                    (profile: string) => profile.substr(1));
+                if (_.some(notUsedProfiles, (profile) => !_.includes(activeProfiles, profile))) {
+                    return true;
+                }
+                return (!_.isUndefined(_.intersection(activeProfiles, profiles)[0]));
             }
             return true;
         });
     }
 
-    private getActiveProfile(): string {
-        return this.getConfigurationProperty(ApplicationContext.ACTIVE_PROFILE_PROPERTY_KEY);
+    private getActiveProfiles(): Array<string> {
+        return this.getConfigurationProperty(ApplicationContext.ACTIVE_PROFILES_PROPERTY_KEY) ?
+            this.getConfigurationProperty(ApplicationContext.ACTIVE_PROFILES_PROPERTY_KEY).split(",") :
+            this.getConfigurationProperty(ApplicationContext.DEFAULT_PROFILES_PROPERTY_KEY).split(",");
     }
 
     private getConfigurationProperty(propertyKey: string): string {

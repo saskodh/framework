@@ -27,7 +27,13 @@ export class ConfigurationData {
 
     loadAllProperties() {
         PropertySourceUtil.getPropertiesFromPaths(...this.propertySourcePaths)
-            .forEach((value, prop) => this.properties.set(prop, value));
+            .forEach((value, prop) => {
+                if (this.properties.has(prop)) {
+                    this.properties.set(prop, `${this.properties.get(prop)},${value}`);
+                } else {
+                    this.properties.set(prop, value);
+                }
+            });
     }
 
     loadAllComponents() {

@@ -19,9 +19,10 @@ describe('ConfigurationData', function () {
 
         // when
         configurationData.loadAllProperties();
+        configurationData.loadAllProperties();
 
         // then
-        expect(configurationData.properties.get('key')).is.eql('val');
+        expect(configurationData.properties.get('key')).is.eql('val,val');
         expect(stubOnGetPropertiesFromPaths.calledWith('somePath')).to.be.true;
 
         stubOnGetPropertiesFromPaths.restore();
@@ -119,6 +120,4 @@ describe('ConfigurationUtil', function () {
         expect(ConfigurationUtil.getConfigurationData(A).propertySourcePaths)
             .to.include.members(['somePath', 'someOtherPath']);
     });
-
-
 });
