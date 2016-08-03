@@ -13,16 +13,16 @@ describe('ConfigurationData', function () {
         // given
         let configurationData = new ConfigurationData();
         configurationData.propertySourcePaths.push('somePath');
+        configurationData.propertySourcePaths.push('somePath');
         let map = new Map();
         map.set('key', 'val');
         let stubOnGetPropertiesFromPaths = stub(PropertySourceUtil, 'getPropertiesFromPaths').returns(map);
 
         // when
         configurationData.loadAllProperties();
-        configurationData.loadAllProperties();
 
         // then
-        expect(configurationData.properties.get('key')).is.eql('val,val');
+        expect(configurationData.properties.get('key')).is.eql('val');
         expect(stubOnGetPropertiesFromPaths.calledWith('somePath')).to.be.true;
 
         stubOnGetPropertiesFromPaths.restore();

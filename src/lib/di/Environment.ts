@@ -1,41 +1,82 @@
 import * as _ from "lodash";
+import { ProcessHandler } from "../helpers/ProcessHandler";
+import { Component } from "../decorators/ComponentDecorator";
 
+@Component()
 export class Environment {
-    private static properties: Map<string, string>;
 
-    static getProperty(key: string, defaultValue?: string): string {
-        if (_.isUndefined(this.properties)) {
-            throw new Error('applicationContext has not been constructed');
+    private  ACTIVE_PROFILES_PROPERTY_KEY = 'application.profiles.active';
+    private  DEFAULT_PROFILES_PROPERTY_KEY = 'application.profiles.default';
+    private  processProperties: Map<string, string>;
+    private  nodeProperties: Map<string, string>;
+    private  processEnvProperties: Map<string, string>;
+    private  sourcePathProperties: Map<string, string>;
+    private  activeProfiles: Array<string>;
+
+    getProperty(key: string, defaultValue?: string): string {
+        if (!_.isUndefined(this.processProperties.get(key))) {
+            return this.processProperties.get(key);
         }
-        if (!_.isUndefined(this.properties.get(key))) {
-            return this.properties.get(key);
+        if (!_.isUndefined(this.nodeProperties.get(key))) {
+            return this.nodeProperties.get(key);
+        }
+        if (!_.isUndefined(this.processEnvProperties.get(key))) {
+            return this.processEnvProperties.get(key);
+        }
+        if (!_.isUndefined(this.sourcePathProperties.get(key))) {
+            return this.sourcePathProperties.get(key);
         }
         return defaultValue;
     }
 
-    static containsProperty(key: string): boolean {
-        if (_.isUndefined(this.properties)) {
-            throw new Error('applicationContext has not been constructed');
-        }
-        return !!this.properties.get(key);
+    containsProperty(key: string): boolean {
+        return !!this.getProperty(key);
     }
 
-    static getRequiredProperty(key: string): string {
-        if (_.isUndefined(this.properties)) {
-            throw new Error('applicationContext has not been constructed');
-        }
-        if (_.isUndefined(this.properties.get(key))) {
+     getRequiredProperty(key: string): string {
+        if (_.isUndefined(this.getProperty(key))) {
             throw new Error(`Property with key ${key} is not set in Environment properties.`);
         }
-        return this.properties.get(key);
+        return this.getProperty(key);
     }
 
-    // TODO: implement the methods for profiles with issue #38 about profiles
-
-    private static setProperties(properties: Map<string, string>) {  // tslint:disable-line
-        if (_.isUndefined(this.properties)) {
-            this.properties = new Map<string, string>();
+     acceptsProfiles(...profiles: Array<string>): boolean {
+        if (_.isUndefined(this.getActiveProfiles())) {
+            if (_.isUndefined(this.getDefaultProfiles())) {
+                return false;
+            }
+            return (_.intersection(this.getDefaultProfiles(), profiles).length > 0);
         }
-        properties.forEach((val, key) => {this.properties.set(key, val); });
+         return (_.intersection(this.getActiveProfiles(), profiles).length > 0);
+    }
+
+     getActiveProfiles(): Array<string> {
+        return this.activeProfiles;
+    }
+
+     getDefaultProfiles(): Array<string> {
+        if (_.isUndefined(this.getProperty(this.DEFAULT_PROFILES_PROPERTY_KEY))) {
+            return undefined;
+        }
+        return this.getProperty(this.DEFAULT_PROFILES_PROPERTY_KEY).split(",");
+    }
+
+    constructor(sourcePathProperties: Map<string, string>, activeProfiles: Array<string>) {
+        this.sourcePathProperties = _.cloneDeep(sourcePathProperties);
+        this.processProperties = new Map<string, string>();
+        this.nodeProperties = new Map<string, string>();
+        this.processEnvProperties = new Map<string, string>();
+
+        // sourcePathProperties.forEach((val, key) => {this.sourcePathProperties.set(key, val); });
+        ProcessHandler.getInstance().getProcessProperties()
+            .forEach((val, key) => {this.processProperties.set(key, val); });
+        ProcessHandler.getInstance().getNodeProperties().forEach((val, key) => {this.nodeProperties.set(key, val); });
+        ProcessHandler.getInstance().getEnvironmentProperties()
+            .forEach((val, key) => {this.processEnvProperties.set(key, val); });
+
+        this.activeProfiles = _.cloneDeep(activeProfiles);
+        if (!_.isUndefined(this.getProperty(this.ACTIVE_PROFILES_PROPERTY_KEY))) {
+            this.activeProfiles.push(...this.getProperty(this.ACTIVE_PROFILES_PROPERTY_KEY).split(','));
+        }
     }
 }

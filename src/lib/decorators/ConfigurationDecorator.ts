@@ -14,6 +14,7 @@ export class ConfigurationData {
     propertySourcePaths: Array<string>;
 
     properties: Map<string, string>;
+    activeProfiles: Array<string>;
 
     constructor() {
         this.componentFactory = new ComponentFactory();
@@ -23,16 +24,13 @@ export class ConfigurationData {
         this.properties = new Map();
         this.componentScanPaths = [];
         this.propertySourcePaths = [];
+        this.activeProfiles = [];
     }
 
     loadAllProperties() {
         PropertySourceUtil.getPropertiesFromPaths(...this.propertySourcePaths)
             .forEach((value, prop) => {
-                if (this.properties.has(prop)) {
-                    this.properties.set(prop, `${this.properties.get(prop)},${value}`);
-                } else {
-                    this.properties.set(prop, value);
-                }
+                this.properties.set(prop, value);
             });
     }
 

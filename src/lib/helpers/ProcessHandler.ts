@@ -1,4 +1,5 @@
 import * as _ from "lodash";
+import { GeneralUtils } from "./GeneralUtils";
 
 export class ProcessHandler {
 
@@ -32,6 +33,34 @@ export class ProcessHandler {
                 return val === callback;
             });
         };
+    }
+
+    getProcessProperties(): Map<string, string> {
+        let result = new Map<string, string>();
+        process.argv.forEach((arg: string) => {
+            if (arg.includes('=')) {
+                result.set(arg.substring(0, arg.indexOf('=')), arg.substring(arg.indexOf('=') + 1));
+            } else {
+                result.set(arg, 'true');
+            }
+        });
+        return result;
+    }
+
+    getNodeProperties(): Map<string, string> {
+        let result = new Map<string, string>();
+        process.execArgv.forEach((arg: string) => {
+            if (arg.includes('=')) {
+                result.set(arg.substring(0, arg.indexOf('=')), arg.substring(arg.indexOf('=') + 1));
+            } else {
+                result.set(arg, 'true');
+            }
+        });
+        return result;
+    }
+
+    getEnvironmentProperties(): Map<string, string> {
+        return GeneralUtils.flattenObject(process.env);
     }
 
     private registerProcessExitEvents() {

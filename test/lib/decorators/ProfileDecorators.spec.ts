@@ -13,8 +13,7 @@ describe('ActiveProfilesDecorator', function () {
         class A { }
 
         // then
-        let profiles = ConfigurationUtil.getConfigurationData(A)
-            .properties.get('application.profiles.active').split(",");
+        let profiles = ConfigurationUtil.getConfigurationData(A).activeProfiles;
         expect(profiles.length).to.be.eq(3);
         expect(profiles).to.include.members(['profileOne', 'profileTwo', 'profileThree']);
     });
