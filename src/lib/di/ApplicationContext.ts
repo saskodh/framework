@@ -6,6 +6,7 @@ import { Router } from "express";
 import * as _ from "lodash";
 import { LifeCycleHooksUtil } from "../decorators/LifeCycleHooksDecorators";
 import { ProcessHandler } from "../helpers/ProcessHandler";
+import { Environment } from "./Environment";
 
 export class ApplicationContextState {
     static NOT_INITIALIZED = 'NOT_INITIALIZED';
@@ -31,6 +32,7 @@ export class ApplicationContext {
         this.configurationData = ConfigurationUtil.getConfigurationData(configurationClass);
         this.configurationData.loadAllProperties();
         this.configurationData.loadAllComponents();
+        (<any> Environment).setProperties(this.configurationData.properties);
     }
 
     getComponent <T>(componentClass): T {

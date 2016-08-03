@@ -13,6 +13,7 @@ export {Profile, ActiveProfiles} from "./lib/decorators/ProfileDecorators";
 export {PropertySource} from "./lib/decorators/PropertySourceDecorator";
 export {View} from "./lib/decorators/ViewDecorator";
 export {RequestMapping, RequestMappingConfig, RequestMethod} from "./lib/decorators/RequestMappingDecorator";
+export {Order} from "./lib/decorators/OrderDecorator";
 
 
 export {ApplicationContext} from "./lib/di/ApplicationContext";
@@ -20,4 +21,4 @@ export {Dispatcher} from "./lib/dispatcher/Dispatcher";
 export {Interceptor} from "./lib/interceptors/InterceptorDecorator";
 export {ComponentDefinitionPostProcessor} from "./lib/processors/ComponentDefinitionPostProcessor";
 export {ComponentPostProcessor} from "./lib/processors/ComponentPostProcessor";
-export {Order} from "./lib/decorators/OrderDecorator";
+export {Environment} from "./lib/di/Environment";

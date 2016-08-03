@@ -12,6 +12,7 @@ import { Injector } from "../../../src/lib/di/Injector";
 import { Dispatcher } from "../../../src/lib/dispatcher/Dispatcher";
 import { spy, stub, match } from "sinon";
 import { ProcessHandler } from "../../../src/lib/helpers/ProcessHandler";
+import { Environment } from "../../../src/lib/di/Environment";
 import { Profile } from "../../../src/lib/decorators/ProfileDecorators";
 
 describe('ApplicationContext', function () {
@@ -47,8 +48,9 @@ describe('ApplicationContext', function () {
 
     it('should initialize properly', function () {
         // given
-        let spyOnLoadAllProperties = spy(ConfigurationData.prototype, 'loadAllProperties');
-        let spyOnLoadAllComponents = spy(ConfigurationData.prototype, 'loadAllComponents');
+        let stubOnLoadAllProperties = stub(ConfigurationData.prototype, 'loadAllProperties');
+        let stubOnLoadAllComponents = stub(ConfigurationData.prototype, 'loadAllComponents');
+        let stubOnEnvironmentSetProperties = stub(Environment, 'setProperties');
 
         // when
         localAppContext = <any> new ApplicationContext(AppConfig);
@@ -58,11 +60,14 @@ describe('ApplicationContext', function () {
         expect(localAppContext.injector).to.be.instanceOf(Injector);
         expect(localAppContext.dispatcher).to.be.instanceOf(Dispatcher);
         expect(localAppContext.configurationData).to.be.instanceOf(ConfigurationData);
-        expect(spyOnLoadAllProperties.called).to.be.true;
-        expect(spyOnLoadAllComponents.called).to.be.true;
+        expect(stubOnLoadAllProperties.called).to.be.true;
+        expect(stubOnLoadAllComponents.called).to.be.true;
+        expect(stubOnEnvironmentSetProperties.calledWith(localAppContext.configurationData.properties)).to.be.true;
 
-        spyOnLoadAllProperties.restore();
-        spyOnLoadAllProperties.restore();
+        // cleanup
+        stubOnLoadAllProperties.restore();
+        stubOnLoadAllComponents.restore();
+        stubOnEnvironmentSetProperties.restore();
     });
 
     it('should throw error if appContext.start() is not called first', function () {
