@@ -1,18 +1,16 @@
 import { Router } from "express";
-import * as _ from "lodash";
 import { ComponentUtil } from "../decorators/ComponentDecorator";
-import { InterceptorHandler } from "./InterceptorHandler";
+import { RouterConfigurer } from "./RouterConfigurer";
 import { RequestMappingUtil } from "../decorators/RequestMappingDecorator";
 
 export class Dispatcher {
 
     private router: Router;
-    private interceptorHandler: InterceptorHandler;
+    private routerConfigurer: RouterConfigurer;
 
     constructor() {
         this.router = Router();
-        this.interceptorHandler = new InterceptorHandler();
-        this.interceptorHandler.registerPreHandleMiddleware(this.router);
+        this.routerConfigurer = new RouterConfigurer(this.router);
     }
 
     getRouter() {
@@ -21,42 +19,23 @@ export class Dispatcher {
 
     processAfterInit(clazz, instance) {
         if (ComponentUtil.isInterceptor(clazz)) {
-            this.interceptorHandler.registerInterceptor(clazz, instance);
+            this.routerConfigurer.registerInterceptor(instance);
         }
         if (ComponentUtil.isController(clazz)) {
             this.registerController(clazz, instance);
         }
     }
 
+    // TODO #29 saskodh: initialize the dispatcher with a post processor
     postConstruct() {
-        this.interceptorHandler.sort();
-        this.interceptorHandler.registerPostHandleMiddleware(this.router);
-        this.router.use(this.resolveResponse);
+        this.routerConfigurer.configure();
     }
 
     private registerController(clazz, instance) {
+        let controllerMappingPath = RequestMappingUtil.getControllerRequestMappingPath(clazz);
         for (let route of RequestMappingUtil.getValidRoutes(clazz)) {
-            // console.log('Registering route: ', route);
-            let controllerMappingPath = RequestMappingUtil.getControllerRequestMappingPath(clazz);
-            let fullPath = controllerMappingPath + route.requestConfig.path;
-            this.router[route.requestConfig.method](fullPath, (request, response, next) => {
-                instance[route.methodHandler](request, response).then(function (result) {
-                    if (!_.isUndefined(route.view)) {
-                        response.view = route.view;
-                    }
-                    response.result = result;
-                    next();
-                });
-            });
+            route.requestConfig.path = controllerMappingPath + route.requestConfig.path;
+            this.routerConfigurer.registerHandler(route, instance);
         }
-    }
-
-    private resolveResponse(req, res, next) {
-        if (_.isUndefined(res.view)) {
-            res.json(res.result);
-        } else {
-            res.render(res.view, res.result);
-        }
-        next();
     }
 }

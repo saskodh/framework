@@ -17,7 +17,6 @@ export {Interceptor} from "./lib/decorators/InterceptorDecorator";
 
 export {ApplicationContext} from "./lib/di/ApplicationContext";
 export {Dispatcher} from "./lib/web/Dispatcher";
-export {InterceptorHandler} from "./lib/web/InterceptorHandler";
 export {ComponentDefinitionPostProcessor} from "./lib/processors/ComponentDefinitionPostProcessor";
 export {ComponentPostProcessor} from "./lib/processors/ComponentPostProcessor";
 export {Order} from "./lib/decorators/OrderDecorator";
