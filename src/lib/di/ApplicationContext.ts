@@ -28,10 +28,14 @@ export class ApplicationContext {
         this.injector = new Injector();
         this.dispatcher = new Dispatcher();
         this.configurationData = ConfigurationUtil.getConfigurationData(configurationClass);
-        this.configurationData.loadAllProperties();
-        this.configurationData.loadAllComponents();
-        this.environment = new Environment(this.configurationData.properties, this.configurationData.activeProfiles);
+        this.environment = new Environment();
+        (<any> this.environment).setProcessProperties();
+        (<any> this.environment).setNodeProperties();
+        (<any> this.environment).setEnvironmentProperties();
+        (<any> this.environment).setActiveProfiles(this.configurationData.activeProfiles);
+        (<any> this.environment).setApplicationProperties(this.configurationData.propertySourcePaths);
         this.injector.register( ComponentUtil.getComponentData(Environment).classToken, this.environment);
+        this.configurationData.loadAllComponents(this.environment);
     }
 
     getComponent <T>(componentClass): T {
@@ -122,7 +126,7 @@ export class ApplicationContext {
                 Reflect.set(instance, fieldName, dependency);
             });
             injectionData.properties.forEach((propertyKey, fieldName) => {
-                Reflect.set(instance, fieldName, this.getConfigurationProperty(propertyKey));
+                Reflect.set(instance, fieldName, this.environment.getProperty(propertyKey));
             });
 
             this.dispatcher.processAfterInit(CompConstructor, instance);
@@ -171,17 +175,11 @@ export class ApplicationContext {
             if (profiles.length > 0) {
                 let notUsedProfiles = _.map(_.filter(profiles, (profile) => (profile[0] === '!')),
                     (profile: string) => profile.substr(1));
-                if (_.some(notUsedProfiles, (profile) => !this.environment.acceptsProfiles(profile))) {
-                    return true;
-                }
-                return this.environment.acceptsProfiles(...profiles);
+                return _.some(notUsedProfiles, (profile) => !this.environment.acceptsProfiles(profile))
+                    || this.environment.acceptsProfiles(...profiles);
             }
             return true;
         });
-    }
-
-    private getConfigurationProperty(propertyKey: string): string {
-        return process.env[propertyKey] || this.configurationData.properties.get(propertyKey);
     }
 
     private verifyContextReady() {

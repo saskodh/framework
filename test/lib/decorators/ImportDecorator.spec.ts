@@ -19,8 +19,6 @@ describe('ImportDecorator', function () {
         configurationDataA.componentPostProcessorFactory.components.push('pp1');
         configurationDataA.componentScanPaths.push('csPath1');
         configurationDataA.propertySourcePaths.push('psPath1');
-        configurationDataA.properties.set('one', 'value1');
-        configurationDataA.properties.set('two', 'value2');
 
         let configurationDataAppConfig = ConfigurationUtil.getConfigurationData(AppConfig);
         configurationDataAppConfig.componentFactory.components.push('c2');
@@ -28,8 +26,6 @@ describe('ImportDecorator', function () {
         configurationDataAppConfig.componentPostProcessorFactory.components.push('pp2');
         configurationDataAppConfig.componentScanPaths.push('csPath2');
         configurationDataAppConfig.propertySourcePaths.push('psPath2');
-        configurationDataAppConfig.properties.set('three', 'value1');
-        configurationDataAppConfig.properties.set('four', 'value2');
 
         // when
         Import(A)(AppConfig);
@@ -42,9 +38,5 @@ describe('ImportDecorator', function () {
             .to.include.members(['pp1', 'pp2']);
         expect(configurationDataAppConfig.componentScanPaths).to.include.members(['csPath1', 'csPath2']);
         expect(configurationDataAppConfig.propertySourcePaths).to.include.members(['psPath1', 'psPath2']);
-        expect(configurationDataAppConfig.properties.get('one')).to.be.eq('value1');
-        expect(configurationDataAppConfig.properties.get('two')).to.be.eq('value2');
-        expect(configurationDataAppConfig.properties.get('three')).to.be.eq('value1');
-        expect(configurationDataAppConfig.properties.get('four')).to.be.eq('value2');
     });
 });

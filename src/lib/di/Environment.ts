@@ -1,30 +1,36 @@
 import * as _ from "lodash";
 import { ProcessHandler } from "../helpers/ProcessHandler";
 import { Component } from "../decorators/ComponentDecorator";
+import { PropertySourceUtil } from "../decorators/PropertySourceDecorator";
+import { ProfiledPath } from "../decorators/ConfigurationDecorator";
 
 @Component()
 export class Environment {
 
-    private  ACTIVE_PROFILES_PROPERTY_KEY = 'application.profiles.active';
-    private  DEFAULT_PROFILES_PROPERTY_KEY = 'application.profiles.default';
-    private  processProperties: Map<string, string>;
-    private  nodeProperties: Map<string, string>;
-    private  processEnvProperties: Map<string, string>;
-    private  sourcePathProperties: Map<string, string>;
-    private  activeProfiles: Array<string>;
+    private ACTIVE_PROFILES_PROPERTY_KEY = 'application.profiles.active';
+    private DEFAULT_PROFILES_PROPERTY_KEY = 'application.profiles.default';
+    private processProperties: Map<string, string>;
+    private nodeProperties: Map<string, string>;
+    private processEnvProperties: Map<string, string>;
+    private applicationProperties: Map<string, string>;
+    private activeProfiles: Array<string>;
+
+    constructor() {
+        this.applicationProperties = new Map<string, string>();
+    }
 
     getProperty(key: string, defaultValue?: string): string {
-        if (!_.isUndefined(this.processProperties.get(key))) {
+        if (this.processProperties.has(key)) {
             return this.processProperties.get(key);
         }
-        if (!_.isUndefined(this.nodeProperties.get(key))) {
+        if (this.nodeProperties.has(key)) {
             return this.nodeProperties.get(key);
         }
-        if (!_.isUndefined(this.processEnvProperties.get(key))) {
+        if (this.processEnvProperties.has(key)) {
             return this.processEnvProperties.get(key);
         }
-        if (!_.isUndefined(this.sourcePathProperties.get(key))) {
-            return this.sourcePathProperties.get(key);
+        if (this.applicationProperties.has(key)) {
+            return this.applicationProperties.get(key);
         }
         return defaultValue;
     }
@@ -33,50 +39,68 @@ export class Environment {
         return !!this.getProperty(key);
     }
 
-     getRequiredProperty(key: string): string {
+    getRequiredProperty(key: string): string {
         if (_.isUndefined(this.getProperty(key))) {
             throw new Error(`Property with key ${key} is not set in Environment properties.`);
         }
         return this.getProperty(key);
     }
 
-     acceptsProfiles(...profiles: Array<string>): boolean {
+    acceptsProfiles(...profiles: Array<string>): boolean {
+        if (profiles.length === 0) {
+            throw Error('function called with no profiles');
+        }
         if (_.isUndefined(this.getActiveProfiles())) {
             if (_.isUndefined(this.getDefaultProfiles())) {
                 return false;
             }
             return (_.intersection(this.getDefaultProfiles(), profiles).length > 0);
         }
-         return (_.intersection(this.getActiveProfiles(), profiles).length > 0);
+        return (_.intersection(this.getActiveProfiles(), profiles).length > 0);
     }
 
-     getActiveProfiles(): Array<string> {
+    getActiveProfiles(): Array<string> {
         return this.activeProfiles;
     }
 
-     getDefaultProfiles(): Array<string> {
+    getDefaultProfiles(): Array<string> {
         if (_.isUndefined(this.getProperty(this.DEFAULT_PROFILES_PROPERTY_KEY))) {
             return undefined;
         }
         return this.getProperty(this.DEFAULT_PROFILES_PROPERTY_KEY).split(",");
     }
 
-    constructor(sourcePathProperties: Map<string, string>, activeProfiles: Array<string>) {
-        this.sourcePathProperties = _.cloneDeep(sourcePathProperties);
-        this.processProperties = new Map<string, string>();
-        this.nodeProperties = new Map<string, string>();
-        this.processEnvProperties = new Map<string, string>();
+    private setProcessProperties() { // tslint:disable-line
+        this.processProperties = ProcessHandler.getInstance().getProcessProperties();
+    }
 
-        // sourcePathProperties.forEach((val, key) => {this.sourcePathProperties.set(key, val); });
-        ProcessHandler.getInstance().getProcessProperties()
-            .forEach((val, key) => {this.processProperties.set(key, val); });
-        ProcessHandler.getInstance().getNodeProperties().forEach((val, key) => {this.nodeProperties.set(key, val); });
-        ProcessHandler.getInstance().getEnvironmentProperties()
-            .forEach((val, key) => {this.processEnvProperties.set(key, val); });
+    private setNodeProperties() { // tslint:disable-line
+        this.nodeProperties = ProcessHandler.getInstance().getNodeProperties();
+    }
 
+    private setEnvironmentProperties() { // tslint:disable-line
+        this.processEnvProperties = ProcessHandler.getInstance().getEnvironmentProperties();
+    }
+
+    private setActiveProfiles(activeProfiles: Array<string>) { // tslint:disable-line
         this.activeProfiles = _.cloneDeep(activeProfiles);
         if (!_.isUndefined(this.getProperty(this.ACTIVE_PROFILES_PROPERTY_KEY))) {
             this.activeProfiles.push(...this.getProperty(this.ACTIVE_PROFILES_PROPERTY_KEY).split(','));
         }
+        this.activeProfiles = _.uniq(this.activeProfiles);
+    }
+
+    private setApplicationProperties(propertySourcePaths: Array<ProfiledPath>) { // tslint: disable-line
+        let viablePaths = _.map(_.filter(propertySourcePaths, (profiledPath: ProfiledPath) =>
+                (profiledPath.profiles.length === 0 || this.acceptsProfiles(...profiledPath.profiles))),
+            (profiledPath: ProfiledPath) => profiledPath.path);
+        PropertySourceUtil.getPropertiesFromPaths(...viablePaths)
+            .forEach((value, prop) => {
+                this.applicationProperties.set(prop, value);
+            });
+        if (!_.isUndefined(this.getProperty(this.ACTIVE_PROFILES_PROPERTY_KEY))) {
+            this.activeProfiles.push(...this.getProperty(this.ACTIVE_PROFILES_PROPERTY_KEY).split(','));
+        }
+        this.activeProfiles = _.uniq(this.activeProfiles);
     }
 }

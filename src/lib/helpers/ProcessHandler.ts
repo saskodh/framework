@@ -37,11 +37,20 @@ export class ProcessHandler {
 
     getProcessProperties(): Map<string, string> {
         let result = new Map<string, string>();
-        process.argv.forEach((arg: string) => {
-            if (arg.includes('=')) {
-                result.set(arg.substring(0, arg.indexOf('=')), arg.substring(arg.indexOf('=') + 1));
-            } else {
-                result.set(arg, 'true');
+        process.argv.forEach((arg: string, index) => {
+            if (index === 0) {
+                result.set('application.process.node', arg);
+            }
+            if (index === 1) {
+                result.set('application.process.entryFile', arg);
+            }
+            if (index > 1) {
+                if (arg.includes('=')) {
+                    let [key, value] = arg.split('=');
+                    result.set(key.trim(), value.trim());
+                } else {
+                    result.set(arg, 'true');
+                }
             }
         });
         return result;
@@ -51,7 +60,8 @@ export class ProcessHandler {
         let result = new Map<string, string>();
         process.execArgv.forEach((arg: string) => {
             if (arg.includes('=')) {
-                result.set(arg.substring(0, arg.indexOf('=')), arg.substring(arg.indexOf('=') + 1));
+                let [key, value] = arg.split('=');
+                result.set(key.trim(), value.trim());
             } else {
                 result.set(arg, 'true');
             }
