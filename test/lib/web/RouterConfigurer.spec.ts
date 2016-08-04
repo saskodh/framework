@@ -10,7 +10,10 @@ describe('RouterConfigurer', function () {
 
     @Interceptor()
     class PreHandleInterceptor {
-        preHandle(request, response) {} // tslint:disable-line
+        preHandle(request, response) {
+            return !(request.originalUrl === 'brokenURL');
+        }
+        afterCompletion(request, response) {} // tslint:disable-line
     }
 
     @Interceptor()
@@ -96,13 +99,14 @@ describe('RouterConfigurer', function () {
         let stubOnWrap = stub((<any> routerConfigurer), 'wrap');
         stubOnWrap.withArgs('bound preHandler').returns('wraped preHandler');
         stubOnWrap.withArgs('bound postHandler').returns('wraped postHandler');
+        stubOnWrap.withArgs('bound resolver').returns('wraped resolver');
 
         // when
         (<any> routerConfigurer).configureMiddlewares();
 
         // then
         expect(stubOnUse.calledThrice).to.be.true;
-        expect(stubOnUse.args).to.eql([['wraped preHandler'], ['wraped postHandler'], ['bound resolver']]);
+        expect(stubOnUse.args).to.eql([['wraped preHandler'], ['wraped postHandler'], ['wraped resolver']]);
         expect(stubOnRegisterRouteHandlers.calledOnce).to.be.true;
 
         stubOnUse.restore();
@@ -179,10 +183,11 @@ describe('RouterConfigurer', function () {
 
         // when
         await (<any> routerConfigurer).preHandler('request', 'response', spyOnNext);
+        await (<any> routerConfigurer).preHandler({'originalUrl': 'brokenURL'}, 'response', spyOnNext);
 
         // then
         expect(spyOnNext.calledOnce).to.be.true;
-        expect(spyOnPreHandle.calledOnce).to.be.true;
+        expect(spyOnPreHandle.calledTwice).to.be.true;
         expect(spyOnPostHandle.called).to.not.be.true;
 
         spyOnPreHandle.restore();
@@ -212,6 +217,9 @@ describe('RouterConfigurer', function () {
     it('should resolve response', async function () {
         // given
         let spyOnNext = spy();
+        let spyOnAfterCompletion = spy(preHandleInterceptor, 'afterCompletion');
+        (<any> routerConfigurer).interceptors.push(preHandleInterceptor);
+        (<any> routerConfigurer).interceptors.push(postHandleInterceptor);
         let mockResponseGet = {
             $$frameworkData: {
                 model: 'getResult',
@@ -230,13 +238,16 @@ describe('RouterConfigurer', function () {
         };
 
         // when
-        (<any> routerConfigurer).resolver('mockRequest', mockResponseGet, spyOnNext);
-        (<any> routerConfigurer).resolver('mockRequest', mockResponsePost, spyOnNext);
+        await (<any> routerConfigurer).resolver('mockRequest', mockResponseGet, spyOnNext);
+        await (<any> routerConfigurer).resolver('mockRequest', mockResponsePost, spyOnNext);
 
         // then
         expect(mockResponseGet.json.calledWith('getResult')).to.be.true;
         expect(mockResponseGet.render.called).to.be.false;
         expect(mockResponsePost.json.called).to.be.false;
         expect(mockResponsePost.render.calledWith('postView', 'postResult')).to.be.true;
+        expect(spyOnAfterCompletion.calledTwice).to.be.true;
+
+        spyOnAfterCompletion.restore();
     });
 });

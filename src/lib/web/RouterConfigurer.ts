@@ -50,7 +50,7 @@ export class RouterConfigurer {
         // That would require the dispatching by path to be implemented on our side
         this.registerRouteHandlers();
         this.router.use(this.wrap(this.postHandler.bind(this)));
-        this.router.use(this.resolver.bind(this));
+        this.router.use(this.wrap(this.resolver.bind(this)));
     }
 
     private registerRouteHandlers() {
@@ -75,7 +75,10 @@ export class RouterConfigurer {
         for (let i = 0; i < this.interceptors.length; i += 1) {
             let interceptor = this.interceptors[i];
             if (_.isFunction(interceptor.preHandle)) {
-                await interceptor.preHandle(request, response);
+                // NOTE: when the the preHandle function returns nothing the middleware chain is not broken
+                if (await interceptor.preHandle(request, response) === false) {
+                    return;
+                }
             }
         }
         next();
@@ -92,13 +95,19 @@ export class RouterConfigurer {
         next();
     }
 
-    private resolver(request, response) {
+    private async resolver(request, response) {
         let handlingResult = response.$$frameworkData;
         if (handlingResult) {
             if (_.isUndefined(handlingResult.view)) {
                 response.json(handlingResult.model);
             } else {
                 response.render(handlingResult.view, handlingResult.model);
+            }
+        }
+        for (let i = this.interceptors.length - 1; i >= 0; i -= 1) {
+            let interceptor = this.interceptors[i];
+            if (_.isFunction(interceptor.afterCompletion)) {
+                await interceptor.afterCompletion(request, response);
             }
         }
     }
