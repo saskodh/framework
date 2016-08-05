@@ -10,10 +10,12 @@ import { Qualifier } from "../../../src/lib/decorators/QualifierDecorator";
 import { Router } from "express";
 import { Injector } from "../../../src/lib/di/Injector";
 import { Dispatcher } from "../../../src/lib/dispatcher/Dispatcher";
-import { spy, stub, match } from "sinon";
+import { spy, stub, match, assert } from "sinon";
 import { ProcessHandler } from "../../../src/lib/helpers/ProcessHandler";
-import { Profile } from "../../../src/lib/decorators/ProfileDecorators";
+import { Profile, ActiveProfiles } from "../../../src/lib/decorators/ProfileDecorators";
+import { Environment } from "../../../src/lib/di/Environment";
 
+// TODO: resolve tests from PostProcesors branch, when merged
 describe('ApplicationContext', function () {
 
     let appContext: ApplicationContext;
@@ -32,13 +34,13 @@ describe('ApplicationContext', function () {
     @Controller()
     class ControllerClassA {}
 
+    @ActiveProfiles('dev')
     @Configuration()
     class AppConfig {}
 
     ConfigurationUtil.getConfigurationData(AppConfig).componentFactory.components.push(ComponentClassA);
     ConfigurationUtil.getConfigurationData(AppConfig).componentFactory.components.push(ComponentClassB);
     ConfigurationUtil.getConfigurationData(AppConfig).componentFactory.components.push(ControllerClassA);
-    ConfigurationUtil.getConfigurationData(AppConfig).properties.set('application.profiles.active', 'dev');
 
     beforeEach(() => {
         appContext = new ApplicationContext(AppConfig);
@@ -47,7 +49,12 @@ describe('ApplicationContext', function () {
 
     it('should initialize properly', function () {
         // given
-        let stubOnLoadAllProperties = stub(ConfigurationData.prototype, 'loadAllProperties');
+        let stubOnSetProcessProperties = stub(Environment.prototype, 'setProcessProperties');
+        let stubOnSetNodeProperties = stub(Environment.prototype, 'setNodeProperties');
+        let stubOnSetEnvironmentProperties = stub(Environment.prototype, 'setEnvironmentProperties');
+        let stubOnSetActiveProfiles = stub(Environment.prototype, 'setActiveProfiles');
+        let setApplicationProperties = stub(Environment.prototype, 'setApplicationProperties');
+        let stubOnRegister = stub(Injector.prototype, 'register');
         let stubOnLoadAllComponents = stub(ConfigurationData.prototype, 'loadAllComponents');
 
         // when
@@ -58,11 +65,30 @@ describe('ApplicationContext', function () {
         expect(localAppContext.injector).to.be.instanceOf(Injector);
         expect(localAppContext.dispatcher).to.be.instanceOf(Dispatcher);
         expect(localAppContext.configurationData).to.be.instanceOf(ConfigurationData);
-        expect(stubOnLoadAllProperties.called).to.be.true;
-        expect(stubOnLoadAllComponents.called).to.be.true;
+        expect(localAppContext.environment).to.be.instanceOf(Environment);
+
+        expect(stubOnSetProcessProperties.calledOnce).to.be.true;
+        expect(stubOnSetNodeProperties.calledOnce).to.be.true;
+        expect(stubOnSetEnvironmentProperties.calledOnce).to.be.true;
+        expect(stubOnSetActiveProfiles.calledOnce).to.be.true;
+        expect(stubOnSetActiveProfiles.calledWith(localAppContext.configurationData.activeProfiles)).to.be.true;
+        expect(setApplicationProperties.calledOnce).to.be.true;
+        expect(setApplicationProperties.calledWith(localAppContext.configurationData.propertySourcePaths)).to.be.true;
+        expect(stubOnRegister.calledOnce).to.be.true;
+        expect(stubOnRegister.args)
+            .to.eql([[ComponentUtil.getComponentData(Environment).classToken, localAppContext.environment]]);
+        expect(stubOnLoadAllComponents.calledOnce).to.be.true;
+
+        assert.callOrder(stubOnSetProcessProperties, stubOnSetNodeProperties, stubOnSetEnvironmentProperties,
+            stubOnSetActiveProfiles, setApplicationProperties, stubOnRegister, stubOnLoadAllComponents);
 
         // cleanup
-        stubOnLoadAllProperties.restore();
+        stubOnSetProcessProperties.restore();
+        stubOnSetNodeProperties.restore();
+        stubOnSetEnvironmentProperties.restore();
+        stubOnSetActiveProfiles.restore();
+        setApplicationProperties.restore();
+        stubOnRegister.restore();
         stubOnLoadAllComponents.restore();
     });
 
@@ -177,6 +203,18 @@ describe('ApplicationContext', function () {
         // then
         expect(router).to.be.of.isPrototypeOf(Router);
         expect(router).to.be.equal(localAppContext.dispatcher.getRouter());
+    });
+
+    it('should return environment', async function () {
+        // given
+        await appContext.start();
+
+        // when
+        let environment = appContext.getEnvironment();
+
+        // then
+        expect(environment).to.be.of.isPrototypeOf(Environment);
+        expect(environment).to.be.equal(localAppContext.environment);
     });
 
     it('should get active components', async function () {

@@ -16,7 +16,11 @@ export class Environment {
     private activeProfiles: Array<string>;
 
     constructor() {
+        this.processProperties = new Map<string, string>();
+        this.nodeProperties = new Map<string, string>();
+        this.processEnvProperties = new Map<string, string>();
         this.applicationProperties = new Map<string, string>();
+        this.activeProfiles = [];
     }
 
     getProperty(key: string, defaultValue?: string): string {
@@ -50,22 +54,19 @@ export class Environment {
         if (profiles.length === 0) {
             throw Error('function called with no profiles');
         }
-        if (_.isUndefined(this.getActiveProfiles())) {
-            if (_.isUndefined(this.getDefaultProfiles())) {
-                return false;
-            }
+        if (this.getActiveProfiles().length === 0) {
             return (_.intersection(this.getDefaultProfiles(), profiles).length > 0);
         }
         return (_.intersection(this.getActiveProfiles(), profiles).length > 0);
     }
 
     getActiveProfiles(): Array<string> {
-        return this.activeProfiles;
+        return this.activeProfiles || [];
     }
 
     getDefaultProfiles(): Array<string> {
         if (_.isUndefined(this.getProperty(this.DEFAULT_PROFILES_PROPERTY_KEY))) {
-            return undefined;
+            return [];
         }
         return this.getProperty(this.DEFAULT_PROFILES_PROPERTY_KEY).split(",");
     }
@@ -90,7 +91,8 @@ export class Environment {
         this.activeProfiles = _.uniq(this.activeProfiles);
     }
 
-    private setApplicationProperties(propertySourcePaths: Array<ProfiledPath>) { // tslint: disable-line
+    private setApplicationProperties(propertySourcePaths: Array<ProfiledPath>) { // tslint:disable-line
+        let isActiveProfilesPropertySet = (!_.isUndefined(this.getProperty(this.ACTIVE_PROFILES_PROPERTY_KEY)));
         let viablePaths = _.map(_.filter(propertySourcePaths, (profiledPath: ProfiledPath) =>
                 (profiledPath.profiles.length === 0 || this.acceptsProfiles(...profiledPath.profiles))),
             (profiledPath: ProfiledPath) => profiledPath.path);
@@ -98,9 +100,9 @@ export class Environment {
             .forEach((value, prop) => {
                 this.applicationProperties.set(prop, value);
             });
-        if (!_.isUndefined(this.getProperty(this.ACTIVE_PROFILES_PROPERTY_KEY))) {
+        if (!isActiveProfilesPropertySet && !_.isUndefined(this.getProperty(this.ACTIVE_PROFILES_PROPERTY_KEY))) {
             this.activeProfiles.push(...this.getProperty(this.ACTIVE_PROFILES_PROPERTY_KEY).split(','));
+            this.activeProfiles = _.uniq(this.activeProfiles);
         }
-        this.activeProfiles = _.uniq(this.activeProfiles);
     }
 }

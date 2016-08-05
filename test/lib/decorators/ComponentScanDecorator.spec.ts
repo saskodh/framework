@@ -4,10 +4,11 @@ import * as fileSystem from "fs";
 import * as path_module from "path";
 import {
     ConfigurationData, Configuration,
-    ConfigurationUtil
+    ConfigurationUtil, ProfiledPath
 } from "../../../src/lib/decorators/ConfigurationDecorator";
 import { ComponentScanUtil, ComponentScan } from "../../../src/lib/decorators/ComponentScanDecorator";
 import { RequireUtils } from "../../../src/lib/helpers/RequireUtils";
+import { Environment } from "../../../src/lib/di/Environment";
 
 describe('ComponentScanDecorator', function () {
 
@@ -55,19 +56,25 @@ describe('ComponentScanUtil', function () {
 
     it('should load all components', function () {
         // given
+        let environment = new Environment();
         let configData = new ConfigurationData();
-        configData.componentScanPaths.push('pathOne');
-        configData.componentScanPaths.push('pathTwo');
-        let loadComponentsFromPathStub = stub(ComponentScanUtil, 'loadComponentsFromPath');
+        configData.componentScanPaths.push(new ProfiledPath(['activeProfile'], 'pathOne'));
+        configData.componentScanPaths.push(new ProfiledPath(['activeProfile'], 'pathTwo'));
+        configData.componentScanPaths.push(new ProfiledPath(['inactiveProfile'], 'pathThree'));
+        let StubOnLoadComponentsFromPath = stub(ComponentScanUtil, 'loadComponentsFromPath');
+        let stubOnAcceptsProfiles = stub(environment, 'acceptsProfiles');
+        stubOnAcceptsProfiles.withArgs('activeProfile').returns(true);
+        stubOnAcceptsProfiles.withArgs('inactiveProfile').returns(false);
 
         // when
-        ComponentScanUtil.loadAllComponents(configData);
+        ComponentScanUtil.loadAllComponents(configData, environment);
 
         // then
-        expect(loadComponentsFromPathStub.calledTwice).to.be.true;
-        expect(loadComponentsFromPathStub.args).to.be.eql([['pathOne', configData], ['pathTwo', configData]]);
+        expect(StubOnLoadComponentsFromPath.calledTwice).to.be.true;
+        expect(StubOnLoadComponentsFromPath.args).to.be.eql([['pathOne', configData], ['pathTwo', configData]]);
 
-        loadComponentsFromPathStub.restore();
+        StubOnLoadComponentsFromPath.restore();
+        stubOnAcceptsProfiles.restore();
     });
 
     it('should get modules from path', function () {

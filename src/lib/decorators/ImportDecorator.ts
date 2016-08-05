@@ -13,7 +13,7 @@ export function Import(...configurationClasses) {
             let configurationData = ConfigurationUtil.getConfigurationData(configurationClass);
             targetConfigurationData.componentFactory.components.push(...configurationData.componentFactory.components);
             targetConfigurationData.componentDefinitionPostProcessorFactory.components
-                .push(configurationData.componentDefinitionPostProcessorFactory.components);
+                .push(...configurationData.componentDefinitionPostProcessorFactory.components);
             targetConfigurationData.componentPostProcessorFactory.components
                 .push(...configurationData.componentPostProcessorFactory.components);
             targetConfigurationData.propertySourcePaths.push(...configurationData.propertySourcePaths);

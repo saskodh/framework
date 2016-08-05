@@ -2,43 +2,26 @@ import {expect} from "chai";
 import {stub} from "sinon";
 import {
     Configuration, ConfigurationUtil,
-    ConfigurationData
+    ConfigurationData, ProfiledPath
 } from "../../../src/lib/decorators/ConfigurationDecorator";
-import { PropertySourceUtil } from "../../../src/lib/decorators/PropertySourceDecorator";
 import { ComponentScanUtil } from "../../../src/lib/decorators/ComponentScanDecorator";
+import { Environment } from "../../../src/lib/di/Environment";
+import { Profile } from "../../../src/lib/decorators/ProfileDecorators";
 
 describe('ConfigurationData', function () {
 
-    it('should load properties', function () {
-        // given
-        let configurationData = new ConfigurationData();
-        configurationData.propertySourcePaths.push('somePath');
-        configurationData.propertySourcePaths.push('somePath');
-        let map = new Map();
-        map.set('key', 'val');
-        let stubOnGetPropertiesFromPaths = stub(PropertySourceUtil, 'getPropertiesFromPaths').returns(map);
-
-        // when
-        configurationData.loadAllProperties();
-
-        // then
-        expect(configurationData.properties.get('key')).is.eql('val');
-        expect(stubOnGetPropertiesFromPaths.calledWith('somePath')).to.be.true;
-
-        stubOnGetPropertiesFromPaths.restore();
-    });
-
     it('should load components', function () {
         // given
+        let environment = new Environment();
         let configurationData = new ConfigurationData();
-        configurationData.componentScanPaths.push('somePath');
+        configurationData.componentScanPaths.push(new ProfiledPath(['someProfile'], 'somePath'));
         let stubOnLoadAllComponents = stub(ComponentScanUtil, 'loadAllComponents');
 
         // when
-        configurationData.loadAllComponents();
+        configurationData.loadAllComponents(environment);
 
         // then
-        expect(stubOnLoadAllComponents.calledWith(configurationData)).to.be.true;
+        expect(stubOnLoadAllComponents.calledWith(configurationData, environment)).to.be.true;
 
         stubOnLoadAllComponents.restore();
     });
@@ -95,6 +78,7 @@ describe('ConfigurationUtil', function () {
 
     it('should add path for component scan', function () {
         // given
+        @Profile('someProfile')
         @Configuration()
         class A {}
 
@@ -103,12 +87,13 @@ describe('ConfigurationUtil', function () {
         ConfigurationUtil.addComponentScanPath(A, 'someOtherPath');
 
         // then
-        expect(ConfigurationUtil.getConfigurationData(A).componentScanPaths)
-            .to.include.members(['somePath', 'someOtherPath']);
+        expect(ConfigurationUtil.getConfigurationData(A).componentScanPaths).to.be.eql(
+            [{profiles: ['someProfile'], path: 'somePath'}, {profiles: ['someProfile'], path: 'someOtherPath'}]);
     });
 
     it('should add path for property source', function () {
         // given
+        @Profile('someProfile')
         @Configuration()
         class A {}
 
@@ -117,7 +102,7 @@ describe('ConfigurationUtil', function () {
         ConfigurationUtil.addPropertySourcePath(A, 'someOtherPath');
 
         // then
-        expect(ConfigurationUtil.getConfigurationData(A).propertySourcePaths)
-            .to.include.members(['somePath', 'someOtherPath']);
+        expect(ConfigurationUtil.getConfigurationData(A).propertySourcePaths).to.be.eql(
+            [{profiles: ['someProfile'], path: 'somePath'}, {profiles: ['someProfile'], path: 'someOtherPath'}]);
     });
 });
