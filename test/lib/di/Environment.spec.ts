@@ -113,7 +113,7 @@ describe('Environment', function () {
 
         // when / then
         expect(localEnvironment.getActiveProfiles()).to.be.eql(['activeProfile']);
-        localEnvironment.activeProfiles = undefined;
+        localEnvironment.activeProfiles = [];
         expect(localEnvironment.getActiveProfiles()).to.be.instanceOf(Array);
         expect(localEnvironment.getActiveProfiles()).to.be.empty;
     });
@@ -183,7 +183,7 @@ describe('Environment', function () {
         let stubOnGetProperty = stub(localEnvironment, 'getProperty').returns('profile1,profile2');
 
         // when
-        localEnvironment.setActiveProfiles(['profile1', 'profile3']);
+        localEnvironment.setActiveProfiles('profile1', 'profile3');
 
         // then
         expect(localEnvironment.activeProfiles.length).to.be.eql(3);

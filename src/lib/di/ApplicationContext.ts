@@ -32,7 +32,7 @@ export class ApplicationContext {
         (<any> this.environment).setProcessProperties();
         (<any> this.environment).setNodeProperties();
         (<any> this.environment).setEnvironmentProperties();
-        (<any> this.environment).setActiveProfiles(this.configurationData.activeProfiles);
+        (<any> this.environment).setActiveProfiles(...this.configurationData.activeProfiles);
         (<any> this.environment).setApplicationProperties(this.configurationData.propertySourcePaths);
         this.injector.register(ComponentUtil.getComponentData(Environment).classToken, this.environment);
         this.configurationData.loadAllComponents(this.environment);

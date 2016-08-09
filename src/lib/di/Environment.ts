@@ -61,7 +61,7 @@ export class Environment {
     }
 
     getActiveProfiles(): Array<string> {
-        return this.activeProfiles || [];
+        return this.activeProfiles;
     }
 
     getDefaultProfiles(): Array<string> {
@@ -83,8 +83,8 @@ export class Environment {
         this.processEnvProperties = ProcessHandler.getInstance().getEnvironmentProperties();
     }
 
-    private setActiveProfiles(activeProfiles: Array<string>) { // tslint:disable-line
-        this.activeProfiles = _.cloneDeep(activeProfiles);
+    setActiveProfiles(...activeProfiles: Array<string>) { // tslint:disable-line
+        this.activeProfiles.push(...activeProfiles);
         if (!_.isUndefined(this.getProperty(this.ACTIVE_PROFILES_PROPERTY_KEY))) {
             this.activeProfiles.push(...this.getProperty(this.ACTIVE_PROFILES_PROPERTY_KEY).split(','));
         }
