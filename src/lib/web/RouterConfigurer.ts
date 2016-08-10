@@ -72,6 +72,15 @@ export class RouterConfigurer {
     }
 
     private async preHandler(request, response, next) {
+        response.on('finish', async () => {
+            for (let i = this.interceptors.length - 1; i >= 0; i -= 1) {
+                let interceptor = this.interceptors[i];
+                if (_.isFunction(interceptor.afterCompletion)) {
+                    await interceptor.afterCompletion(request, response);
+                }
+            }
+        });
+
         for (let i = 0; i < this.interceptors.length; i += 1) {
             let interceptor = this.interceptors[i];
             if (_.isFunction(interceptor.preHandle)) {
@@ -97,17 +106,11 @@ export class RouterConfigurer {
 
     private async resolver(request, response) {
         let handlingResult = response.$$frameworkData;
-        if (handlingResult) {
+        if (handlingResult && response.finished === false) {
             if (_.isUndefined(handlingResult.view)) {
                 response.json(handlingResult.model);
             } else {
                 response.render(handlingResult.view, handlingResult.model);
-            }
-        }
-        for (let i = this.interceptors.length - 1; i >= 0; i -= 1) {
-            let interceptor = this.interceptors[i];
-            if (_.isFunction(interceptor.afterCompletion)) {
-                await interceptor.afterCompletion(request, response);
             }
         }
     }

@@ -175,23 +175,49 @@ describe('RouterConfigurer', function () {
 
     it('should pre handle', async function () {
         // given
+        let responseOne = {
+            callback: undefined,
+            on(event: string, callback: Function) {
+                if (event === 'finish') {
+                    this.callback = callback;
+                }
+            }
+        };
+        let responseTwo = {
+            callback: undefined,
+            on(event: string, callback: Function) {
+                if (event === 'finish') {
+                    this.callback = callback;
+                }
+            }
+        };
+
         let spyOnPreHandle = spy(preHandleInterceptor, 'preHandle');
         let spyOnPostHandle = spy(postHandleInterceptor, 'postHandle');
+        let spyOnAfterCompletion = spy(preHandleInterceptor, 'afterCompletion');
         let spyOnNext = spy();
         (<any> routerConfigurer).interceptors.push(preHandleInterceptor);
         (<any> routerConfigurer).interceptors.push(postHandleInterceptor);
 
         // when
-        await (<any> routerConfigurer).preHandler('request', 'response', spyOnNext);
-        await (<any> routerConfigurer).preHandler({'originalUrl': 'brokenURL'}, 'response', spyOnNext);
+        await (<any> routerConfigurer).preHandler('request', responseOne, spyOnNext);
+        await (<any> routerConfigurer).preHandler({'originalUrl': 'brokenURL'}, responseTwo, spyOnNext);
+        responseOne.callback();
+        responseTwo.callback();
 
         // then
         expect(spyOnNext.calledOnce).to.be.true;
         expect(spyOnPreHandle.calledTwice).to.be.true;
+        expect(spyOnPreHandle.calledWith('request', responseOne)).to.be.true;
+        expect(spyOnPreHandle.calledWith({'originalUrl': 'brokenURL'}, responseTwo)).to.be.true;
+        expect(spyOnAfterCompletion.calledTwice).to.be.true;
+        expect(spyOnAfterCompletion.calledWith('request', responseOne)).to.be.true;
+        expect(spyOnAfterCompletion.calledWith({'originalUrl': 'brokenURL'}, responseTwo)).to.be.true;
         expect(spyOnPostHandle.called).to.not.be.true;
 
         spyOnPreHandle.restore();
         spyOnPostHandle.restore();
+        spyOnAfterCompletion.restore();
     });
 
     it('should post handle', async function () {
@@ -209,6 +235,7 @@ describe('RouterConfigurer', function () {
         expect(spyOnNext.calledOnce).to.be.true;
         expect(spyOnPreHandle.called).to.not.be.true;
         expect(spyOnPostHandle.calledOnce).to.be.true;
+        expect(spyOnPostHandle.calledWith('request', 'response')).to.be.true;
 
         spyOnPreHandle.restore();
         spyOnPostHandle.restore();
@@ -217,7 +244,6 @@ describe('RouterConfigurer', function () {
     it('should resolve response', async function () {
         // given
         let spyOnNext = spy();
-        let spyOnAfterCompletion = spy(preHandleInterceptor, 'afterCompletion');
         (<any> routerConfigurer).interceptors.push(preHandleInterceptor);
         (<any> routerConfigurer).interceptors.push(postHandleInterceptor);
         let mockResponseGet = {
@@ -226,7 +252,8 @@ describe('RouterConfigurer', function () {
                 view: undefined
             },
             json: spy(),
-            render: spy()
+            render: spy(),
+            finished: false
         };
         let mockResponsePost = {
             $$frameworkData: {
@@ -234,20 +261,30 @@ describe('RouterConfigurer', function () {
                 view: 'postView'
             },
             json: spy(),
-            render: spy()
+            render: spy(),
+            finished: false
+        };
+        let mockBrokenResponse = {
+            $$frameworkData: {
+                model: 'brokenResult',
+                view: undefined
+            },
+            json: spy(),
+            render: spy(),
+            finished: true
         };
 
         // when
         await (<any> routerConfigurer).resolver('mockRequest', mockResponseGet, spyOnNext);
         await (<any> routerConfigurer).resolver('mockRequest', mockResponsePost, spyOnNext);
+        await (<any> routerConfigurer).resolver('mockRequest', mockBrokenResponse, spyOnNext);
 
         // then
+        expect(mockResponseGet.json.calledOnce).to.be.true;
+        expect(mockResponsePost.render.calledOnce).to.be.true;
         expect(mockResponseGet.json.calledWith('getResult')).to.be.true;
         expect(mockResponseGet.render.called).to.be.false;
         expect(mockResponsePost.json.called).to.be.false;
         expect(mockResponsePost.render.calledWith('postView', 'postResult')).to.be.true;
-        expect(spyOnAfterCompletion.calledTwice).to.be.true;
-
-        spyOnAfterCompletion.restore();
     });
 });
