@@ -1,6 +1,7 @@
 import { InjectUtil, InjectionData } from "./InjectionDecorators";
 import { CONTROLLER_DECORATOR_TOKEN } from "./ControllerDecorator";
 import { INTERCEPTOR_DECORATOR_TOKEN } from "../interceptors/InterceptorDecorator";
+import { DecoratorUsageError } from "../errors/DecoratorUsageError";
 
 export class ComponentData {
     classToken: Symbol;
@@ -28,7 +29,7 @@ export function Component() {
 export function Profile(profile: string) {
     return function (target) {
         if (!ComponentUtil.isComponent(target)) {
-            throw new Error('@Profile can be set only on @Component!');
+            throw new DecoratorUsageError(`@Profile can be set only on @Component! (${target.name})`);
         }
         ComponentUtil.getComponentData(target).profile = profile;
     };

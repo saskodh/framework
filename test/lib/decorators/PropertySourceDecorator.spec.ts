@@ -3,6 +3,7 @@ import { spy, stub } from "sinon";
 import { Configuration, ConfigurationUtil } from "../../../src/lib/decorators/ConfigurationDecorator";
 import { PropertySource, PropertySourceUtil } from "../../../src/lib/decorators/PropertySourceDecorator";
 import { RequireUtils } from "../../../src/lib/helpers/RequireUtils";
+import { DecoratorUsageError } from "../../../src/lib/errors/DecoratorUsageError";
 
 describe('PropertySourceDecorator', function () {
 
@@ -29,7 +30,7 @@ describe('PropertySourceDecorator', function () {
         class A {}
 
         // when / then
-        expect(PropertySource('somePath').bind(this, A)).to.throw(Error);
+        expect(PropertySource('somePath').bind(this, A)).to.throw(DecoratorUsageError);
     });
 });
 

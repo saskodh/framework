@@ -1,26 +1,27 @@
 import * as _ from "lodash";
 import {expect} from 'chai';
 import {Preconditions} from "../../../../src/lib/helpers/validation/Preconditions";
+import { BadArgumentError } from "../../../../src/lib/errors/BadArgumentError";
 
 describe('Preconditions', function () {
 
     let assertDefinedPrecondition = function (argument?) {
         return function () {
             Preconditions.assertDefined(argument);
-        }
+        };
     };
 
     class MyClass {
         value: string;
     }
 
-    it('should throw if argument is undefined',function () {
+    it('should throw if argument is undefined', function () {
         // given
         let arg;
 
         // when / then
-        expect(assertDefinedPrecondition(arg)).to.throw(Error);
-        expect(assertDefinedPrecondition()).to.throw(Error);
+        expect(assertDefinedPrecondition(arg)).to.throw(BadArgumentError);
+        expect(assertDefinedPrecondition()).to.throw(BadArgumentError);
     });
 
     it('should not throw if argument is defined', function () {

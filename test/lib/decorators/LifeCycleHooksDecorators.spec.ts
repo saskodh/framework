@@ -5,6 +5,7 @@ import {
 import {
     PostConstruct, LifeCycleHooksUtil, PreDestroy
 } from "../../../src/lib/decorators/LifeCycleHooksDecorators";
+import { DecoratorUsageError } from "../../../src/lib/errors/DecoratorUsageError";
 
 describe('PostConstructDecorator', function () {
 
@@ -13,7 +14,7 @@ describe('PostConstructDecorator', function () {
         @Component()
         class A {
             @PostConstruct()
-            init () {}
+            init () {} // tslint:disable-line
         }
 
         // when
@@ -30,15 +31,15 @@ describe('PostConstructDecorator', function () {
             @Component()
             class A {
                 @PostConstruct()
-                init() {}
+                init() {} // tslint:disable-line
 
                 @PostConstruct()
-                initTwo() {}
+                initTwo() {} // tslint:disable-line
             }
         };
 
         // when / then
-        expect(createComponent).to.throw(Error);
+        expect(createComponent).to.throw(DecoratorUsageError);
     });
 });
 
@@ -49,7 +50,7 @@ describe('PreDestroyDecorator', function () {
         @Component()
         class A {
             @PreDestroy()
-            destroy () {}
+            destroy () {} // tslint:disable-line
         }
 
         // when
@@ -66,14 +67,14 @@ describe('PreDestroyDecorator', function () {
             @Component()
             class A {
                 @PreDestroy()
-                destroy() {}
+                destroy() {} // tslint:disable-line
 
                 @PreDestroy()
-                destroy2() {}
+                destroy2() {} // tslint:disable-line
             }
         };
 
         // when / then
-        expect(createComponent).to.throw(Error);
+        expect(createComponent).to.throw(DecoratorUsageError);
     });
 });

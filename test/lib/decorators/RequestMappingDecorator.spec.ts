@@ -5,6 +5,8 @@ import {
 } from "../../../src/lib/decorators/RequestMappingDecorator";
 import { View } from "../../../src/lib/decorators/ViewDecorator";
 import { stub } from "sinon";
+import { DecoratorUsageError } from "../../../src/lib/errors/DecoratorUsageError";
+import { BadArgumentError } from "../../../src/lib/errors/BadArgumentError";
 
 describe('RequestMappingDecorator', function () {
 
@@ -13,7 +15,7 @@ describe('RequestMappingDecorator', function () {
         @RequestMapping({path: '/path'})
         @Controller()
         class A {
-            method () {}
+            method () {} // tslint:disable-line
         }
 
         // when
@@ -31,7 +33,8 @@ describe('RequestMappingDecorator', function () {
         }
 
         // when / then
-        expect(RequestMapping({path: '/path', method: RequestMethod.GET}).bind(this, A, 'arg1')).to.throw(Error);
+        expect(RequestMapping({path: '/path', method: RequestMethod.GET}).bind(this, A, 'arg1'))
+            .to.throw(DecoratorUsageError);
     });
 
     describe('MethodDecorator', function() {
@@ -40,11 +43,12 @@ describe('RequestMappingDecorator', function () {
             // given
             @Controller()
             class A {
-                method () {}
+                method () {} // tslint:disable-line
             }
 
             // when / then
-            expect(RequestMapping({path: '/somePath'}).bind(this, A, 'method', A.prototype.method)).to.throw(Error);
+            expect(RequestMapping({path: '/somePath'}).bind(this, A, 'method', A.prototype.method))
+                .to.throw(BadArgumentError);
         });
 
         it('should add the route config as metadata', function () {
@@ -52,10 +56,10 @@ describe('RequestMappingDecorator', function () {
             @Controller()
             class A {
                 @RequestMapping({path: '/somePath', method: RequestMethod.OPTIONS})
-                method () {}
+                method () {} // tslint:disable-line
 
                 @RequestMapping({path: '/someOtherPath', method: RequestMethod.DELETE})
-                methodTwo () {}
+                methodTwo () {} // tslint:disable-line
             }
 
             // when
@@ -82,7 +86,7 @@ describe('RequestMappingDecorator', function () {
 
                 @RequestMapping({path: '/somePath', method: RequestMethod.GET})
                 @View()
-                method () {}
+                method () {} // tslint:disable-line
             }
 
             // when

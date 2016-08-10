@@ -1,3 +1,5 @@
+import { DecoratorUsageError } from "../errors/DecoratorUsageError";
+
 const LIFE_CYCLE_HOOKS_TOKEN = Symbol('life_cycle_hooks_token');
 
 export class LifeCycleHooksConfig {
@@ -13,7 +15,8 @@ export function PostConstruct() {
         let conf = LifeCycleHooksUtil.initIfDoesntExist(target);
         if (conf.postConstructMethod) {
             let errorParams = [conf.postConstructMethod, methodName].join(', ');
-            throw new Error(`@PostConstruct used on multiple methods within a component (${errorParams})`);
+            // tslint:disable-next-line
+            throw new DecoratorUsageError(`@PostConstruct used on multiple methods (${errorParams}) within a component`);
         }
         conf.postConstructMethod = methodName;
     };
@@ -27,7 +30,7 @@ export function PreDestroy() {
         let conf = LifeCycleHooksUtil.initIfDoesntExist(target);
         if (conf.preDestroyMethod) {
             let errorParams = [conf.preDestroyMethod, methodName].join(', ');
-            throw new Error(`@PreDestroy used on multiple methods within a component (${errorParams})`);
+            throw new DecoratorUsageError(`@PreDestroy used on multiple methods within a component (${errorParams})`);
         }
         conf.preDestroyMethod = methodName;
     };

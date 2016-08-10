@@ -6,6 +6,7 @@ import { Router } from "express";
 import * as _ from "lodash";
 import { LifeCycleHooksUtil } from "../decorators/LifeCycleHooksDecorators";
 import { ProcessHandler } from "../helpers/ProcessHandler";
+import { DecoratorUsageError } from "../errors/DecoratorUsageError";
 
 export class ApplicationContextState {
     static NOT_INITIALIZED = 'NOT_INITIALIZED';
@@ -133,7 +134,7 @@ export class ApplicationContext {
             if (postConstructMethod) {
                 let instance = this.injector.getComponent(componentData.classToken);
                 if (!_.isFunction(instance[postConstructMethod])) {
-                    throw new Error(`@PostConstruct is not on a method (${postConstructMethod})`);
+                    throw new DecoratorUsageError(`@PostConstruct is not on a method (${postConstructMethod})`);
                 }
                 let invocationResult = instance[postConstructMethod]();
                 postConstructInvocations.push(invocationResult);
@@ -150,7 +151,7 @@ export class ApplicationContext {
             if (preDestroyMethod) {
                 let instance = this.injector.getComponent(componentData.classToken);
                 if (!_.isFunction(instance[preDestroyMethod])) {
-                    throw new Error(`@PreDestroy is not on a method (${preDestroyMethod})`);
+                    throw new DecoratorUsageError(`@PreDestroy is not on a method (${preDestroyMethod})`);
                 }
                 let invocationResult = instance[preDestroyMethod]();
                 preDestroyInvocations.push(invocationResult);

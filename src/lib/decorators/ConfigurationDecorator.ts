@@ -1,6 +1,7 @@
 import { ComponentFactory } from "../di/ComponentFactory";
 import { PropertySourceUtil } from "./PropertySourceDecorator";
 import { ComponentScanUtil } from "./ComponentScanDecorator";
+import { DecoratorUsageError } from "../errors/DecoratorUsageError";
 
 const CONFIGURATION_HOLDER_TOKEN = Symbol('configuration_holder_token');
 
@@ -38,7 +39,7 @@ export class ConfigurationData {
 export function Configuration() {
     return function (target) {
         if (target[CONFIGURATION_HOLDER_TOKEN]) {
-            throw new Error('Duplicate @Configuration decorator');
+            throw new DecoratorUsageError(`Duplicate @Configuration decorator' (${target.name})`);
         }
         target[CONFIGURATION_HOLDER_TOKEN] = new ConfigurationData();
 
@@ -50,7 +51,7 @@ export class ConfigurationUtil {
 
     static getConfigurationData(target): ConfigurationData {
         if (!this.isConfigurationClass(target)) {
-            throw new Error('Given target is not a @Configuration class');
+            throw new Error(`${target.name} is not a @Configuration class`);
         }
         return target[CONFIGURATION_HOLDER_TOKEN];
     }

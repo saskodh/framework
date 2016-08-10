@@ -1,5 +1,6 @@
 import { ComponentUtil } from "./ComponentDecorator";
 import { TypeUtils } from "../helpers/TypeUtils";
+import { InjectionError } from "../errors/InjectionError";
 
 const INJECT_DECORATOR_TOKEN = Symbol('injector_decorator_token');
 
@@ -31,7 +32,7 @@ export function Inject(dependencyToken?: Symbol) {
             if (ComponentUtil.isComponent(type)) {
                 token = ComponentUtil.getClassToken(type);
             } else {
-                throw new Error('Cannot inject dependency which is not a @Component!');
+                throw new InjectionError(`Cannot inject dependency which is not a @Component! (${type.name})`);
             }
         }
         // NOTE assumption: if type not declared or any then type is Object and isArray is false

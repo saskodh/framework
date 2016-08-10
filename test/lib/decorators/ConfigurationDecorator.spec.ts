@@ -6,6 +6,7 @@ import {
 } from "../../../src/lib/decorators/ConfigurationDecorator";
 import { PropertySourceUtil } from "../../../src/lib/decorators/PropertySourceDecorator";
 import { ComponentScanUtil } from "../../../src/lib/decorators/ComponentScanDecorator";
+import { DecoratorUsageError } from "../../../src/lib/errors/DecoratorUsageError";
 
 describe('ConfigurationData', function () {
 
@@ -78,7 +79,7 @@ describe('ConfigurationDecorator', function () {
         };
 
         // when / then
-        expect(createConfiguration).to.throw(Error);
+        expect(createConfiguration).to.throw(DecoratorUsageError);
     });
 });
 

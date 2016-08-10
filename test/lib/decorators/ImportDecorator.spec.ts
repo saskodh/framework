@@ -2,6 +2,8 @@ import {expect} from "chai";
 import {Configuration, ConfigurationUtil} from "../../../src/lib/decorators/ConfigurationDecorator";
 import {Import} from "../../../src/lib/decorators/ImportDecorator";
 import "reflect-metadata";
+import { BadArgumentError } from "../../../src/lib/errors/BadArgumentError";
+import { DecoratorUsageError } from "../../../src/lib/errors/DecoratorUsageError";
 
 describe('ImportDecorator', function () {
 
@@ -46,5 +48,27 @@ describe('ImportDecorator', function () {
         expect(configurationDataAppConfig.properties.get('two')).to.be.eq('value2');
         expect(configurationDataAppConfig.properties.get('three')).to.be.eq('value1');
         expect(configurationDataAppConfig.properties.get('four')).to.be.eq('value2');
+    });
+
+    it('should throw when not on a configuration class', function () {
+        // given
+        @Configuration()
+        class A { }
+
+        class AppConfig {}
+
+        // when / then
+        expect(Import(A).bind(undefined, AppConfig)).to.throw(DecoratorUsageError);
+    });
+
+    it('should throw when non-configuration is passed', function () {
+        // given
+        class A { }
+
+        @Configuration()
+        class AppConfig {}
+
+        // when / then
+        expect(Import(A).bind(undefined, AppConfig)).to.throw(BadArgumentError);
     });
 });

@@ -8,6 +8,7 @@ import {
 } from "../../../src/lib/decorators/ConfigurationDecorator";
 import { ComponentScanUtil, ComponentScan } from "../../../src/lib/decorators/ComponentScanDecorator";
 import { RequireUtils } from "../../../src/lib/helpers/RequireUtils";
+import { DecoratorUsageError } from "../../../src/lib/errors/DecoratorUsageError";
 
 describe('ComponentScanDecorator', function () {
 
@@ -31,7 +32,7 @@ describe('ComponentScanDecorator', function () {
         class A {}
 
         // when / then
-        expect(ComponentScan('somePath').bind(null, A)).to.throw(Error);
+        expect(ComponentScan('somePath').bind(null, A)).to.throw(DecoratorUsageError);
     });
 });
 
