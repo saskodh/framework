@@ -3,6 +3,7 @@ import { ConfigurationUtil } from "./ConfigurationDecorator";
 import { GeneralUtils } from "../helpers/GeneralUtils";
 import {RequireUtils} from "../helpers/RequireUtils";
 import { DecoratorUsageError } from "../errors/DecoratorUsageError";
+import { DecoratorUtil } from "../helpers/DecoratorUtils";
 
 /**
  * A decorator for defining a JSON property source for the configuration properties.
@@ -12,8 +13,8 @@ import { DecoratorUsageError } from "../errors/DecoratorUsageError";
 export function PropertySource(path: string) {
     return function (target) {
         if (!ConfigurationUtil.isConfigurationClass(target)) {
-            // tslint:disable-next-line
-            throw new DecoratorUsageError(`@PropertySource can be used only on @Configuration classes! (${target.name})`);
+            let subject = DecoratorUtil.getSubjectName(Array.prototype.slice.call(arguments));
+            throw new DecoratorUsageError(`@PropertySource is allowed on @Configuration classes only! (${subject})`);
         }
         ConfigurationUtil.addPropertySourcePath(target, path);
     };

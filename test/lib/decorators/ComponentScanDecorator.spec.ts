@@ -29,10 +29,16 @@ describe('ComponentScanDecorator', function () {
 
     it('should throw when not on @Configuration', function () {
         // given
-        class A {}
+        class MyClass {
+            myProperty: string;
+            myFunction() {} // tslint:disable-line
+        }
 
         // when / then
-        expect(ComponentScan('somePath').bind(null, A)).to.throw(DecoratorUsageError);
+        expect(ComponentScan('somePath').bind(undefined, MyClass)).to.throw(DecoratorUsageError);
+        expect(ComponentScan('somePath').bind(undefined, MyClass, 'myFunction', MyClass.prototype.myFunction))
+            .to.throw(DecoratorUsageError);
+        expect(ComponentScan('somePath').bind(undefined, MyClass, 'myProperty')).to.throw(DecoratorUsageError);
     });
 });
 

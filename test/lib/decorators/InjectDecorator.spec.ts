@@ -3,11 +3,17 @@ import {
     Component, ComponentUtil
 } from "../../../src/lib/decorators/ComponentDecorator";
 import {
-    Inject, InjectUtil, Value, Autowire
+    Inject, InjectUtil, Value, Autowired
 } from "../../../src/lib/decorators/InjectionDecorators";
 import "reflect-metadata";
 import { Qualifier } from "../../../src/lib/decorators/QualifierDecorator";
 import { InjectionError } from "../../../src/lib/errors/InjectionError";
+import { DecoratorUsageError } from "../../../src/lib/errors/DecoratorUsageError";
+
+class MyClass {
+    myProperty: String;
+    myFunction() {} // tslint:disable-line
+}
 
 describe('InjectDecorator', function () {
 
@@ -112,9 +118,16 @@ describe('InjectDecorator', function () {
         // when / then
         expect(createComponent).to.throw(InjectionError);
     });
+
+    it('should throw error when used on non property', function () {
+        // given / when / then
+        expect(Inject().bind(undefined, MyClass)).to.throw(DecoratorUsageError);
+        expect(Inject().bind(undefined, MyClass, 'myFunction', MyClass.prototype.myFunction))
+            .to.throw(DecoratorUsageError);
+    });
 });
 
-describe('AutowireDecorator', function () {
+describe('AutowiredDecorator', function () {
 
     it('should add metadata', function () {
         // given
@@ -125,10 +138,10 @@ describe('AutowireDecorator', function () {
         @Component()
         class A {
 
-            @Autowire()
+            @Autowired()
             b1: B;
 
-            @Autowire()
+            @Autowired()
             b2: B;
         }
 
@@ -141,6 +154,13 @@ describe('AutowireDecorator', function () {
         expect(dependenciesA.get('b1').isArray).to.be.false;
         expect(dependenciesA.get('b2').token).to.be.eql(ComponentUtil.getClassToken(B));
         expect(dependenciesA.get('b2').isArray).to.be.false;
+    });
+
+    it('should throw error when used on non property', function () {
+        // given / when / then
+        expect(Autowired().bind(undefined, MyClass)).to.throw(DecoratorUsageError);
+        expect(Autowired().bind(undefined, MyClass, 'myFunction', MyClass.prototype.myFunction))
+            .to.throw(DecoratorUsageError);
     });
 });
 
@@ -161,6 +181,13 @@ describe('ValueDecorator', function () {
         // then
         expect(propertiesA.size).to.be.eq(1);
         expect(propertiesA.get('name')).to.be.eq('default.name');
+    });
+
+    it('should throw error when used on non property', function () {
+        // given / when / then
+        expect(Value('someKey').bind(undefined, MyClass)).to.throw(DecoratorUsageError);
+        expect(Value('someKey').bind(undefined, MyClass, 'myFunction', MyClass.prototype.myFunction))
+            .to.throw(DecoratorUsageError);
     });
 });
 

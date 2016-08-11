@@ -4,6 +4,7 @@ import {
     RequestMethod, RequestMappingUtil, RequestMapping
 } from "../../../src/lib/decorators/RequestMappingDecorator";
 import {View} from "../../../src/lib/decorators/ViewDecorator";
+import { DecoratorUsageError } from "../../../src/lib/errors/DecoratorUsageError";
 require('reflect-metadata');
 
 describe('ViewDecorator', function () {
@@ -14,15 +15,15 @@ describe('ViewDecorator', function () {
         class A {
 
             @RequestMapping({path: '/path1', method: RequestMethod.OPTIONS})
-            method () {}
+            method () {} // tslint:disable-line
 
             @View()
             @RequestMapping({path: '/path2', method: RequestMethod.DELETE})
-            methodTwo () {}
+            methodTwo () {} // tslint:disable-line
 
             @View('someView')
             @RequestMapping({path: '/path3', method: RequestMethod.PUT})
-            methodThree () {}
+            methodThree () {} // tslint:disable-line
         }
 
         // when
@@ -49,7 +50,7 @@ describe('ViewDecorator', function () {
 
             @RequestMapping({path: '/path', method: RequestMethod.PATCH})
             @View('someOtherView')
-            method () {}
+            method () {} // tslint:disable-line
         }
 
         // when
@@ -58,5 +59,17 @@ describe('ViewDecorator', function () {
 
         // then
         expect(route1.view).to.be.eq('someOtherView');
+    });
+
+    it('should throw when not on method', function () {
+        // given
+        class MyClass {
+            myProperty: string;
+            myFunction() {} // tslint:disable-line
+        }
+
+        // when / then
+        expect(View().bind(undefined, MyClass)).to.throw(DecoratorUsageError);
+        expect(View().bind(undefined, MyClass, 'myProperty')).to.throw(DecoratorUsageError);
     });
 });

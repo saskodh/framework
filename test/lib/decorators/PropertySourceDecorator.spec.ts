@@ -27,10 +27,16 @@ describe('PropertySourceDecorator', function () {
 
     it('should throw when not on @Configuration', function () {
         // given
-        class A {}
+        class MyClass {
+            myProperty: string;
+            myFunction() {} // tslint:disable-line
+        }
 
         // when / then
-        expect(PropertySource('somePath').bind(this, A)).to.throw(DecoratorUsageError);
+        expect(PropertySource('somePath').bind(undefined, MyClass)).to.throw(DecoratorUsageError);
+        expect(PropertySource('somePath').bind(undefined, MyClass, 'myFunction', MyClass.prototype.myFunction))
+            .to.throw(DecoratorUsageError);
+        expect(PropertySource('somePath').bind(undefined, MyClass, 'myProperty')).to.throw(DecoratorUsageError);
     });
 });
 

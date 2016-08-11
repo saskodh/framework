@@ -63,7 +63,8 @@ export function RequestMapping(config: RequestMappingConfig) {
             // TODO: refactor when new options are added on @RequestMapping for classes
             target[CLASS_ROUTER_CONFIG] = config.path;
         } else {
-            throw new DecoratorUsageError(`@RequestMapping can only be used on classes and methods! (${target.name})`);
+            let subjectName = DecoratorUtil.getSubjectName(Array.prototype.slice.call(arguments));
+            throw new DecoratorUsageError(`@RequestMapping can only be used on classes and methods! (${subjectName})`);
         }
     };
 }

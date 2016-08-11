@@ -12,7 +12,7 @@ export class DecoratorType {
 
 export class DecoratorUtil {
 
-    static getType(args): string {
+    static getType(args: Array<any>): string {
         if (args.length === 1) {
             return DecoratorType.CLASS;
         } else if (args.length === 2) {
@@ -29,7 +29,17 @@ export class DecoratorUtil {
         }
     }
 
-    static isType(decoratorType, args): boolean {
+    static isType(decoratorType: DecoratorType, args: Array<any>): boolean {
         return this.getType(args) === decoratorType;
+    }
+
+    static getSubjectName (args: Array<any>) {
+        if (this.isType(DecoratorType.CLASS, args)) {
+            return args[0].name;
+        }
+        if (this.isType(DecoratorType.METHOD, args)) {
+            return `${args[0].constructor.name}.${args[1]}()`;
+        }
+        return [args[0].constructor.name, args[1]].join('.');
     }
 }

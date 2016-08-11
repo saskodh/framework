@@ -7,7 +7,7 @@ export {ComponentScan} from "./lib/decorators/ComponentScanDecorator";
 export {Import} from "./lib/decorators/ImportDecorator";
 export {Configuration} from "./lib/decorators/ConfigurationDecorator";
 export {Controller} from "./lib/decorators/ControllerDecorator";
-export {Inject, Value, Autowire} from "./lib/decorators/InjectionDecorators";
+export {Inject, Value, Autowired} from "./lib/decorators/InjectionDecorators";
 export {PostConstruct, PreDestroy} from "./lib/decorators/LifeCycleHooksDecorators"
 export {Profile} from "./lib/decorators/ComponentDecorator";
 export {PropertySource} from "./lib/decorators/PropertySourceDecorator";

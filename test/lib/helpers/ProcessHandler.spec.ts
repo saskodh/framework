@@ -1,6 +1,7 @@
 import {expect} from "chai";
 import {stub} from "sinon";
 import {ProcessHandler} from "../../../src/lib/helpers/ProcessHandler";
+import { BadArgumentError } from "../../../src/lib/errors/BadArgumentError";
 
 describe('ProcessHandler', function () {
 
@@ -73,11 +74,11 @@ describe('ProcessHandler', function () {
         let processHandler = new ProcessHandler();
 
         // when / then
-        expect(processHandler.registerOnExitListener.bind(processHandler, 5)).to.throw(Error);
-        expect(processHandler.registerOnExitListener.bind(processHandler, {val: 'name'})).to.throw(Error);
-        expect(processHandler.registerOnExitListener.bind(processHandler, undefined)).to.throw(Error);
-        expect(processHandler.registerOnExitListener.bind(processHandler, true)).to.throw(Error);
-        expect(processHandler.registerOnExitListener.bind(processHandler, 'chocolates')).to.throw(Error);
+        expect(processHandler.registerOnExitListener.bind(processHandler, 5)).to.throw(BadArgumentError);
+        expect(processHandler.registerOnExitListener.bind(processHandler, {val: 'name'})).to.throw(BadArgumentError);
+        expect(processHandler.registerOnExitListener.bind(processHandler, undefined)).to.throw(BadArgumentError);
+        expect(processHandler.registerOnExitListener.bind(processHandler, true)).to.throw(BadArgumentError);
+        expect(processHandler.registerOnExitListener.bind(processHandler, 'chocolates')).to.throw(BadArgumentError);
     });
 
     it('should return singleton instance on getInstance()', function () {

@@ -5,14 +5,13 @@ import {
 } from "../../../src/lib/processors/ComponentDefinitionPostProcessor";
 import { ComponentUtil } from "../../../src/lib/decorators/ComponentDecorator";
 
+@ComponentDefinitionPostProcessor()
+class A {}
+
 describe('ComponentDefinitionPostProcessor', function () {
 
     it('should add metadata', function () {
-        // given
-        @ComponentDefinitionPostProcessor()
-        class A {}
-
-        // when
+        // given / when
         let isDefinitionPostProcessor = A[COMPONENT_DEFINITION_POST_PROCESSOR_DECORATOR_TOKEN];
 
         // then

@@ -8,6 +8,11 @@ import {Controller} from "../../../src/lib/decorators/ControllerDecorator";
 import {Interceptor} from "../../../src/lib/interceptors/InterceptorDecorator";
 import { DecoratorUsageError } from "../../../src/lib/errors/DecoratorUsageError";
 
+class MyClass {
+    myProperty: string;
+    myFunction() {} // tslint:disable-line
+}
+
 describe('ComponentDecorator', function () {
 
     it('should add metadata', function () {
@@ -24,6 +29,13 @@ describe('ComponentDecorator', function () {
         expect(componentData.aliasTokens).to.be.eql([]);
         expect(componentData.injectionData).to.be.instanceOf(InjectionData);
         expect(componentData.profile).to.be.undefined;
+    });
+
+    it('should throw when not on a class', function () {
+        // given / when / then
+        expect(Component().bind(undefined, MyClass, 'myFunction', MyClass.prototype.myFunction))
+            .to.throw(DecoratorUsageError);
+        expect(Component().bind(undefined, MyClass, 'myProperty')).to.throw(DecoratorUsageError);
     });
 });
 
@@ -43,11 +55,11 @@ describe('ProfileDecorator', function () {
     });
 
     it('should throw error when @Profile is used on non Component', function () {
-        // given
-        class B {}
-
-        // when / then
-        expect(Profile('dev').bind(this, B)).to.throw(DecoratorUsageError);
+        // given / when / then
+        expect(Profile('dev').bind(undefined, MyClass)).to.throw(DecoratorUsageError);
+        expect(Profile('dev').bind(undefined, MyClass, 'myFunction', MyClass.prototype.myFunction))
+            .to.throw(DecoratorUsageError);
+        expect(Profile('dev').bind(undefined, MyClass, 'myProperty')).to.throw(DecoratorUsageError);
     });
 });
 

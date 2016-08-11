@@ -24,9 +24,15 @@ describe('QualifierDecorator', function () {
 
     it('should throw error if target is not a component', function () {
         // given
-        class B {}
+        class MyClass {
+            myProperty: string;
+            myFunction() {} // tslint:disable-line
+        }
 
         // when / then
-        expect(Qualifier(Symbol('token')).bind(this, B)).to.throw(DecoratorUsageError);
+        expect(Qualifier(Symbol('token')).bind(undefined, MyClass)).to.throw(DecoratorUsageError);
+        expect(Qualifier(Symbol('token')).bind(undefined, MyClass, 'myFunction', MyClass.prototype.myFunction))
+            .to.throw(DecoratorUsageError);
+        expect(Qualifier(Symbol('token')).bind(undefined, MyClass, 'myProperty')).to.throw(DecoratorUsageError);
     });
 });

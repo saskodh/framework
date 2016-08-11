@@ -42,18 +42,6 @@ describe('ConfigurationData', function () {
 
         stubOnLoadAllComponents.restore();
     });
-
-    it('should throw error when @Configuration is used more than once on the same class', function () {
-        // given
-        let createConfiguration = () => {
-            @Configuration()
-            @Configuration()
-            class A {}
-        };
-
-        // when / then
-        expect(createConfiguration).to.throw(Error);
-    });
 });
 
 describe('ConfigurationDecorator', function () {
@@ -80,6 +68,19 @@ describe('ConfigurationDecorator', function () {
 
         // when / then
         expect(createConfiguration).to.throw(DecoratorUsageError);
+    });
+
+    it('should throw when not on a class', function () {
+        // given
+        class MyClass {
+            myProperty: string;
+            myFunction() {} // tslint:disable-line
+        }
+
+        // when / then
+        expect(Configuration().bind(undefined, MyClass, 'myFunction', MyClass.prototype.myFunction))
+            .to.throw(DecoratorUsageError);
+        expect(Configuration().bind(undefined, MyClass, 'myProperty')).to.throw(DecoratorUsageError);
     });
 });
 

@@ -7,6 +7,11 @@ import {
 } from "../../../src/lib/decorators/LifeCycleHooksDecorators";
 import { DecoratorUsageError } from "../../../src/lib/errors/DecoratorUsageError";
 
+class MyClass {
+    myProperty: string;
+    myFunction() {} // tslint:disable-line
+}
+
 describe('PostConstructDecorator', function () {
 
     it('should add metadata', function () {
@@ -23,6 +28,12 @@ describe('PostConstructDecorator', function () {
         // then
         expect(config.postConstructMethod).to.eql('init');
         expect(config.preDestroyMethod).to.be.undefined;
+    });
+
+    it('should throw when not on method', function () {
+        // given / when / then
+        expect(PostConstruct().bind(undefined, MyClass)).to.throw(DecoratorUsageError);
+        expect(PostConstruct().bind(undefined, MyClass, 'myProperty')).to.throw(DecoratorUsageError);
     });
 
     it('should throw error if @PostConstruct is used on more than one method', function () {
@@ -59,6 +70,12 @@ describe('PreDestroyDecorator', function () {
         // then
         expect(config.preDestroyMethod).to.eql('destroy');
         expect(config.postConstructMethod).to.be.undefined;
+    });
+
+    it('should throw when not on method', function () {
+        // given / when / then
+        expect(PreDestroy().bind(undefined, MyClass)).to.throw(DecoratorUsageError);
+        expect(PreDestroy().bind(undefined, MyClass, 'myProperty')).to.throw(DecoratorUsageError);
     });
 
     it('should throw error if @PreDestroy is used on more than one method', function () {

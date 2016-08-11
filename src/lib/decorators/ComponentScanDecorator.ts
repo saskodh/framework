@@ -5,6 +5,7 @@ import { ConfigurationData, ConfigurationUtil } from "./ConfigurationDecorator";
 import { ComponentUtil } from "./ComponentDecorator";
 import { RequireUtils } from "../helpers/RequireUtils";
 import { DecoratorUsageError } from "../errors/DecoratorUsageError";
+import { DecoratorUtil } from "../helpers/DecoratorUtils";
 
 /**
  *A decorator for setting up project files to be component-scanned.
@@ -14,7 +15,8 @@ import { DecoratorUsageError } from "../errors/DecoratorUsageError";
 export function ComponentScan(path) {
     return function (target) {
         if (!ConfigurationUtil.isConfigurationClass(target)) {
-            throw new DecoratorUsageError(`@ComponentScan is allowed on @Configuration classes only! (${target.name})`);
+            let subjectName = DecoratorUtil.getSubjectName(Array.prototype.slice.call(arguments));
+            throw new DecoratorUsageError(`@ComponentScan is allowed on @Configuration classes only! (${subjectName})`);
         }
         ConfigurationUtil.addComponentScanPath(target, path);
     };

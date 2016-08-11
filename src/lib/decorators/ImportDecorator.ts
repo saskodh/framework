@@ -1,6 +1,7 @@
 import { ConfigurationUtil } from "./ConfigurationDecorator";
 import { BadArgumentError } from "../errors/BadArgumentError";
 import { DecoratorUsageError } from "../errors/DecoratorUsageError";
+import { DecoratorUtil } from "../helpers/DecoratorUtils";
 
 /**
  * Decorator used for composing configuration classes by importing other configuration classes.
@@ -11,8 +12,8 @@ import { DecoratorUsageError } from "../errors/DecoratorUsageError";
 export function Import(...configurationClasses) {
     return function (targetConfigurationClass) {
         if (!ConfigurationUtil.isConfigurationClass(targetConfigurationClass)) {
-            // tslint:disable-next-line
-            throw new DecoratorUsageError(`@Import is allowed on @Configuration classes only! (${targetConfigurationClass.name})`);
+            let subjectName = DecoratorUtil.getSubjectName(Array.prototype.slice.call(arguments));
+            throw new DecoratorUsageError(`@Import is allowed on @Configuration classes only! (${subjectName})`);
         }
         let targetConfigurationData = ConfigurationUtil.getConfigurationData(targetConfigurationClass);
         for (let configurationClass of configurationClasses) {

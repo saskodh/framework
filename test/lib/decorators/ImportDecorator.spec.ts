@@ -55,10 +55,16 @@ describe('ImportDecorator', function () {
         @Configuration()
         class A { }
 
-        class AppConfig {}
+        class MyClass {
+            myProperty: string;
+            myFunction() {} // tslint:disable-line
+        }
 
         // when / then
-        expect(Import(A).bind(undefined, AppConfig)).to.throw(DecoratorUsageError);
+        expect(Import(A).bind(undefined, MyClass)).to.throw(DecoratorUsageError);
+        expect(Import(A).bind(undefined, MyClass, 'myFunction', MyClass.prototype.myFunction))
+            .to.throw(DecoratorUsageError);
+        expect(Import(A).bind(undefined, MyClass, 'myProperty')).to.throw(DecoratorUsageError);
     });
 
     it('should throw when non-configuration is passed', function () {
@@ -70,5 +76,6 @@ describe('ImportDecorator', function () {
 
         // when / then
         expect(Import(A).bind(undefined, AppConfig)).to.throw(BadArgumentError);
+        expect(Import('someString').bind(undefined, AppConfig)).to.throw(BadArgumentError);
     });
 });

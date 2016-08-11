@@ -2,6 +2,7 @@ import { ComponentFactory } from "../di/ComponentFactory";
 import { PropertySourceUtil } from "./PropertySourceDecorator";
 import { ComponentScanUtil } from "./ComponentScanDecorator";
 import { DecoratorUsageError } from "../errors/DecoratorUsageError";
+import { DecoratorUtil, DecoratorType } from "../helpers/DecoratorUtils";
 
 const CONFIGURATION_HOLDER_TOKEN = Symbol('configuration_holder_token');
 
@@ -38,6 +39,10 @@ export class ConfigurationData {
 
 export function Configuration() {
     return function (target) {
+        if (!DecoratorUtil.isType(DecoratorType.CLASS, Array.prototype.slice.call(arguments))) {
+            let subjectName = DecoratorUtil.getSubjectName(Array.prototype.slice.call(arguments));
+            throw new DecoratorUsageError(`@Configuration can be set only on classes! (${subjectName})`);
+        }
         if (target[CONFIGURATION_HOLDER_TOKEN]) {
             throw new DecoratorUsageError(`Duplicate @Configuration decorator' (${target.name})`);
         }
@@ -51,7 +56,8 @@ export class ConfigurationUtil {
 
     static getConfigurationData(target): ConfigurationData {
         if (!this.isConfigurationClass(target)) {
-            throw new Error(`${target.name} is not a @Configuration class`);
+            let subjectName = DecoratorUtil.getSubjectName(Array.prototype.slice.call(arguments));
+            throw new Error(`${subjectName} is not a @Configuration class`);
         }
         return target[CONFIGURATION_HOLDER_TOKEN];
     }
