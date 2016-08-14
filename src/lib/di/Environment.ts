@@ -16,9 +16,9 @@ export class Environment {
     private activeProfiles: Array<string>;
 
     constructor() {
-        this.processProperties = new Map<string, string>();
-        this.nodeProperties = new Map<string, string>();
-        this.processEnvProperties = new Map<string, string>();
+        this.processProperties = ProcessHandler.getProcessProperties();
+        this.nodeProperties = ProcessHandler.getNodeProperties();
+        this.processEnvProperties = ProcessHandler.getEnvironmentProperties();
         this.applicationProperties = new Map<string, string>();
         this.activeProfiles = [];
     }
@@ -71,19 +71,7 @@ export class Environment {
         return this.getProperty(this.DEFAULT_PROFILES_PROPERTY_KEY).split(",");
     }
 
-    private setProcessProperties() { // tslint:disable-line
-        this.processProperties = ProcessHandler.getInstance().getProcessProperties();
-    }
-
-    private setNodeProperties() { // tslint:disable-line
-        this.nodeProperties = ProcessHandler.getInstance().getNodeProperties();
-    }
-
-    private setEnvironmentProperties() { // tslint:disable-line
-        this.processEnvProperties = ProcessHandler.getInstance().getEnvironmentProperties();
-    }
-
-    setActiveProfiles(...activeProfiles: Array<string>) { // tslint:disable-line
+    setActiveProfiles(...activeProfiles: Array<string>) {
         this.activeProfiles.push(...activeProfiles);
         if (!_.isUndefined(this.getProperty(this.ACTIVE_PROFILES_PROPERTY_KEY))) {
             this.activeProfiles.push(...this.getProperty(this.ACTIVE_PROFILES_PROPERTY_KEY).split(','));
@@ -91,7 +79,7 @@ export class Environment {
         this.activeProfiles = _.uniq(this.activeProfiles);
     }
 
-    private setApplicationProperties(propertySourcePaths: Array<ProfiledPath>) { // tslint:disable-line
+    setApplicationProperties(propertySourcePaths: Array<ProfiledPath>) {
         let isActiveProfilesPropertySet = (!_.isUndefined(this.getProperty(this.ACTIVE_PROFILES_PROPERTY_KEY)));
         let viablePaths = _.map(_.filter(propertySourcePaths, (profiledPath: ProfiledPath) =>
                 (profiledPath.profiles.length === 0 || this.acceptsProfiles(...profiledPath.profiles))),

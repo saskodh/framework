@@ -9,9 +9,33 @@ describe('Environment', function () {
 
     let environment;
     let localEnvironment;
+
     beforeEach(() => {
         environment = new Environment();
         localEnvironment = <any> environment;
+    });
+
+    afterEach(() => localEnvironment.properties = undefined);
+
+    it('should initialize correctly', () => {
+        // given
+        let stubOnGetProcessProperties = stub(ProcessHandler, 'getProcessProperties').returns('process props');
+        let stubOnGetNodeProperties = stub(ProcessHandler, 'getNodeProperties').returns('node props');
+        let stubOnGetEnvironmentProperties = stub(ProcessHandler, 'getEnvironmentProperties').returns('env props');
+
+        // when
+        environment = new Environment();
+        localEnvironment = <any> environment;
+
+        // then
+        expect(localEnvironment.processProperties).to.equal('process props');
+        expect(localEnvironment.nodeProperties).to.equal('node props');
+        expect(localEnvironment.processEnvProperties).to.equal('env props');
+
+        // clean-up
+        stubOnGetProcessProperties.restore();
+        stubOnGetNodeProperties.restore();
+        stubOnGetEnvironmentProperties.restore();
     });
 
     it('should get property', function () {
@@ -65,8 +89,6 @@ describe('Environment', function () {
 
         stubOnGetProperty.restore();
     });
-
-    afterEach(() => {localEnvironment.properties = undefined; });
 
     it('should get required property', function () {
         // given
@@ -130,52 +152,6 @@ describe('Environment', function () {
         expect(stubOnGetProperty.calledWith(localEnvironment.DEFAULT_PROFILES_PROPERTY_KEY)).to.be.true;
 
         stubOnGetProperty.restore();
-    });
-
-    it('should set process properties', function () {
-        // given
-        let map = new Map<string, string>();
-        map.set('key', 'val');
-        let stubOnGetProcessProperties = stub(ProcessHandler.getInstance(), 'getProcessProperties').returns(map);
-
-        // when
-        localEnvironment.setProcessProperties();
-
-        // then
-        expect(localEnvironment.processProperties).to.equal(map);
-
-        stubOnGetProcessProperties.restore();
-    });
-
-    it('should set node properties', function () {
-        // given
-        let map = new Map<string, string>();
-        map.set('key', 'val');
-        let stubOnGetNodeProperties = stub(ProcessHandler.getInstance(), 'getNodeProperties').returns(map);
-
-        // when
-        localEnvironment.setNodeProperties();
-
-        // then
-        expect(localEnvironment.nodeProperties).to.equal(map);
-
-        stubOnGetNodeProperties.restore();
-    });
-
-    it('should set environment properties', function () {
-        // given
-        let map = new Map<string, string>();
-        map.set('key', 'val');
-        let stubOnGetEnvironmentProperties =
-            stub(ProcessHandler.getInstance(), 'getEnvironmentProperties').returns(map);
-
-        // when
-        localEnvironment.setEnvironmentProperties();
-
-        // then
-        expect(localEnvironment.processEnvProperties).to.equal(map);
-
-        stubOnGetEnvironmentProperties.restore();
     });
 
     it('should set active profiles', function () {

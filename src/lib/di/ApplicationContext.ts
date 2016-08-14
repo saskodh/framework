@@ -28,13 +28,7 @@ export class ApplicationContext {
         this.injector = new Injector();
         this.dispatcher = new Dispatcher();
         this.configurationData = ConfigurationUtil.getConfigurationData(configurationClass);
-        this.environment = new Environment();
-        (<any> this.environment).setProcessProperties();
-        (<any> this.environment).setNodeProperties();
-        (<any> this.environment).setEnvironmentProperties();
-        (<any> this.environment).setActiveProfiles(...this.configurationData.activeProfiles);
-        (<any> this.environment).setApplicationProperties(this.configurationData.propertySourcePaths);
-        this.injector.register(ComponentUtil.getComponentData(Environment).classToken, this.environment);
+        this.initializeEnvironment();
         this.configurationData.loadAllComponents(this.environment);
     }
 
@@ -180,6 +174,13 @@ export class ApplicationContext {
             }
             return true;
         });
+    }
+
+    private initializeEnvironment() {
+        this.environment = new Environment();
+        this.environment.setActiveProfiles(...this.configurationData.activeProfiles);
+        this.environment.setApplicationProperties(this.configurationData.propertySourcePaths);
+        this.injector.register(ComponentUtil.getComponentData(Environment).classToken, this.environment);
     }
 
     private verifyContextReady() {

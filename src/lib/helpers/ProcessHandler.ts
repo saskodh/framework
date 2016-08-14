@@ -22,20 +22,7 @@ export class ProcessHandler {
         return this.instance;
     }
 
-    registerOnExitListener(callback: Function) {
-        if (!_.isFunction(callback)) {
-            throw new Error('Passed callback must be a function!');
-        }
-
-        this.onExitListeners.push(callback);
-        return () => {
-            _.remove(this.onExitListeners, function (val) {
-                return val === callback;
-            });
-        };
-    }
-
-    getProcessProperties(): Map<string, string> {
+    static getProcessProperties(): Map<string, string> {
         let result = new Map<string, string>();
         process.argv.forEach((arg: string, index) => {
             if (index === 0) {
@@ -56,7 +43,7 @@ export class ProcessHandler {
         return result;
     }
 
-    getNodeProperties(): Map<string, string> {
+    static getNodeProperties(): Map<string, string> {
         let result = new Map<string, string>();
         process.execArgv.forEach((arg: string) => {
             if (arg.includes('=')) {
@@ -69,8 +56,21 @@ export class ProcessHandler {
         return result;
     }
 
-    getEnvironmentProperties(): Map<string, string> {
+    static getEnvironmentProperties(): Map<string, string> {
         return GeneralUtils.flattenObject(process.env);
+    }
+
+    registerOnExitListener(callback: Function) {
+        if (!_.isFunction(callback)) {
+            throw new Error('Passed callback must be a function!');
+        }
+
+        this.onExitListeners.push(callback);
+        return () => {
+            _.remove(this.onExitListeners, function (val) {
+                return val === callback;
+            });
+        };
     }
 
     private registerProcessExitEvents() {

@@ -74,12 +74,11 @@ describe('ProcessHandler', function () {
 
     it('should get process properties', function () {
         // given
-        let processHandler = new ProcessHandler();
         let stubOnProcessArgv = stub(process.argv, 'forEach', (callback) =>
             ['nodePath', 'entryPath', 'arg1', 'arg2=val'].forEach(callback));
 
         // when
-        let result = processHandler.getProcessProperties();
+        let result = ProcessHandler.getProcessProperties();
 
         // then
         expect(result.size).to.eql(4);
@@ -93,12 +92,11 @@ describe('ProcessHandler', function () {
 
     it('should get node properties', function () {
         // given
-        let processHandler = new ProcessHandler();
         let stubOnProcessExecArgv = stub(process.execArgv, 'forEach', (callback) =>
             ['arg1', 'arg2=val'].forEach(callback));
 
         // when
-        let result = processHandler.getNodeProperties();
+        let result = ProcessHandler.getNodeProperties();
 
         // then
         expect(result.size).to.eql(2);
@@ -110,14 +108,13 @@ describe('ProcessHandler', function () {
 
     it('should get environment properties', function () {
         // given
-        let processHandler = new ProcessHandler();
         let map = new Map();
         map.set('key1', 'val1');
         map.set('key2', 'val2');
         let stubOnFlattenObject = stub(GeneralUtils, 'flattenObject').returns(map);
 
         // when
-        let result = processHandler.getEnvironmentProperties();
+        let result = ProcessHandler.getEnvironmentProperties();
 
         // then
         expect(result).to.equal(map);

@@ -49,9 +49,6 @@ describe('ApplicationContext', function () {
 
     it('should initialize properly', function () {
         // given
-        let stubOnSetProcessProperties = stub(Environment.prototype, 'setProcessProperties');
-        let stubOnSetNodeProperties = stub(Environment.prototype, 'setNodeProperties');
-        let stubOnSetEnvironmentProperties = stub(Environment.prototype, 'setEnvironmentProperties');
         let stubOnSetActiveProfiles = stub(Environment.prototype, 'setActiveProfiles');
         let stubOnSetApplicationProperties = stub(Environment.prototype, 'setApplicationProperties');
         let stubOnRegister = stub(Injector.prototype, 'register');
@@ -67,9 +64,6 @@ describe('ApplicationContext', function () {
         expect(localAppContext.configurationData).to.be.instanceOf(ConfigurationData);
         expect(localAppContext.environment).to.be.instanceOf(Environment);
 
-        expect(stubOnSetProcessProperties.calledOnce).to.be.true;
-        expect(stubOnSetNodeProperties.calledOnce).to.be.true;
-        expect(stubOnSetEnvironmentProperties.calledOnce).to.be.true;
         expect(stubOnSetActiveProfiles.calledOnce).to.be.true;
         expect(stubOnSetActiveProfiles.calledWith(...localAppContext.configurationData.activeProfiles)).to.be.true;
         expect(stubOnSetApplicationProperties.calledOnce).to.be.true;
@@ -80,13 +74,10 @@ describe('ApplicationContext', function () {
             .to.eql([[ComponentUtil.getComponentData(Environment).classToken, localAppContext.environment]]);
         expect(stubOnLoadAllComponents.calledOnce).to.be.true;
 
-        assert.callOrder(stubOnSetProcessProperties, stubOnSetNodeProperties, stubOnSetEnvironmentProperties,
-            stubOnSetActiveProfiles, stubOnSetApplicationProperties, stubOnRegister, stubOnLoadAllComponents);
+        assert.callOrder(stubOnSetActiveProfiles, stubOnSetApplicationProperties, stubOnRegister,
+            stubOnLoadAllComponents);
 
         // cleanup
-        stubOnSetProcessProperties.restore();
-        stubOnSetNodeProperties.restore();
-        stubOnSetEnvironmentProperties.restore();
         stubOnSetActiveProfiles.restore();
         stubOnSetApplicationProperties.restore();
         stubOnRegister.restore();
