@@ -1,7 +1,6 @@
 import * as _ from "lodash";
 import { Router } from "express-serve-static-core";
 import { OrderUtil } from "../decorators/OrderDecorator";
-import { Interceptor } from "../decorators/InterceptorDecorator";
 import { RouterConfigItem } from "../decorators/RequestMappingDecorator";
 
 /**
@@ -23,7 +22,7 @@ export class RouterConfigurer {
      * Registers an interceptor.
      * @param instance instance of the interceptor
      * */
-    registerInterceptor(instance: Interceptor) {
+    registerInterceptor(instance) {
         this.interceptors.push(instance);
     }
 
@@ -33,16 +32,7 @@ export class RouterConfigurer {
      * @param handler the instance responsible for handling the route
      * */
     registerHandler(route: RouterConfigItem, handler) {
-        console.log(`Registering route. Path: '${route.requestConfig.path}', method: ${route.requestConfig.method}.`);
-        this.router[route.requestConfig.method](route.requestConfig.path, this.wrap(async (request, response, next) => {
-            let result = await handler[route.methodHandler](request, response);
-            // TODO #3 saskodh: Check whether is more convenient to store in the request zone or pass on next
-            response.$$frameworkData = {
-                view: route.view,
-                model: result
-            };
-            next();
-        }));
+        this.routeHandlers.set(route, handler);
     }
 
     /**
@@ -55,21 +45,20 @@ export class RouterConfigurer {
     }
 
     private configureMiddlewares() {
-        // TODO #28: bug route handlers are still executed before preHandlers
         this.router.use(this.wrap(this.preHandler.bind(this)));
         // NOTE: we will have our middleware handler when we drop the dependency to express
         // That would require the dispatching by path to be implemented on our side
         this.registerRouteHandlers();
         this.router.use(this.wrap(this.postHandler.bind(this)));
-        this.router.use(this.resolver.bind(this));
+        this.router.use(this.wrap(this.resolver.bind(this)));
     }
 
     private registerRouteHandlers() {
         for (let [route, handler] of this.routeHandlers.entries()) {
             let httpMethod = route.requestConfig.method;
             let path = route.requestConfig.path;
+            console.log(`Registering route. Path: '${path}', method: ${httpMethod}.`);
 
-            // console.log(`Registering route. Path: '${path}', method: ${httpMethod}.`);
             this.router[httpMethod](path, this.wrap(async(request, response, next) => {
                 let result = await handler[route.methodHandler](request, response);
                 // TODO #3 saskodh: Check whether is more convenient to store in the request zone or pass on next
@@ -83,10 +72,22 @@ export class RouterConfigurer {
     }
 
     private async preHandler(request, response, next) {
+        response.on('finish', async () => {
+            for (let i = this.interceptors.length - 1; i >= 0; i -= 1) {
+                let interceptor = this.interceptors[i];
+                if (_.isFunction(interceptor.afterCompletion)) {
+                    await interceptor.afterCompletion(request, response);
+                }
+            }
+        });
+
         for (let i = 0; i < this.interceptors.length; i += 1) {
             let interceptor = this.interceptors[i];
             if (_.isFunction(interceptor.preHandle)) {
-                await interceptor.preHandle(request, response);
+                // NOTE: when the the preHandle function returns nothing the middleware chain is not broken
+                if (await interceptor.preHandle(request, response) === false) {
+                    return;
+                }
             }
         }
         next();
@@ -103,9 +104,9 @@ export class RouterConfigurer {
         next();
     }
 
-    private resolver(request, response) {
+    private async resolver(request, response) {
         let handlingResult = response.$$frameworkData;
-        if (handlingResult) {
+        if (handlingResult && response.finished === false) {
             if (_.isUndefined(handlingResult.view)) {
                 response.json(handlingResult.model);
             } else {
