@@ -4,15 +4,18 @@ import {
     Configuration, ConfigurationUtil,
     ConfigurationData
 } from "../../../src/lib/decorators/ConfigurationDecorator";
-import { Component, ComponentUtil, Profile } from "../../../src/lib/decorators/ComponentDecorator";
+import { Component, ComponentUtil } from "../../../src/lib/decorators/ComponentDecorator";
 import { Controller } from "../../../src/lib/decorators/ControllerDecorator";
 import { Qualifier } from "../../../src/lib/decorators/QualifierDecorator";
 import { Router } from "express";
 import { Injector } from "../../../src/lib/di/Injector";
 import { Dispatcher } from "../../../src/lib/web/Dispatcher";
-import { spy, stub, match } from "sinon";
+import { spy, stub, match, assert } from "sinon";
 import { ProcessHandler } from "../../../src/lib/helpers/ProcessHandler";
+import { Profile, ActiveProfiles } from "../../../src/lib/decorators/ProfileDecorators";
+import { Environment } from "../../../src/lib/di/Environment";
 
+// TODO: resolve tests from PostProcesors branch, when merged
 describe('ApplicationContext', function () {
 
     let appContext: ApplicationContext;
@@ -31,13 +34,13 @@ describe('ApplicationContext', function () {
     @Controller()
     class ControllerClassA {}
 
+    @ActiveProfiles('dev')
     @Configuration()
     class AppConfig {}
 
     ConfigurationUtil.getConfigurationData(AppConfig).componentFactory.components.push(ComponentClassA);
     ConfigurationUtil.getConfigurationData(AppConfig).componentFactory.components.push(ComponentClassB);
     ConfigurationUtil.getConfigurationData(AppConfig).componentFactory.components.push(ControllerClassA);
-    ConfigurationUtil.getConfigurationData(AppConfig).properties.set('application.profiles.active', 'dev');
 
     beforeEach(() => {
         appContext = new ApplicationContext(AppConfig);
@@ -46,8 +49,10 @@ describe('ApplicationContext', function () {
 
     it('should initialize properly', function () {
         // given
-        let spyOnLoadAllProperties = spy(ConfigurationData.prototype, 'loadAllProperties');
-        let spyOnLoadAllComponents = spy(ConfigurationData.prototype, 'loadAllComponents');
+        let stubOnSetActiveProfiles = stub(Environment.prototype, 'setActiveProfiles');
+        let stubOnSetApplicationProperties = stub(Environment.prototype, 'setApplicationProperties');
+        let stubOnRegister = stub(Injector.prototype, 'register');
+        let stubOnLoadAllComponents = stub(ConfigurationData.prototype, 'loadAllComponents');
 
         // when
         localAppContext = <any> new ApplicationContext(AppConfig);
@@ -57,11 +62,26 @@ describe('ApplicationContext', function () {
         expect(localAppContext.injector).to.be.instanceOf(Injector);
         expect(localAppContext.dispatcher).to.be.instanceOf(Dispatcher);
         expect(localAppContext.configurationData).to.be.instanceOf(ConfigurationData);
-        expect(spyOnLoadAllProperties.called).to.be.true;
-        expect(spyOnLoadAllComponents.called).to.be.true;
+        expect(localAppContext.environment).to.be.instanceOf(Environment);
 
-        spyOnLoadAllProperties.restore();
-        spyOnLoadAllProperties.restore();
+        expect(stubOnSetActiveProfiles.calledOnce).to.be.true;
+        expect(stubOnSetActiveProfiles.calledWith(...localAppContext.configurationData.activeProfiles)).to.be.true;
+        expect(stubOnSetApplicationProperties.calledOnce).to.be.true;
+        expect(stubOnSetApplicationProperties
+            .calledWith(localAppContext.configurationData.propertySourcePaths)).to.be.true;
+        expect(stubOnRegister.calledOnce).to.be.true;
+        expect(stubOnRegister.args)
+            .to.eql([[ComponentUtil.getComponentData(Environment).classToken, localAppContext.environment]]);
+        expect(stubOnLoadAllComponents.calledOnce).to.be.true;
+
+        assert.callOrder(stubOnSetActiveProfiles, stubOnSetApplicationProperties, stubOnRegister,
+            stubOnLoadAllComponents);
+
+        // cleanup
+        stubOnSetActiveProfiles.restore();
+        stubOnSetApplicationProperties.restore();
+        stubOnRegister.restore();
+        stubOnLoadAllComponents.restore();
     });
 
     it('should throw error if appContext.start() is not called first', function () {
@@ -198,5 +218,56 @@ describe('ApplicationContext', function () {
         wireComponentsStub.restore();
         executePostConstructionStub.restore();
         dispatcherPostConstructStub.restore();
+    });
+
+    it('should return environment', async function () {
+        // given
+        await appContext.start();
+
+        // when
+        let environment = appContext.getEnvironment();
+
+        // then
+        expect(environment).to.be.of.isPrototypeOf(Environment);
+        expect(environment).to.be.equal(localAppContext.environment);
+    });
+
+    it('should get active components', async function () {
+        // given
+        let data1 = {
+            profiles: ['dev']
+        };
+        let data2 = {
+            profiles: ['other', '!dev']
+        };
+        let data3 = {
+            profiles: []
+        };
+        let data4 = {
+            profiles: ['other', '!mongo']
+        };
+        localAppContext.configurationData.componentFactory.components = ['comp1', 'comp2', 'comp3', 'comp4'];
+        let stubOnAcceptsProfiles =
+            stub(localAppContext.environment, 'acceptsProfiles', (profile) => profile === 'dev');
+        let stubOnGetComponentData = stub(ComponentUtil, 'getComponentData');
+        stubOnGetComponentData.withArgs('comp1').returns(data1);
+        stubOnGetComponentData.withArgs('comp2').returns(data2);
+        stubOnGetComponentData.withArgs('comp3').returns(data3);
+        stubOnGetComponentData.withArgs('comp4').returns(data4);
+
+        // when
+        let activeComponents = localAppContext.getActiveComponents();
+
+        // then
+        expect(activeComponents).to.be.eql(['comp1', 'comp3', 'comp4']);
+        expect(stubOnGetComponentData.callCount).to.be.eq(4);
+        expect(stubOnGetComponentData.calledWith('comp1')).to.be.true;
+        expect(stubOnGetComponentData.calledWith('comp2')).to.be.true;
+        expect(stubOnGetComponentData.calledWith('comp3')).to.be.true;
+        expect(stubOnGetComponentData.calledWith('comp4')).to.be.true;
+
+        // cleanup
+        stubOnAcceptsProfiles.restore();
+        stubOnGetComponentData.restore();
     });
 });

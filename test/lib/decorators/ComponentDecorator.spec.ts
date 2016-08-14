@@ -1,7 +1,7 @@
 import {expect} from "chai";
 import {
     Component, ComponentData,
-    ComponentUtil, Profile
+    ComponentUtil
 } from "../../../src/lib/decorators/ComponentDecorator";
 import {InjectionData} from "../../../src/lib/decorators/InjectionDecorators";
 import {Controller} from "../../../src/lib/decorators/ControllerDecorator";
@@ -22,31 +22,7 @@ describe('ComponentDecorator', function () {
         expect(componentData.classToken).to.be.a('symbol');
         expect(componentData.aliasTokens).to.be.eql([]);
         expect(componentData.injectionData).to.be.instanceOf(InjectionData);
-        expect(componentData.profile).to.be.undefined;
-    });
-});
-
-describe('ProfileDecorator', function () {
-
-    it('should add metadata to Component classes', function () {
-        // given
-        @Profile('dev')
-        @Component()
-        class A {}
-
-        // when
-        let componentData = ComponentUtil.getComponentData(A);
-
-        // then
-        expect(componentData.profile).to.eq('dev');
-    });
-
-    it('should throw error when @Profile is used on non Component', function () {
-        // given
-        class B {}
-
-        // when / then
-        expect(Profile('dev').bind(this, B)).to.throw(Error);
+        expect(componentData.profiles).to.be.empty;
     });
 });
 
