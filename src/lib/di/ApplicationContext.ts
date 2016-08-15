@@ -1,7 +1,7 @@
 import { ConfigurationUtil, ConfigurationData } from "../decorators/ConfigurationDecorator";
 import { ComponentUtil } from "../decorators/ComponentDecorator";
 import { Injector } from "./Injector";
-import { Dispatcher } from "../dispatcher/Dispatcher";
+import { Dispatcher } from "../web/Dispatcher";
 import { Router } from "express";
 import * as _ from "lodash";
 import { LifeCycleHooksUtil } from "../decorators/LifeCycleHooksDecorators";
@@ -11,6 +11,7 @@ import {
     IComponentDefinitionPostProcessor, ComponentDefinitionPostProcessorUtil
 } from "../processors/ComponentDefinitionPostProcessor";
 import { OrderUtil } from "../decorators/OrderDecorator";
+import { Environment } from "./Environment";
 
 export class ApplicationContextState {
     static NOT_INITIALIZED = 'NOT_INITIALIZED';
@@ -20,11 +21,10 @@ export class ApplicationContextState {
 
 export class ApplicationContext {
 
-    private static ACTIVE_PROFILE_PROPERTY_KEY = 'application.profiles.active';
-
     private state: ApplicationContextState;
     private injector: Injector;
     private dispatcher: Dispatcher;
+    private environment: Environment;
     private configurationData: ConfigurationData;
     private unRegisterExitListenerCallback: Function;
 
@@ -33,8 +33,8 @@ export class ApplicationContext {
         this.injector = new Injector();
         this.dispatcher = new Dispatcher();
         this.configurationData = ConfigurationUtil.getConfigurationData(configurationClass);
-        this.configurationData.loadAllProperties();
-        this.configurationData.loadAllComponents();
+        this.initializeEnvironment();
+        this.configurationData.loadAllComponents(this.environment);
     }
 
     getComponent <T>(componentClass): T {
@@ -57,6 +57,10 @@ export class ApplicationContext {
         return this.dispatcher.getRouter();
     }
 
+    getEnvironment(): Environment {
+        return this.environment;
+    }
+
     /**
      * Starts the application context by initializing the DI components container.
      * */
@@ -77,6 +81,7 @@ export class ApplicationContext {
         await this.postProcessBeforeInit();
 
         await this.executePostConstruction();
+        await this.dispatcher.postConstruct();
 
         await this.postProcessAfterInit();
 
@@ -130,7 +135,7 @@ export class ApplicationContext {
                 Reflect.set(instance, fieldName, dependency);
             });
             injectionData.properties.forEach((propertyKey, fieldName) => {
-                Reflect.set(instance, fieldName, this.getConfigurationProperty(propertyKey));
+                Reflect.set(instance, fieldName, this.environment.getProperty(propertyKey));
             });
 
             this.dispatcher.processAfterInit(CompConstructor, instance);
@@ -243,11 +248,13 @@ export class ApplicationContext {
     }
 
     private getActiveComponents() {
-        let activeProfile = this.getActiveProfile();
         return _.filter(this.configurationData.componentFactory.components, (CompConstructor) => {
-            let profile = ComponentUtil.getComponentData(CompConstructor).profile;
-            if (profile) {
-                return profile === activeProfile;
+            let profiles = ComponentUtil.getComponentData(CompConstructor).profiles;
+            if (profiles.length > 0) {
+                let notUsedProfiles = _.map(_.filter(profiles, (profile) => (profile[0] === '!')),
+                    (profile: string) => profile.substr(1));
+                return _.some(notUsedProfiles, (profile) => !this.environment.acceptsProfiles(profile))
+                    || this.environment.acceptsProfiles(...profiles);
             }
             return true;
         });
@@ -306,12 +313,11 @@ export class ApplicationContext {
         return postProcessors;
     }
 
-    private getActiveProfile(): string {
-        return this.getConfigurationProperty(ApplicationContext.ACTIVE_PROFILE_PROPERTY_KEY);
-    }
-
-    private getConfigurationProperty(propertyKey: string): string {
-        return process.env[propertyKey] || this.configurationData.properties.get(propertyKey);
+    private initializeEnvironment() {
+        this.environment = new Environment();
+        this.environment.setActiveProfiles(...this.configurationData.activeProfiles);
+        this.environment.setApplicationProperties(this.configurationData.propertySourcePaths);
+        this.injector.register(ComponentUtil.getComponentData(Environment).classToken, this.environment);
     }
 
     private verifyContextReady() {

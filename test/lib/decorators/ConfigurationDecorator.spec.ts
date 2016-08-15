@@ -2,36 +2,20 @@ import {expect} from "chai";
 import {stub} from "sinon";
 import {
     Configuration, ConfigurationUtil,
-    ConfigurationData
+    ConfigurationData, ProfiledPath
 } from "../../../src/lib/decorators/ConfigurationDecorator";
-import { PropertySourceUtil } from "../../../src/lib/decorators/PropertySourceDecorator";
 import { ComponentScanUtil } from "../../../src/lib/decorators/ComponentScanDecorator";
+import { Environment } from "../../../src/lib/di/Environment";
+import { Profile } from "../../../src/lib/decorators/ProfileDecorators";
 import { ComponentUtil } from "../../../src/lib/decorators/ComponentDecorator";
 
 describe('ConfigurationData', function () {
 
-    it('should load properties', function () {
-        // given
-        let configurationData = new ConfigurationData();
-        configurationData.propertySourcePaths.push('somePath');
-        let map = new Map();
-        map.set('key', 'val');
-        let stubOnGetPropertiesFromPaths = stub(PropertySourceUtil, 'getPropertiesFromPaths').returns(map);
-
-        // when
-        configurationData.loadAllProperties();
-
-        // then
-        expect(configurationData.properties.get('key')).is.eql('val');
-        expect(stubOnGetPropertiesFromPaths.calledWith('somePath')).to.be.true;
-
-        stubOnGetPropertiesFromPaths.restore();
-    });
-
     it('should load components', function () {
         // given
+        let environment = new Environment();
         let configurationData = new ConfigurationData();
-        configurationData.componentScanPaths = ['path1'];
+        configurationData.componentScanPaths.push(new ProfiledPath(['profile1'], 'path1'));
         let stubOnComponentScanUtilGetComponentsFromPaths = stub(ComponentScanUtil, 'getComponentsFromPaths')
             .returns(['component', 'definitionPostProcessor', 'postProcessor']);
         let stubOnIsComponentDefinitionPostProcessor = stub(ComponentUtil, 'isComponentDefinitionPostProcessor');
@@ -44,12 +28,13 @@ describe('ConfigurationData', function () {
         stubOnIsComponentPostProcessor.withArgs('postProcessor').returns(true);
 
         // when
-        configurationData.loadAllComponents();
+        configurationData.loadAllComponents(environment);
 
         // then
         expect(configurationData.componentFactory.components.length).to.be.eq(1);
         expect(configurationData.componentDefinitionPostProcessorFactory.components.length).to.be.eq(1);
         expect(configurationData.componentPostProcessorFactory.components.length).to.be.eq(1);
+        expect(stubOnComponentScanUtilGetComponentsFromPaths.calledWith(configurationData, environment)).to.be.true;
         // cleanup
         stubOnComponentScanUtilGetComponentsFromPaths.restore();
         stubOnIsComponentDefinitionPostProcessor.restore();
@@ -108,6 +93,7 @@ describe('ConfigurationUtil', function () {
 
     it('should add path for component scan', function () {
         // given
+        @Profile('someProfile')
         @Configuration()
         class A {}
 
@@ -116,12 +102,13 @@ describe('ConfigurationUtil', function () {
         ConfigurationUtil.addComponentScanPath(A, 'someOtherPath');
 
         // then
-        expect(ConfigurationUtil.getConfigurationData(A).componentScanPaths)
-            .to.include.members(['somePath', 'someOtherPath']);
+        expect(ConfigurationUtil.getConfigurationData(A).componentScanPaths).to.be.eql(
+            [{profiles: ['someProfile'], path: 'somePath'}, {profiles: ['someProfile'], path: 'someOtherPath'}]);
     });
 
     it('should add path for property source', function () {
         // given
+        @Profile('someProfile')
         @Configuration()
         class A {}
 
@@ -130,9 +117,7 @@ describe('ConfigurationUtil', function () {
         ConfigurationUtil.addPropertySourcePath(A, 'someOtherPath');
 
         // then
-        expect(ConfigurationUtil.getConfigurationData(A).propertySourcePaths)
-            .to.include.members(['somePath', 'someOtherPath']);
+        expect(ConfigurationUtil.getConfigurationData(A).propertySourcePaths).to.be.eql(
+            [{profiles: ['someProfile'], path: 'somePath'}, {profiles: ['someProfile'], path: 'someOtherPath'}]);
     });
-
-
 });

@@ -1,11 +1,11 @@
 import { expect } from "chai";
 import {
     Component, ComponentData,
-    ComponentUtil, Profile
+    ComponentUtil
 } from "../../../src/lib/decorators/ComponentDecorator";
 import { InjectionData } from "../../../src/lib/decorators/InjectionDecorators";
 import { Controller } from "../../../src/lib/decorators/ControllerDecorator";
-import { Interceptor } from "../../../src/lib/interceptors/InterceptorDecorator";
+import { Interceptor } from "../../../src/lib/decorators/InterceptorDecorator";
 import { ComponentPostProcessor } from "../../../src/lib/processors/ComponentPostProcessor";
 import { ComponentDefinitionPostProcessor } from "../../../src/lib/processors/ComponentDefinitionPostProcessor";
 
@@ -25,6 +25,7 @@ describe('ComponentDecorator', function () {
         expect(componentData.aliasTokens).to.be.eql([]);
         expect(componentData.injectionData).to.be.instanceOf(InjectionData);
         expect(componentData.profile).to.be.undefined;
+        expect(componentData.profiles).to.be.empty;
     });
 });
 

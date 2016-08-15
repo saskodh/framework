@@ -20,7 +20,8 @@ describe('PropertySourceDecorator', function () {
 
         // then
         expect(configurationDataA.propertySourcePaths.length).to.be.eq(2);
-        expect(configurationDataA.propertySourcePaths).to.include.members([propertiesPath, "propertiesPathTwo"]);
+        expect(configurationDataA.propertySourcePaths).to.be.eql([{path: propertiesPath, profiles: []},
+            {path: "propertiesPathTwo", "profiles": []}]);
         expect(configurationUtilSpy.called).to.be.true;
         // cleanup
         configurationUtilSpy.restore();

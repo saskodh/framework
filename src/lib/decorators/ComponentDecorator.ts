@@ -1,5 +1,6 @@
 import { InjectUtil, InjectionData } from "./InjectionDecorators";
 import { CONTROLLER_DECORATOR_TOKEN } from "./ControllerDecorator";
+import { INTERCEPTOR_DECORATOR_TOKEN } from "./InterceptorDecorator";
 import { INTERCEPTOR_DECORATOR_TOKEN } from "../interceptors/InterceptorDecorator";
 import { COMPONENT_DEFINITION_POST_PROCESSOR_DECORATOR_TOKEN } from "../processors/ComponentDefinitionPostProcessor";
 import { COMPONENT_POST_PROCESSOR_DECORATOR_TOKEN } from "../processors/ComponentPostProcessor";
@@ -8,11 +9,12 @@ export class ComponentData {
     classToken: Symbol;
     aliasTokens: Array<Symbol>;
     injectionData: InjectionData;
-    profile: string;
+    profiles: Array<string>;
 
     constructor() {
         this.classToken = Symbol('classToken');
         this.aliasTokens = [];
+        this.profiles = [];
         this.injectionData = new InjectionData();
     }
 }
@@ -24,15 +26,6 @@ export function Component() {
         let componentData = new ComponentData();
         componentData.injectionData = InjectUtil.initIfDoesntExist(target.prototype);
         target[COMPONENT_DECORATOR_TOKEN] = componentData;
-    };
-}
-
-export function Profile(profile: string) {
-    return function (target) {
-        if (!ComponentUtil.isComponent(target)) {
-            throw new Error('@Profile can be set only on @Component!');
-        }
-        ComponentUtil.getComponentData(target).profile = profile;
     };
 }
 

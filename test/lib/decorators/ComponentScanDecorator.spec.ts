@@ -4,11 +4,12 @@ import * as fileSystem from "fs";
 import * as path_module from "path";
 import {
     ConfigurationData, Configuration,
-    ConfigurationUtil
+    ConfigurationUtil, ProfiledPath
 } from "../../../src/lib/decorators/ConfigurationDecorator";
 import { ComponentScanUtil, ComponentScan } from "../../../src/lib/decorators/ComponentScanDecorator";
 import { RequireUtils } from "../../../src/lib/helpers/RequireUtils";
 import { ComponentUtil } from "../../../src/lib/decorators/ComponentDecorator";
+import { Environment } from "../../../src/lib/di/Environment";
 
 describe('ComponentScanDecorator', function () {
 
@@ -56,9 +57,11 @@ describe('ComponentScanUtil', function () {
 
     it('should get all components', function () {
         // given
+        let environment = new Environment();
         let configData = new ConfigurationData();
-        configData.componentScanPaths.push('pathOne');
-        configData.componentScanPaths.push('pathTwo');
+        configData.componentScanPaths.push(new ProfiledPath(['activeProfile'], 'pathOne'));
+        configData.componentScanPaths.push(new ProfiledPath(['activeProfile'], 'pathTwo'));
+        configData.componentScanPaths.push(new ProfiledPath(['inactiveProfile'], 'pathThree'));
         let module1 = 'module1';
         let module2 = 'module2';
         let component1 = 'component1';
@@ -72,7 +75,7 @@ describe('ComponentScanUtil', function () {
         stubOnGetComponentsFromModule.withArgs(module2).returns([component3]);
 
         // when
-        let components = ComponentScanUtil.getComponentsFromPaths(configData.componentScanPaths);
+        let components = ComponentScanUtil.getComponentsFromPaths(configData.componentScanPaths, environment);
 
         // then
         expect(stubOnGetModulesStartingFrom.calledWith('pathOne')).to.be.true;

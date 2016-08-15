@@ -4,6 +4,7 @@ import * as path_module from "path";
 import { ConfigurationUtil } from "./ConfigurationDecorator";
 import { ComponentUtil } from "./ComponentDecorator";
 import { RequireUtils } from "../helpers/RequireUtils";
+import { Environment } from "../di/Environment";
 
 /**
  *A decorator for setting up project files to be component-scanned.
@@ -21,12 +22,14 @@ export function ComponentScan(path) {
 
 export class ComponentScanUtil {
 
-    static getComponentsFromPaths(paths: Array<string>): Set<any> {
+    static getComponentsFromPaths(paths: Array<string>, environment: Environment): Set<any> {
         let result = new Set<any>();
         for (let path of paths) {
-            for (let module of this.getModulesStartingFrom(path)) {
-                for (let component of this.getComponentsFromModule(module)) {
-                    result.add(component);
+            if (profiledPath.profiles.length === 0 || environment.acceptsProfiles(...profiledPath.profiles)) {
+                for (let module of this.getModulesStartingFrom(path)) {
+                    for (let component of this.getComponentsFromModule(module)) {
+                        result.add(component);
+                    }
                 }
             }
         }
