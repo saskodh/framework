@@ -194,5 +194,7 @@ describe('Environment', function () {
         expect(localEnvironment.activeProfiles).to.include.members(['profile1', 'profile2', 'profile3']);
 
         stubOnGetPropertiesFromPaths.restore();
+        stubOnGetProperty.restore();
+        stubOnAcceptsProfiles.restore();
     });
 });

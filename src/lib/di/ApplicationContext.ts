@@ -261,29 +261,35 @@ export class ApplicationContext {
     }
 
     private getActiveDefinitionPostProcessors() {
-        let activeProfile = this.getActiveProfile();
+        let activeProfiles = this.environment.getActiveProfiles();
         let definitionPostProcessors = _.filter(
             this.configurationData.componentDefinitionPostProcessorFactory.components, (CompConstructor) => {
-                let profile = ComponentUtil.getComponentData(CompConstructor).profile;
-                if (profile) {
-
-                    return profile === activeProfile;
+                let profiles = ComponentUtil.getComponentData(CompConstructor).profiles;
+                if (profiles.length === 0) {
+                    return true;
                 }
-                return true;
+                for (let profile of profiles) {
+                    for (let activeProfile of activeProfiles) {
+                        return profile === activeProfile;
+                    }
+                }
             });
         return OrderUtil.orderList(definitionPostProcessors);
     }
 
     private getActivePostProcessors() {
-        let activeProfile = this.getActiveProfile();
+        let activeProfiles = this.environment.getActiveProfiles();
         let postProcessors = _.filter(
             this.configurationData.componentPostProcessorFactory.components, (CompConstructor) => {
-                let profile = ComponentUtil.getComponentData(CompConstructor).profile;
-                if (profile) {
-
-                    return profile === activeProfile;
+                let profiles = ComponentUtil.getComponentData(CompConstructor).profiles;
+                if (profiles.length === 0) {
+                    return true;
                 }
-                return true;
+                for (let profile of profiles) {
+                    for (let activeProfile of activeProfiles) {
+                        return profile === activeProfile;
+                    }
+                }
             });
         return OrderUtil.orderList(postProcessors);
     }

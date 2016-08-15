@@ -8,6 +8,7 @@ import { Controller } from "../../../src/lib/decorators/ControllerDecorator";
 import { Interceptor } from "../../../src/lib/decorators/InterceptorDecorator";
 import { ComponentPostProcessor } from "../../../src/lib/processors/ComponentPostProcessor";
 import { ComponentDefinitionPostProcessor } from "../../../src/lib/processors/ComponentDefinitionPostProcessor";
+import { Profile } from "../../../src/lib/decorators/ProfileDecorators";
 
 describe('ComponentDecorator', function () {
 
@@ -24,8 +25,7 @@ describe('ComponentDecorator', function () {
         expect(componentData.classToken).to.be.a('symbol');
         expect(componentData.aliasTokens).to.be.eql([]);
         expect(componentData.injectionData).to.be.instanceOf(InjectionData);
-        expect(componentData.profile).to.be.undefined;
-        expect(componentData.profiles).to.be.empty;
+        expect(componentData.profiles.length).to.be.eq(0);
     });
 });
 
@@ -41,7 +41,8 @@ describe('ProfileDecorator', function () {
         let componentData = ComponentUtil.getComponentData(A);
 
         // then
-        expect(componentData.profile).to.eq('dev');
+        expect(componentData.profiles.length).to.eq(1);
+        expect(componentData.profiles[0]).to.eq('dev');
     });
 
     it('should throw error when @Profile is used on non Component', function () {

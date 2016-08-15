@@ -1,13 +1,9 @@
 import { expect } from "chai";
 import { ApplicationContext, ApplicationContextState } from "../../../src/lib/di/ApplicationContext";
 import {
-    Configuration, ConfigurationUtil,
+    Configuration, ConfigurationUtil, ConfigurationData,
 } from "../../../src/lib/decorators/ConfigurationDecorator";
 import { ComponentUtil } from "../../../src/lib/decorators/ComponentDecorator";
-import { Component, ComponentUtil } from "../../../src/lib/decorators/ComponentDecorator";
-import { Controller } from "../../../src/lib/decorators/ControllerDecorator";
-import { Qualifier } from "../../../src/lib/decorators/QualifierDecorator";
-import { Router } from "express";
 import { Injector } from "../../../src/lib/di/Injector";
 import { Dispatcher } from "../../../src/lib/web/Dispatcher";
 import { spy, stub, match, assert } from "sinon";
@@ -20,7 +16,7 @@ import {
 } from "../../../src/lib/processors/ComponentPostProcessor";
 import { OrderUtil } from "../../../src/lib/decorators/OrderDecorator";
 import { LifeCycleHooksUtil } from "../../../src/lib/decorators/LifeCycleHooksDecorators";
-import { Profile, ActiveProfiles } from "../../../src/lib/decorators/ProfileDecorators";
+import { ActiveProfiles } from "../../../src/lib/decorators/ProfileDecorators";
 import { Environment } from "../../../src/lib/di/Environment";
 
 describe('ApplicationContext', function () {
@@ -41,12 +37,10 @@ describe('ApplicationContext', function () {
         // given
         let stubOnGetConfigurationData = stub(ConfigurationUtil, 'getConfigurationData')
             .returns(localAppContext.configurationData);
-        let stubOnLoadAllProperties = stub(localAppContext.configurationData, 'loadAllProperties');
         let stubOnLoadAllComponents = stub(localAppContext.configurationData, 'loadAllComponents');
         let stubOnSetActiveProfiles = stub(Environment.prototype, 'setActiveProfiles');
         let stubOnSetApplicationProperties = stub(Environment.prototype, 'setApplicationProperties');
         let stubOnRegister = stub(Injector.prototype, 'register');
-        let stubOnLoadAllComponents = stub(ConfigurationData.prototype, 'loadAllComponents');
 
         // when
         localAppContext = <any> new ApplicationContext(AppConfig);
@@ -56,12 +50,7 @@ describe('ApplicationContext', function () {
         expect(localAppContext.injector).to.be.instanceOf(Injector);
         expect(localAppContext.dispatcher).to.be.instanceOf(Dispatcher);
         expect(stubOnGetConfigurationData.calledWith(AppConfig)).to.be.true;
-        expect(stubOnLoadAllProperties.called).to.be.true;
         expect(stubOnLoadAllComponents.called).to.be.true;
-        // cleanup
-        stubOnGetConfigurationData.restore();
-        stubOnLoadAllProperties.restore();
-        stubOnLoadAllComponents.restore();
         expect(localAppContext.configurationData).to.be.instanceOf(ConfigurationData);
         expect(localAppContext.environment).to.be.instanceOf(Environment);
 
@@ -79,10 +68,11 @@ describe('ApplicationContext', function () {
             stubOnLoadAllComponents);
 
         // cleanup
+        stubOnGetConfigurationData.restore();
+        stubOnLoadAllComponents.restore();
         stubOnSetActiveProfiles.restore();
         stubOnSetApplicationProperties.restore();
         stubOnRegister.restore();
-        stubOnLoadAllComponents.restore();
     });
 
     it('should return Component with class token', async function () {
@@ -198,7 +188,7 @@ describe('ApplicationContext', function () {
         expect(stubOnExecutePostConstruction.calledOnce).to.be.true;
         expect(stubOnPostProcessAfterInit.calledOnce).to.be.true;
         expect(localAppContext.state).to.be.eq(ApplicationContextState.READY);
-        expect(dispatcherPostConstructStub.called).to.be.true;
+        expect(stubOnDispatcherPostConstruct.called).to.be.true;
 
         stubOnInitializeDefinitionPostProcessors.restore();
         stubOnInitializePostProcessors.restore();
@@ -371,7 +361,7 @@ describe('ApplicationContext', function () {
         let stubOnGetComponents = stub(localAppContext.injector, 'getComponents');
         stubOnGetComponents.withArgs('token 2').returns(['injected instance 2', 'injected instance 3']);
         let stubOnReflectSet = stub(Reflect, 'set');
-        let stubOnGetConfigurationProperty = stub(appContext, 'getConfigurationProperty').returns('value 1');
+        let stubOnEnvironmentGetProperty = stub(Environment.prototype, 'getProperty').returns('value 1');
         let stubOnProcessAfterInit = stub(Dispatcher.prototype, 'processAfterInit');
 
         // when
@@ -388,14 +378,14 @@ describe('ApplicationContext', function () {
             .calledWith('instance 1', 'dependency data 2', ['injected instance 2', 'injected instance 3'])).to.be.true;
         expect(stubOnReflectSet.calledWith('instance 1', 'prop 1', 'value 1')).to.be.true;
         expect(stubOnProcessAfterInit.calledWith('comp1', 'instance 1')).to.be.true;
-        expect(stubOnProcessAfterInit.calledWith('comp1', 'instance 1'));
+        expect(stubOnEnvironmentGetProperty.calledWith('value 1')).to.be.true;
         // cleanup
         stubOnGetActiveComponents.restore();
         stubOnGetComponentData.restore();
         stubOnGetInjectionData.restore();
         stubOnGetComponent.restore();
         stubOnReflectSet.restore();
-        stubOnGetConfigurationProperty.restore();
+        stubOnEnvironmentGetProperty.restore();
         stubOnProcessAfterInit.restore();
     });
 
@@ -554,21 +544,6 @@ describe('ApplicationContext', function () {
         // cleanup
         stubOnAcceptsProfiles.restore();
         stubOnGetComponentData.restore();
-    });
-
-    it('should get active profile', async function () {
-        // given
-        (<any> ApplicationContext).ACTIVE_PROFILE_PROPERTY_KEY = 'dev';
-        let stubOnGetConfigurationProperty = stub(appContext, 'getConfigurationProperty').returns('dev profile');
-
-        // when
-        let profile = localAppContext.getActiveProfile();
-
-        // then
-        expect(stubOnGetConfigurationProperty.calledWith('dev')).to.be.true;
-        expect(profile).to.be.eq('dev profile');
-        // cleanup
-        stubOnGetConfigurationProperty.restore();
     });
 
     it('should verify if context is ready', async function () {
@@ -759,16 +734,18 @@ describe('DefinitionPostProcessors', function() {
     it('should get active definition post processors', async function () {
         // given
         let data1 = {
-            profile: 'dev'
+            profiles: ['dev']
         };
         let data2 = {
-            profile: 'other'
+            profiles: ['other']
         };
 
-        let data3 = {};
+        let data3 = {
+            profiles: []
+        };
         localAppContext.configurationData.componentDefinitionPostProcessorFactory
             .components = ['comp1', 'comp2', 'comp3'];
-        let stubOnGetActiveProfile = stub(appContext, 'getActiveProfile').returns('dev');
+        let stubOnGetActiveProfile = stub(localAppContext.environment, 'getActiveProfiles').returns(['dev']);
         let stubOnGetComponentData = stub(ComponentUtil, 'getComponentData');
         stubOnGetComponentData.withArgs('comp1').returns(data1);
         stubOnGetComponentData.withArgs('comp2').returns(data2);
@@ -1024,15 +1001,17 @@ describe('PostProcessors', function() {
     it('should get active post processors', async function () {
         // given
         let data1 = {
-            profile: 'dev'
+            profiles: ['dev']
         };
         let data2 = {
-            profile: 'other'
+            profiles: ['other']
         };
 
-        let data3 = {};
+        let data3 = {
+            profiles: []
+        };
         localAppContext.configurationData.componentPostProcessorFactory.components = ['comp1', 'comp2', 'comp3'];
-        let stubOnGetActiveProfile = stub(appContext, 'getActiveProfile').returns('dev');
+        let stubOnGetActiveProfile = stub(localAppContext.environment, 'getActiveProfiles').returns(['dev']);
         let stubOnGetComponentData = stub(ComponentUtil, 'getComponentData');
         stubOnGetComponentData.withArgs('comp1').returns(data1);
         stubOnGetComponentData.withArgs('comp2').returns(data2);

@@ -61,18 +61,25 @@ describe('ComponentScanUtil', function () {
         let configData = new ConfigurationData();
         configData.componentScanPaths.push(new ProfiledPath(['activeProfile'], 'pathOne'));
         configData.componentScanPaths.push(new ProfiledPath(['activeProfile'], 'pathTwo'));
-        configData.componentScanPaths.push(new ProfiledPath(['inactiveProfile'], 'pathThree'));
+        configData.componentScanPaths.push(new ProfiledPath([], 'pathThree'));
+        configData.componentScanPaths.push(new ProfiledPath(['inactiveProfile'], 'pathFour'));
         let module1 = 'module1';
         let module2 = 'module2';
+        let module3 = 'module3';
         let component1 = 'component1';
         let component2 = 'component2';
         let component3 = 'component3';
         let stubOnGetModulesStartingFrom = stub(ComponentScanUtil, 'getModulesStartingFrom');
         stubOnGetModulesStartingFrom.withArgs('pathOne').returns([module1]);
         stubOnGetModulesStartingFrom.withArgs('pathTwo').returns([module2]);
+        stubOnGetModulesStartingFrom.withArgs('pathThree').returns([module3]);
         let stubOnGetComponentsFromModule = stub(ComponentScanUtil, 'getComponentsFromModule');
         stubOnGetComponentsFromModule.withArgs(module1).returns([component1, component2]);
         stubOnGetComponentsFromModule.withArgs(module2).returns([component3]);
+        stubOnGetComponentsFromModule.withArgs(module3).returns([component3]);
+        let stubOnEnvironmentAcceptsProfiles = stub(environment, 'acceptsProfiles');
+        stubOnEnvironmentAcceptsProfiles.withArgs('activeProfile').returns(true);
+        stubOnEnvironmentAcceptsProfiles.withArgs('inactiveProfile').returns(false);
 
         // when
         let components = ComponentScanUtil.getComponentsFromPaths(configData.componentScanPaths, environment);
@@ -80,16 +87,22 @@ describe('ComponentScanUtil', function () {
         // then
         expect(stubOnGetModulesStartingFrom.calledWith('pathOne')).to.be.true;
         expect(stubOnGetModulesStartingFrom.calledWith('pathTwo')).to.be.true;
+        expect(stubOnGetModulesStartingFrom.calledWith('pathThree')).to.be.true;
         expect(stubOnGetComponentsFromModule.calledWith(module1)).to.be.true;
         expect(stubOnGetComponentsFromModule.calledWith(module2)).to.be.true;
+        expect(stubOnGetComponentsFromModule.calledWith(module3)).to.be.true;
         expect(components.size).to.be.eq(3);
         expect(components.has(component1)).to.be.true;
         expect(components.has(component2)).to.be.true;
         expect(components.has(component3)).to.be.true;
+        expect(stubOnEnvironmentAcceptsProfiles.callCount).to.be.eq(3);
+        expect(stubOnEnvironmentAcceptsProfiles.calledWith('activeProfile')).to.be.true;
+        expect(stubOnEnvironmentAcceptsProfiles.calledWith('inactiveProfile')).to.be.true;
 
         // cleanup
         stubOnGetModulesStartingFrom.restore();
         stubOnGetComponentsFromModule.restore();
+        stubOnEnvironmentAcceptsProfiles.restore();
     });
 
     it('should get modules from path', function () {

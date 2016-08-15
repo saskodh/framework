@@ -34,7 +34,8 @@ describe('ConfigurationData', function () {
         expect(configurationData.componentFactory.components.length).to.be.eq(1);
         expect(configurationData.componentDefinitionPostProcessorFactory.components.length).to.be.eq(1);
         expect(configurationData.componentPostProcessorFactory.components.length).to.be.eq(1);
-        expect(stubOnComponentScanUtilGetComponentsFromPaths.calledWith(configurationData, environment)).to.be.true;
+        expect(stubOnComponentScanUtilGetComponentsFromPaths
+            .calledWith(configurationData.componentScanPaths, environment)).to.be.true;
         // cleanup
         stubOnComponentScanUtilGetComponentsFromPaths.restore();
         stubOnIsComponentDefinitionPostProcessor.restore();

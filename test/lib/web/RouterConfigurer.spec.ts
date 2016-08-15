@@ -137,8 +137,8 @@ describe('RouterConfigurer', function () {
         let postConfig = new RouterConfigItem({path: '/post', method: RequestMethod.POST}, 'post');
         postConfig.view = 'viewName';
         (<any> routerConfigurer).routeHandlers.set(postConfig, instanceofA);
-        let spyOnRouterGet = stub(router, RequestMethod.GET);
-        let spyOnRouterPost = stub(router, RequestMethod.POST);
+        let stubOnRouterGet = stub(router, RequestMethod.GET);
+        let stubOnRouterPost = stub(router, RequestMethod.POST);
         let spyOnNext = spy();
         let mockResponseGet = {
             $$frameworkData: undefined
@@ -151,15 +151,15 @@ describe('RouterConfigurer', function () {
 
         // when
         (<any> routerConfigurer).registerRouteHandlers();
-        let getRequestCallback = spyOnRouterGet.args[0][1];
-        let postRequestCallback = spyOnRouterPost.args[0][1];
+        let getRequestCallback = stubOnRouterGet.args[0][1];
+        let postRequestCallback = stubOnRouterPost.args[0][1];
 
         await getRequestCallback('requestGET', mockResponseGet, spyOnNext);
         await postRequestCallback('requestPOST', mockResponsePost, spyOnNext);
 
         // then
-        expect(spyOnRouterGet.calledWith('/get', match.func)).to.be.true;
-        expect(spyOnRouterPost.calledWith('/post', match.func)).to.be.true;
+        expect(stubOnRouterGet.calledWith('/get', match.func)).to.be.true;
+        expect(stubOnRouterPost.calledWith('/post', match.func)).to.be.true;
         expect(spyOnControllerGet.calledWith('requestGET', mockResponseGet)).to.be.true;
         expect(spyOnControllerPost.calledWith('requestPOST', mockResponsePost)).to.be.true;
         expect(mockResponseGet.$$frameworkData.model).to.be.eql('GET resolved');
@@ -169,8 +169,8 @@ describe('RouterConfigurer', function () {
         expect(spyOnNext.calledTwice).to.be.true;
 
         // cleanup
-        spyOnRouterGet.restore();
-        spyOnRouterPost.restore();
+        stubOnRouterGet.restore();
+        stubOnRouterPost.restore();
     });
 
     it('should pre handle', async function () {

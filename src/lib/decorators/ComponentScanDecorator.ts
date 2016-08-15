@@ -1,7 +1,7 @@
 import * as _ from "lodash";
 import * as fileSystem from "fs";
 import * as path_module from "path";
-import { ConfigurationUtil } from "./ConfigurationDecorator";
+import { ConfigurationUtil, ProfiledPath } from "./ConfigurationDecorator";
 import { ComponentUtil } from "./ComponentDecorator";
 import { RequireUtils } from "../helpers/RequireUtils";
 import { Environment } from "../di/Environment";
@@ -22,11 +22,11 @@ export function ComponentScan(path) {
 
 export class ComponentScanUtil {
 
-    static getComponentsFromPaths(paths: Array<string>, environment: Environment): Set<any> {
+    static getComponentsFromPaths(paths: Array<ProfiledPath>, environment: Environment): Set<any> {
         let result = new Set<any>();
         for (let path of paths) {
-            if (profiledPath.profiles.length === 0 || environment.acceptsProfiles(...profiledPath.profiles)) {
-                for (let module of this.getModulesStartingFrom(path)) {
+            if (path.profiles.length === 0 || environment.acceptsProfiles(...path.profiles)) {
+                for (let module of this.getModulesStartingFrom(path.path)) {
                     for (let component of this.getComponentsFromModule(module)) {
                         result.add(component);
                     }

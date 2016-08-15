@@ -1,7 +1,6 @@
 import { InjectUtil, InjectionData } from "./InjectionDecorators";
 import { CONTROLLER_DECORATOR_TOKEN } from "./ControllerDecorator";
 import { INTERCEPTOR_DECORATOR_TOKEN } from "./InterceptorDecorator";
-import { INTERCEPTOR_DECORATOR_TOKEN } from "../interceptors/InterceptorDecorator";
 import { COMPONENT_DEFINITION_POST_PROCESSOR_DECORATOR_TOKEN } from "../processors/ComponentDefinitionPostProcessor";
 import { COMPONENT_POST_PROCESSOR_DECORATOR_TOKEN } from "../processors/ComponentPostProcessor";
 

@@ -1,6 +1,5 @@
 import { ComponentFactory } from "../di/ComponentFactory";
 import { ComponentScanUtil } from "./ComponentScanDecorator";
-import { ComponentUtil } from "./ComponentDecorator";
 import { Component, ComponentUtil } from "./ComponentDecorator";
 import { Environment } from "../di/Environment";
 
