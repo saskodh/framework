@@ -6,6 +6,11 @@ import { Router } from "express";
 import * as _ from "lodash";
 import { LifeCycleHooksUtil } from "../decorators/LifeCycleHooksDecorators";
 import { ProcessHandler } from "../helpers/ProcessHandler";
+import { IComponentPostProcessor, ComponentPostProcessorUtil } from "../processors/ComponentPostProcessor";
+import {
+    IComponentDefinitionPostProcessor, ComponentDefinitionPostProcessorUtil
+} from "../processors/ComponentDefinitionPostProcessor";
+import { OrderUtil } from "../decorators/OrderDecorator";
 import { Environment } from "./Environment";
 
 export class ApplicationContextState {
@@ -64,11 +69,22 @@ export class ApplicationContext {
             console.warn("Application context was already initialized or it is initializing at the moment.");
         }
 
+        await this.initializeDefinitionPostProcessors();
+        await this.initializePostProcessors();
+
+        await this.postProcessDefinition();
+
         this.state = ApplicationContextState.INITIALIZING;
         await this.initializeComponents();
         await this.wireComponents();
+
+        await this.postProcessBeforeInit();
+
         await this.executePostConstruction();
         await this.dispatcher.postConstruct();
+
+        await this.postProcessAfterInit();
+
         this.state = ApplicationContextState.READY;
     }
 
@@ -99,8 +115,6 @@ export class ApplicationContext {
         for (let CompConstructor of this.getActiveComponents()) {
             let componentData = ComponentUtil.getComponentData(CompConstructor);
 
-            // todo pass the comp constructor through the registered definition post processors
-            // configurationData.componentDefinitionPostProcessorFactory
             let instance = new CompConstructor();
             this.injector.register(componentData.classToken, instance);
             for (let token of componentData.aliasTokens) {
@@ -125,8 +139,77 @@ export class ApplicationContext {
             });
 
             this.dispatcher.processAfterInit(CompConstructor, instance);
+        }
+    }
 
-            // todo pass through the post processors configurationData.componentPostProcessorFactory
+    private initializeDefinitionPostProcessors() {
+        for (let CompConstructor of this.getActiveDefinitionPostProcessors()) {
+            let componentData = ComponentUtil.getComponentData(CompConstructor);
+
+            let instance = new CompConstructor();
+            if (!ComponentDefinitionPostProcessorUtil.isIComponentDefinitionPostProcessor(instance)) {
+                throw new Error('Components annotated with @ComponentDefinitionPostProcessor must implement the ' +
+                    'IComponentDefinitionPostProcessor interface');
+            }
+
+            this.injector.register(componentData.classToken, instance);
+            for (let token of componentData.aliasTokens) {
+                this.injector.register(token, instance);
+            }
+        }
+    }
+
+    private initializePostProcessors() {
+        for (let CompConstructor of this.getActivePostProcessors()) {
+            let componentData = ComponentUtil.getComponentData(CompConstructor);
+
+            let instance = new CompConstructor();
+            if (!ComponentPostProcessorUtil.isIComponentPostProcessor(instance)) {
+                throw new Error('Components annotated with @ComponentPostProcessor must implement the ' +
+                    'IComponentPostProcessor interface');
+            }
+
+            this.injector.register(componentData.classToken, instance);
+            for (let token of componentData.aliasTokens) {
+                this.injector.register(token, instance);
+            }
+        }
+    }
+
+    private async postProcessDefinition() {
+        this.configurationData.componentFactory.components = _.map(
+            this.configurationData.componentFactory.components, (componentDefinition) => {
+                for (let componentDefinitionPostProcessor of this.getOrderedDefinitionPostProcessors()) {
+                    let result = componentDefinitionPostProcessor.postProcessDefinition(componentDefinition);
+                    if (_.isFunction(result)) {
+                        componentDefinition = result;
+                    } else if (!_.isUndefined(result)) {
+                        throw new Error('Component Definition Post Processor must return a constructor function');
+                    }
+                }
+                return componentDefinition;
+            });
+    }
+
+    private async postProcessBeforeInit() {
+        for (let componentPostProcessor of this.getOrderedPostProcessors()) {
+
+            for (let componentConstructor of this.getActiveComponents()) {
+                let componentData = ComponentUtil.getComponentData(componentConstructor);
+                let instance = this.injector.getComponent(componentData.classToken);
+                componentPostProcessor.postProcessBeforeInit(instance);
+            }
+        }
+    }
+
+    private async postProcessAfterInit() {
+        for (let componentPostProcessor of this.getOrderedPostProcessors()) {
+
+            for (let componentConstructor of this.getActiveComponents()) {
+                let componentData = ComponentUtil.getComponentData(componentConstructor);
+                let instance = this.injector.getComponent(componentData.classToken);
+                componentPostProcessor.postProcessAfterInit(instance);
+            }
         }
     }
 
@@ -175,6 +258,65 @@ export class ApplicationContext {
             }
             return true;
         });
+    }
+
+    private getActiveDefinitionPostProcessors() {
+        let activeProfiles = this.environment.getActiveProfiles();
+        let definitionPostProcessors = _.filter(
+            this.configurationData.componentDefinitionPostProcessorFactory.components, (CompConstructor) => {
+                let profiles = ComponentUtil.getComponentData(CompConstructor).profiles;
+                if (profiles.length === 0) {
+                    return true;
+                }
+                for (let profile of profiles) {
+                    for (let activeProfile of activeProfiles) {
+                        return profile === activeProfile;
+                    }
+                }
+            });
+        return OrderUtil.orderList(definitionPostProcessors);
+    }
+
+    private getActivePostProcessors() {
+        let activeProfiles = this.environment.getActiveProfiles();
+        let postProcessors = _.filter(
+            this.configurationData.componentPostProcessorFactory.components, (CompConstructor) => {
+                let profiles = ComponentUtil.getComponentData(CompConstructor).profiles;
+                if (profiles.length === 0) {
+                    return true;
+                }
+                for (let profile of profiles) {
+                    for (let activeProfile of activeProfiles) {
+                        return profile === activeProfile;
+                    }
+                }
+            });
+        return OrderUtil.orderList(postProcessors);
+    }
+
+    // return the definitionPostProcessors ordered by the value extracted if it implements the IOrdered interface
+    private getOrderedDefinitionPostProcessors(): Array<IComponentDefinitionPostProcessor> {
+        let definitionPostProcessors = [];
+        for (let componentDefinitionPostProcessor of this.getActiveDefinitionPostProcessors()) {
+            let componentData = ComponentUtil.getComponentData(componentDefinitionPostProcessor);
+            let definitionPostProcessor = <IComponentDefinitionPostProcessor> this.injector
+                .getComponent(componentData.classToken);
+
+            definitionPostProcessors.push(definitionPostProcessor);
+        }
+        return definitionPostProcessors;
+    }
+
+    // return the postProcessors ordered by the value extracted if it implements the IOrdered interface
+    private getOrderedPostProcessors() {
+        let postProcessors = [];
+        for (let componentPostProcessor of this.getActivePostProcessors()) {
+            let componentData = ComponentUtil.getComponentData(componentPostProcessor);
+            let postProcessor = <IComponentPostProcessor> this.injector.getComponent(componentData.classToken);
+
+            postProcessors.push(postProcessor);
+        }
+        return postProcessors;
     }
 
     private initializeEnvironment() {

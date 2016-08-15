@@ -23,6 +23,8 @@ describe('PropertySourceDecorator', function () {
         expect(configurationDataA.propertySourcePaths).to.be.eql([{path: propertiesPath, profiles: []},
             {path: "propertiesPathTwo", "profiles": []}]);
         expect(configurationUtilSpy.called).to.be.true;
+        // cleanup
+        configurationUtilSpy.restore();
     });
 
     it('should throw when not on @Configuration', function () {

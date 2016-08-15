@@ -37,7 +37,16 @@ export class ConfigurationData {
     }
 
     loadAllComponents(environment: Environment) {
-        ComponentScanUtil.loadAllComponents(this, environment);
+        ComponentScanUtil.getComponentsFromPaths(this.componentScanPaths, environment)
+            .forEach((component) => {
+                if (ComponentUtil.isComponentDefinitionPostProcessor(component)) {
+                    this.componentDefinitionPostProcessorFactory.components.push(component);
+                } else if (ComponentUtil.isComponentPostProcessor(component)) {
+                    this.componentPostProcessorFactory.components.push(component);
+                } else {
+                    this.componentFactory.components.push(component);
+                }
+            });
     }
 }
 

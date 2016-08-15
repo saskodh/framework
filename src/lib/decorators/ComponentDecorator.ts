@@ -1,6 +1,8 @@
 import { InjectUtil, InjectionData } from "./InjectionDecorators";
 import { CONTROLLER_DECORATOR_TOKEN } from "./ControllerDecorator";
 import { INTERCEPTOR_DECORATOR_TOKEN } from "./InterceptorDecorator";
+import { COMPONENT_DEFINITION_POST_PROCESSOR_DECORATOR_TOKEN } from "../processors/ComponentDefinitionPostProcessor";
+import { COMPONENT_POST_PROCESSOR_DECORATOR_TOKEN } from "../processors/ComponentPostProcessor";
 
 export class ComponentData {
     classToken: Symbol;
@@ -56,5 +58,13 @@ export class ComponentUtil {
 
     static isInterceptor(target): boolean {
         return !!target[INTERCEPTOR_DECORATOR_TOKEN];
+    }
+
+    static isComponentDefinitionPostProcessor(target): boolean {
+    return !!target[COMPONENT_DEFINITION_POST_PROCESSOR_DECORATOR_TOKEN];
+}
+
+    static isComponentPostProcessor(target): boolean {
+        return !!target[COMPONENT_POST_PROCESSOR_DECORATOR_TOKEN];
     }
 }

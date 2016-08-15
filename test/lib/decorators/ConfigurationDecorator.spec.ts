@@ -7,6 +7,7 @@ import {
 import { ComponentScanUtil } from "../../../src/lib/decorators/ComponentScanDecorator";
 import { Environment } from "../../../src/lib/di/Environment";
 import { Profile } from "../../../src/lib/decorators/ProfileDecorators";
+import { ComponentUtil } from "../../../src/lib/decorators/ComponentDecorator";
 
 describe('ConfigurationData', function () {
 
@@ -14,16 +15,31 @@ describe('ConfigurationData', function () {
         // given
         let environment = new Environment();
         let configurationData = new ConfigurationData();
-        configurationData.componentScanPaths.push(new ProfiledPath(['someProfile'], 'somePath'));
-        let stubOnLoadAllComponents = stub(ComponentScanUtil, 'loadAllComponents');
+        configurationData.componentScanPaths.push(new ProfiledPath(['profile1'], 'path1'));
+        let stubOnComponentScanUtilGetComponentsFromPaths = stub(ComponentScanUtil, 'getComponentsFromPaths')
+            .returns(['component', 'definitionPostProcessor', 'postProcessor']);
+        let stubOnIsComponentDefinitionPostProcessor = stub(ComponentUtil, 'isComponentDefinitionPostProcessor');
+        stubOnIsComponentDefinitionPostProcessor.withArgs('component').returns(false);
+        stubOnIsComponentDefinitionPostProcessor.withArgs('definitionPostProcessor').returns(true);
+        stubOnIsComponentDefinitionPostProcessor.withArgs('postProcessor').returns(false);
+        let stubOnIsComponentPostProcessor = stub(ComponentUtil, 'isComponentPostProcessor');
+        stubOnIsComponentPostProcessor.withArgs('component').returns(false);
+        stubOnIsComponentPostProcessor.withArgs('definitionPostProcessor').returns(false);
+        stubOnIsComponentPostProcessor.withArgs('postProcessor').returns(true);
 
         // when
         configurationData.loadAllComponents(environment);
 
         // then
-        expect(stubOnLoadAllComponents.calledWith(configurationData, environment)).to.be.true;
-
-        stubOnLoadAllComponents.restore();
+        expect(configurationData.componentFactory.components.length).to.be.eq(1);
+        expect(configurationData.componentDefinitionPostProcessorFactory.components.length).to.be.eq(1);
+        expect(configurationData.componentPostProcessorFactory.components.length).to.be.eq(1);
+        expect(stubOnComponentScanUtilGetComponentsFromPaths
+            .calledWith(configurationData.componentScanPaths, environment)).to.be.true;
+        // cleanup
+        stubOnComponentScanUtilGetComponentsFromPaths.restore();
+        stubOnIsComponentDefinitionPostProcessor.restore();
+        stubOnIsComponentPostProcessor.restore();
     });
 
     it('should throw error when @Configuration is used more than once on the same class', function () {
