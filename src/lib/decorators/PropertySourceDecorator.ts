@@ -2,6 +2,9 @@ import * as _ from "lodash";
 import { ConfigurationUtil } from "./ConfigurationDecorator";
 import { GeneralUtils } from "../helpers/GeneralUtils";
 import {RequireUtils} from "../helpers/RequireUtils";
+import { LoggerFactory } from "../helpers/logging/LoggerFactory";
+
+let logger = LoggerFactory.getInstance();
 
 /**
  * A decorator for defining a JSON property source for the configuration properties.
@@ -22,7 +25,7 @@ export class PropertySourceUtil {
     static getPropertiesFromPaths(...propertySourcePaths: Array<string>): Map<string, string> {
         let resultPropertiesMap = new Map<string, string>();
         for (let path of propertySourcePaths) {
-            console.log(`Loading properties by @PropertySource from "${path}"`);
+            logger.debug(`Loading properties by @PropertySource from "${path}"`);
             let properties = RequireUtils.require(path);
             this.parseProperties(properties).forEach((value, prop) => resultPropertiesMap.set(prop, value));
         }

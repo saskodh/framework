@@ -5,6 +5,9 @@ import { ConfigurationUtil, ProfiledPath } from "./ConfigurationDecorator";
 import { ComponentUtil } from "./ComponentDecorator";
 import { RequireUtils } from "../helpers/RequireUtils";
 import { Environment } from "../di/Environment";
+import { LoggerFactory } from "../helpers/logging/LoggerFactory";
+
+let logger = LoggerFactory.getInstance();
 
 /**
  *A decorator for setting up project files to be component-scanned.
@@ -48,7 +51,7 @@ export class ComponentScanUtil {
 
             // if it's JavaScript file load it
             if (lstat.isFile() && path_module.extname(fileName) === '.js') {
-                console.log(`Loading dynamically by @ComponentScan: ${fileName} (${filePath})`);
+                logger.debug(`Loading dynamically by @ComponentScan: ${fileName} (${filePath})`);
                 yield RequireUtils.require(filePath);
             }
 

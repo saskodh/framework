@@ -2,6 +2,9 @@ import * as _ from "lodash";
 import { Router } from "express-serve-static-core";
 import { OrderUtil } from "../decorators/OrderDecorator";
 import { RouterConfigItem } from "../decorators/RequestMappingDecorator";
+import { LoggerFactory } from "../helpers/logging/LoggerFactory";
+
+let logger = LoggerFactory.getInstance();
 
 /**
  * RouteConfigurer responsible for configuring the Express 4.x router that will be exposed by the dispatcher.
@@ -57,7 +60,7 @@ export class RouterConfigurer {
         for (let [route, handler] of this.routeHandlers.entries()) {
             let httpMethod = route.requestConfig.method;
             let path = route.requestConfig.path;
-            console.log(`Registering route. Path: '${path}', method: ${httpMethod}.`);
+            logger.debug(`Registering route. Path: '${path}', method: ${httpMethod}.`);
 
             this.router[httpMethod](path, this.wrap(async(request, response, next) => {
                 let result = await handler[route.methodHandler](request, response);

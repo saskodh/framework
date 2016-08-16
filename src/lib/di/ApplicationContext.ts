@@ -12,6 +12,9 @@ import {
 } from "../processors/ComponentDefinitionPostProcessor";
 import { OrderUtil } from "../decorators/OrderDecorator";
 import { Environment } from "./Environment";
+import { LoggerFactory } from "../helpers/logging/LoggerFactory";
+
+let logger = LoggerFactory.getInstance();
 
 export class ApplicationContextState {
     static NOT_INITIALIZED = 'NOT_INITIALIZED';
@@ -66,7 +69,7 @@ export class ApplicationContext {
      * */
     async start() {
         if (this.state !== ApplicationContextState.NOT_INITIALIZED) {
-            console.warn("Application context was already initialized or it is initializing at the moment.");
+            logger.warn("Application context was already initialized or it is initializing at the moment.");
         }
 
         await this.initializeDefinitionPostProcessors();
@@ -112,9 +115,11 @@ export class ApplicationContext {
     }
 
     private initializeComponents() {
+        logger.info(`Initializing ApplicationContext's components.`);
         for (let CompConstructor of this.getActiveComponents()) {
             let componentData = ComponentUtil.getComponentData(CompConstructor);
 
+            logger.debug(`Initializing ${CompConstructor.name} component.`);
             let instance = new CompConstructor();
             this.injector.register(componentData.classToken, instance);
             for (let token of componentData.aliasTokens) {
@@ -124,16 +129,20 @@ export class ApplicationContext {
     }
 
     private wireComponents() {
+        logger.info(`Wiring ApplicationContext's components.`);
         for (let CompConstructor of this.getActiveComponents()) {
             let componentData = ComponentUtil.getComponentData(CompConstructor);
             let injectionData = ComponentUtil.getInjectionData(CompConstructor);
             let instance = this.injector.getComponent(componentData.classToken);
 
+            logger.debug(`Wiring dependencies for '${CompConstructor.name}' component.`);
             injectionData.dependencies.forEach((dependencyData, fieldName) => {
                 let dependency = dependencyData.isArray ? this.injector.getComponents(dependencyData.token) :
                     this.injector.getComponent(dependencyData.token);
                 Reflect.set(instance, fieldName, dependency);
             });
+
+            logger.debug(`Wiring properties for '${CompConstructor.name}' component.`);
             injectionData.properties.forEach((propertyKey, fieldName) => {
                 Reflect.set(instance, fieldName, this.environment.getProperty(propertyKey));
             });
@@ -143,6 +152,7 @@ export class ApplicationContext {
     }
 
     private initializeDefinitionPostProcessors() {
+        logger.info('Initializing component definition post processors.');
         for (let CompConstructor of this.getActiveDefinitionPostProcessors()) {
             let componentData = ComponentUtil.getComponentData(CompConstructor);
 
@@ -156,10 +166,12 @@ export class ApplicationContext {
             for (let token of componentData.aliasTokens) {
                 this.injector.register(token, instance);
             }
+            logger.debug(`Initialized and registered component definition post processor: '${CompConstructor.name}'`);
         }
     }
 
     private initializePostProcessors() {
+        logger.info('Initializing component post processors.');
         for (let CompConstructor of this.getActivePostProcessors()) {
             let componentData = ComponentUtil.getComponentData(CompConstructor);
 
@@ -173,12 +185,15 @@ export class ApplicationContext {
             for (let token of componentData.aliasTokens) {
                 this.injector.register(token, instance);
             }
+            logger.debug(`Initialized and registered component post processor: '${CompConstructor.name}'`);
         }
     }
 
     private async postProcessDefinition() {
+        logger.info('Postprocessing component definitions.');
         this.configurationData.componentFactory.components = _.map(
             this.configurationData.componentFactory.components, (componentDefinition) => {
+                logger.debug(`Postprocessing component definition for: '${componentDefinition.name}'`);
                 for (let componentDefinitionPostProcessor of this.getOrderedDefinitionPostProcessors()) {
                     let result = componentDefinitionPostProcessor.postProcessDefinition(componentDefinition);
                     if (_.isFunction(result)) {
@@ -192,9 +207,12 @@ export class ApplicationContext {
     }
 
     private async postProcessBeforeInit() {
+        logger.info('Postprocessing components before initialization.');
         for (let componentPostProcessor of this.getOrderedPostProcessors()) {
 
             for (let componentConstructor of this.getActiveComponents()) {
+                logger.debug(`Post processing component '${componentConstructor.name}' by 
+                    '${componentPostProcessor.name}' component post processor.`);
                 let componentData = ComponentUtil.getComponentData(componentConstructor);
                 let instance = this.injector.getComponent(componentData.classToken);
                 componentPostProcessor.postProcessBeforeInit(instance);
@@ -203,9 +221,12 @@ export class ApplicationContext {
     }
 
     private async postProcessAfterInit() {
+        logger.info('Postprocessing components after initialization.');
         for (let componentPostProcessor of this.getOrderedPostProcessors()) {
 
             for (let componentConstructor of this.getActiveComponents()) {
+                logger.debug(`Post processing component '${componentConstructor.name}' by 
+                    '${componentPostProcessor.name}' component post processor.`);
                 let componentData = ComponentUtil.getComponentData(componentConstructor);
                 let instance = this.injector.getComponent(componentData.classToken);
                 componentPostProcessor.postProcessAfterInit(instance);
@@ -214,6 +235,7 @@ export class ApplicationContext {
     }
 
     private async executePostConstruction() {
+        logger.info('Executing @PostConstruct methods for all components.');
         let postConstructInvocations = [];
         for (let CompConstructor of this.getActiveComponents()) {
             let componentData = ComponentUtil.getComponentData(CompConstructor);
@@ -223,6 +245,7 @@ export class ApplicationContext {
                 if (!_.isFunction(instance[postConstructMethod])) {
                     throw new Error(`@PostConstruct is not on a method (${postConstructMethod})`);
                 }
+                logger.debug(`Executing @PostConstruct method for '${CompConstructor.name}' component.`);
                 let invocationResult = instance[postConstructMethod]();
                 postConstructInvocations.push(invocationResult);
             }
@@ -231,6 +254,7 @@ export class ApplicationContext {
     }
 
     private async executePreDestruction() {
+        logger.info('Executing @PreDestroy methods for all components.');
         let preDestroyInvocations = [];
         for (let CompConstructor of this.getActiveComponents()) {
             let componentData = ComponentUtil.getComponentData(CompConstructor);
@@ -240,6 +264,7 @@ export class ApplicationContext {
                 if (!_.isFunction(instance[preDestroyMethod])) {
                     throw new Error(`@PreDestroy is not on a method (${preDestroyMethod})`);
                 }
+                logger.debug(`Executing @PreDestroy method for '${CompConstructor.name}' component.`);
                 let invocationResult = instance[preDestroyMethod]();
                 preDestroyInvocations.push(invocationResult);
             }
@@ -320,6 +345,7 @@ export class ApplicationContext {
     }
 
     private initializeEnvironment() {
+        logger.info(`Initializing the ApplicationContext's Environment.`);
         this.environment = new Environment();
         this.environment.setActiveProfiles(...this.configurationData.activeProfiles);
         this.environment.setApplicationProperties(this.configurationData.propertySourcePaths);
