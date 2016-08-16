@@ -1,9 +1,10 @@
 import * as _ from "lodash";
 import * as fileSystem from "fs";
 import * as path_module from "path";
-import { ConfigurationData, ConfigurationUtil } from "./ConfigurationDecorator";
+import { ConfigurationUtil, ProfiledPath } from "./ConfigurationDecorator";
 import { ComponentUtil } from "./ComponentDecorator";
 import { RequireUtils } from "../helpers/RequireUtils";
+import { Environment } from "../di/Environment";
 import { DecoratorUsageError } from "../errors/DecoratorUsageError";
 import { DecoratorUtil } from "../helpers/DecoratorUtils";
 
@@ -23,10 +24,19 @@ export function ComponentScan(path) {
 }
 
 export class ComponentScanUtil {
-    static loadAllComponents(configurationData: ConfigurationData) {
-        for (let path of configurationData.componentScanPaths) {
-            this.loadComponentsFromPath(path, configurationData);
+
+    static getComponentsFromPaths(paths: Array<ProfiledPath>, environment: Environment): Set<any> {
+        let result = new Set<any>();
+        for (let path of paths) {
+            if (path.profiles.length === 0 || environment.acceptsProfiles(...path.profiles)) {
+                for (let module of this.getModulesStartingFrom(path.path)) {
+                    for (let component of this.getComponentsFromModule(module)) {
+                        result.add(component);
+                    }
+                }
+            }
         }
+        return result;
     };
 
     private static * getModulesStartingFrom(path: string) {
@@ -53,13 +63,5 @@ export class ComponentScanUtil {
 
     private static getComponentsFromModule(module): Array<any> {
         return _.filter(module, (exportable) => ComponentUtil.isComponent(exportable));
-    };
-
-    private static loadComponentsFromPath(path: string, configurationData: ConfigurationData) {
-        for (let module of this.getModulesStartingFrom(path)) {
-            for (let component of this.getComponentsFromModule(module)) {
-                configurationData.componentFactory.components.push(component);
-            }
-        }
     };
 }

@@ -1,6 +1,6 @@
 import { Component } from "../decorators/ComponentDecorator";
 
-export interface ComponentDefinitionPostProcessor {
+export interface IComponentDefinitionPostProcessor {
     postProcessDefinition (componentConstructor: any): any;
 }
 
@@ -12,4 +12,11 @@ export function ComponentDefinitionPostProcessor() {
         Component()(target);
         target[COMPONENT_DEFINITION_POST_PROCESSOR_DECORATOR_TOKEN] = true;
     };
+}
+
+export class ComponentDefinitionPostProcessorUtil {
+
+    static isIComponentDefinitionPostProcessor(arg: any): arg is IComponentDefinitionPostProcessor {
+        return arg.postProcessDefinition !== undefined;
+    }
 }

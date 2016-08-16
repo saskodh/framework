@@ -1,6 +1,7 @@
 import {expect} from "chai";
 import {stub} from "sinon";
 import {ProcessHandler} from "../../../src/lib/helpers/ProcessHandler";
+import { GeneralUtils } from "../../../src/lib/helpers/GeneralUtils";
 import { BadArgumentError } from "../../../src/lib/errors/BadArgumentError";
 
 describe('ProcessHandler', function () {
@@ -13,6 +14,11 @@ describe('ProcessHandler', function () {
 
     afterEach(() => {
         processOnMock.restore();
+    });
+
+    it('should return singleton instance on getInstance()', function () {
+        // given / when / then
+        expect(ProcessHandler.getInstance()).to.be.equal(ProcessHandler.getInstance());
     });
 
     it('should call registered listeners on process.exit()', function () {
@@ -35,6 +41,18 @@ describe('ProcessHandler', function () {
         expect(listenerTwo.called).to.be.true;
     });
 
+    it('should throw error when registering listener which is not a function', function () {
+        // given
+        let processHandler = new ProcessHandler();
+
+        // when / then
+        expect(processHandler.registerOnExitListener.bind(processHandler, 5)).to.throw(Error);
+        expect(processHandler.registerOnExitListener.bind(processHandler, {val: 'name'})).to.throw(Error);
+        expect(processHandler.registerOnExitListener.bind(processHandler, undefined)).to.throw(Error);
+        expect(processHandler.registerOnExitListener.bind(processHandler, true)).to.throw(Error);
+        expect(processHandler.registerOnExitListener.bind(processHandler, 'chocolates')).to.throw(Error);
+    });
+
     it('should not call unregistered listeners on process.exit()', function () {
         // given
         let listenerOne = stub();
@@ -55,6 +73,57 @@ describe('ProcessHandler', function () {
         expect(listenerTwo.called).to.be.true;
     });
 
+    it('should get process properties', function () {
+        // given
+        let stubOnProcessArgv = stub(process.argv, 'forEach', (callback) =>
+            ['nodePath', 'entryPath', 'arg1', 'arg2=val'].forEach(callback));
+
+        // when
+        let result = ProcessHandler.getProcessProperties();
+
+        // then
+        expect(result.size).to.eql(4);
+        expect(result.get('application.process.node')).to.eql('nodePath');
+        expect(result.get('application.process.entryFile')).to.eql('entryPath');
+        expect(result.get('arg1')).to.eql('true');
+        expect(result.get('arg2')).to.eql('val');
+
+        stubOnProcessArgv.restore();
+    });
+
+    it('should get node properties', function () {
+        // given
+        let stubOnProcessExecArgv = stub(process.execArgv, 'forEach', (callback) =>
+            ['arg1', 'arg2=val'].forEach(callback));
+
+        // when
+        let result = ProcessHandler.getNodeProperties();
+
+        // then
+        expect(result.size).to.eql(2);
+        expect(result.get('arg1')).to.eql('true');
+        expect(result.get('arg2')).to.eql('val');
+
+        stubOnProcessExecArgv.restore();
+    });
+
+    it('should get environment properties', function () {
+        // given
+        let map = new Map();
+        map.set('key1', 'val1');
+        map.set('key2', 'val2');
+        let stubOnFlattenObject = stub(GeneralUtils, 'flattenObject').returns(map);
+
+        // when
+        let result = ProcessHandler.getEnvironmentProperties();
+
+        // then
+        expect(result).to.equal(map);
+        expect(stubOnFlattenObject.calledWith(process.env)).to.be.true;
+
+        stubOnFlattenObject.restore();
+    });
+
     it('should call process.exit() on SIGINT', function () {
         // given
         let processExitSpy = stub(process, 'exit');
@@ -67,22 +136,5 @@ describe('ProcessHandler', function () {
         // then
         expect(processOnMock.args[1][0]).to.be.eql('SIGINT');
         expect(processExitSpy.called).to.be.true;
-    });
-
-    it('should throw error when registering listener which is not a function', function () {
-        // given
-        let processHandler = new ProcessHandler();
-
-        // when / then
-        expect(processHandler.registerOnExitListener.bind(processHandler, 5)).to.throw(BadArgumentError);
-        expect(processHandler.registerOnExitListener.bind(processHandler, {val: 'name'})).to.throw(BadArgumentError);
-        expect(processHandler.registerOnExitListener.bind(processHandler, undefined)).to.throw(BadArgumentError);
-        expect(processHandler.registerOnExitListener.bind(processHandler, true)).to.throw(BadArgumentError);
-        expect(processHandler.registerOnExitListener.bind(processHandler, 'chocolates')).to.throw(BadArgumentError);
-    });
-
-    it('should return singleton instance on getInstance()', function () {
-        // given / when / then
-        expect(ProcessHandler.getInstance()).to.be.equal(ProcessHandler.getInstance());
     });
 });

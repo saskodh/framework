@@ -1,11 +1,14 @@
-import {expect} from "chai";
+import { expect } from "chai";
 import {
     Component, ComponentData,
-    ComponentUtil, Profile
+    ComponentUtil
 } from "../../../src/lib/decorators/ComponentDecorator";
-import {InjectionData} from "../../../src/lib/decorators/InjectionDecorators";
-import {Controller} from "../../../src/lib/decorators/ControllerDecorator";
-import {Interceptor} from "../../../src/lib/interceptors/InterceptorDecorator";
+import { InjectionData } from "../../../src/lib/decorators/InjectionDecorators";
+import { Controller } from "../../../src/lib/decorators/ControllerDecorator";
+import { Interceptor } from "../../../src/lib/decorators/InterceptorDecorator";
+import { ComponentPostProcessor } from "../../../src/lib/processors/ComponentPostProcessor";
+import { ComponentDefinitionPostProcessor } from "../../../src/lib/processors/ComponentDefinitionPostProcessor";
+import { Profile } from "../../../src/lib/decorators/ProfileDecorators";
 import { DecoratorUsageError } from "../../../src/lib/errors/DecoratorUsageError";
 
 class MyClass {
@@ -28,7 +31,7 @@ describe('ComponentDecorator', function () {
         expect(componentData.classToken).to.be.a('symbol');
         expect(componentData.aliasTokens).to.be.eql([]);
         expect(componentData.injectionData).to.be.instanceOf(InjectionData);
-        expect(componentData.profile).to.be.undefined;
+        expect(componentData.profiles.length).to.be.eq(0);
     });
 
     it('should throw when not on a class', function () {
@@ -51,7 +54,8 @@ describe('ProfileDecorator', function () {
         let componentData = ComponentUtil.getComponentData(A);
 
         // then
-        expect(componentData.profile).to.eq('dev');
+        expect(componentData.profiles.length).to.eq(1);
+        expect(componentData.profiles[0]).to.eq('dev');
     });
 
     it('should throw error when @Profile is used on non Component', function () {
@@ -151,5 +155,37 @@ describe('ComponentUtil', function () {
         expect(ComponentUtil.isInterceptor(A)).to.be.true;
         expect(ComponentUtil.isInterceptor(B)).to.be.false;
         expect(ComponentUtil.isInterceptor(C)).to.be.false;
+    });
+
+    it('should return if instance is definition post processor', function () {
+        // given
+        @ComponentDefinitionPostProcessor()
+        class A {}
+
+        @Controller()
+        class B {}
+
+        class C {}
+
+        // when / then
+        expect(ComponentUtil.isComponentDefinitionPostProcessor(A)).to.be.true;
+        expect(ComponentUtil.isComponentDefinitionPostProcessor(B)).to.be.false;
+        expect(ComponentUtil.isComponentDefinitionPostProcessor(C)).to.be.false;
+    });
+
+    it('should return if instance is post processor', function () {
+        // given
+        @ComponentPostProcessor()
+        class A {}
+
+        @Controller()
+        class B {}
+
+        class C {}
+
+        // when / then
+        expect(ComponentUtil.isComponentPostProcessor(A)).to.be.true;
+        expect(ComponentUtil.isComponentPostProcessor(B)).to.be.false;
+        expect(ComponentUtil.isComponentPostProcessor(C)).to.be.false;
     });
 });

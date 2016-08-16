@@ -1,6 +1,8 @@
 import { InjectUtil, InjectionData } from "./InjectionDecorators";
 import { CONTROLLER_DECORATOR_TOKEN } from "./ControllerDecorator";
-import { INTERCEPTOR_DECORATOR_TOKEN } from "../interceptors/InterceptorDecorator";
+import { INTERCEPTOR_DECORATOR_TOKEN } from "./InterceptorDecorator";
+import { COMPONENT_DEFINITION_POST_PROCESSOR_DECORATOR_TOKEN } from "../processors/ComponentDefinitionPostProcessor";
+import { COMPONENT_POST_PROCESSOR_DECORATOR_TOKEN } from "../processors/ComponentPostProcessor";
 import { DecoratorUsageError } from "../errors/DecoratorUsageError";
 import { DecoratorUtil, DecoratorType } from "../helpers/DecoratorUtils";
 
@@ -8,11 +10,12 @@ export class ComponentData {
     classToken: Symbol;
     aliasTokens: Array<Symbol>;
     injectionData: InjectionData;
-    profile: string;
+    profiles: Array<string>;
 
     constructor() {
         this.classToken = Symbol('classToken');
         this.aliasTokens = [];
+        this.profiles = [];
         this.injectionData = new InjectionData();
     }
 }
@@ -29,16 +32,6 @@ export function Component() {
         let componentData = new ComponentData();
         componentData.injectionData = InjectUtil.initIfDoesntExist(target.prototype);
         target[COMPONENT_DECORATOR_TOKEN] = componentData;
-    };
-}
-
-export function Profile(profile: string) {
-    return function (target) {
-        if (!ComponentUtil.isComponent(target)) {
-            let subjectName = DecoratorUtil.getSubjectName(Array.prototype.slice.call(arguments));
-            throw new DecoratorUsageError(`@Profile can be set only on @Component! (${subjectName})`);
-        }
-        ComponentUtil.getComponentData(target).profile = profile;
     };
 }
 
@@ -72,5 +65,13 @@ export class ComponentUtil {
 
     static isInterceptor(target): boolean {
         return !!target[INTERCEPTOR_DECORATOR_TOKEN];
+    }
+
+    static isComponentDefinitionPostProcessor(target): boolean {
+    return !!target[COMPONENT_DEFINITION_POST_PROCESSOR_DECORATOR_TOKEN];
+}
+
+    static isComponentPostProcessor(target): boolean {
+        return !!target[COMPONENT_POST_PROCESSOR_DECORATOR_TOKEN];
     }
 }

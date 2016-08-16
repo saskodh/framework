@@ -1,4 +1,5 @@
 import * as _ from "lodash";
+import { GeneralUtils } from "./GeneralUtils";
 import { BadArgumentError } from "../errors/BadArgumentError";
 
 export class ProcessHandler {
@@ -20,6 +21,44 @@ export class ProcessHandler {
             this.instance = new ProcessHandler();
         }
         return this.instance;
+    }
+
+    static getProcessProperties(): Map<string, string> {
+        let result = new Map<string, string>();
+        process.argv.forEach((arg: string, index) => {
+            if (index === 0) {
+                result.set('application.process.node', arg);
+            }
+            if (index === 1) {
+                result.set('application.process.entryFile', arg);
+            }
+            if (index > 1) {
+                if (arg.includes('=')) {
+                    let [key, value] = arg.split('=');
+                    result.set(key.trim(), value.trim());
+                } else {
+                    result.set(arg, 'true');
+                }
+            }
+        });
+        return result;
+    }
+
+    static getNodeProperties(): Map<string, string> {
+        let result = new Map<string, string>();
+        process.execArgv.forEach((arg: string) => {
+            if (arg.includes('=')) {
+                let [key, value] = arg.split('=');
+                result.set(key.trim(), value.trim());
+            } else {
+                result.set(arg, 'true');
+            }
+        });
+        return result;
+    }
+
+    static getEnvironmentProperties(): Map<string, string> {
+        return GeneralUtils.flattenObject(process.env);
     }
 
     registerOnExitListener(callback: Function) {

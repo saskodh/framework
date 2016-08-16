@@ -1,5 +1,5 @@
 import {expect} from "chai";
-import {Interceptor, INTERCEPTOR_DECORATOR_TOKEN} from "../../../src/lib/interceptors/InterceptorDecorator";
+import {Interceptor, INTERCEPTOR_DECORATOR_TOKEN} from "../../../src/lib/decorators/InterceptorDecorator";
 import { ComponentUtil } from "../../../src/lib/decorators/ComponentDecorator";
 
 @Interceptor()
