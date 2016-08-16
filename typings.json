@@ -3,7 +3,8 @@
   "dependencies": {},
   "globalDependencies": {
     "lodash": "registry:dt/lodash#3.10.0+20160330154726",
-    "node": "registry:dt/node#6.0.0+20160514165920"
+    "node": "registry:dt/node#6.0.0+20160514165920",
+    "winston": "registry:dt/winston#0.0.0+20160417152829"
   },
   "globalDevDependencies": {
     "body-parser": "registry:dt/body-parser#0.0.0+20160317120654",

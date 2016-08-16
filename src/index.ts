@@ -21,3 +21,4 @@ export {Dispatcher} from "./lib/web/Dispatcher";
 export {ComponentDefinitionPostProcessor} from "./lib/processors/ComponentDefinitionPostProcessor";
 export {ComponentPostProcessor} from "./lib/processors/ComponentPostProcessor";
 export {Environment} from "./lib/di/Environment";
+export { LoggerFactory } from "./lib/helpers/logging/LoggerFactory";
