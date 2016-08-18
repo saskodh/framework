@@ -3,7 +3,7 @@ import { Configuration, ConfigurationUtil, ProfiledPath } from "../../../src/lib
 import {Import} from "../../../src/lib/decorators/ImportDecorator";
 import "reflect-metadata";
 import { BadArgumentError } from "../../../src/lib/errors/BadArgumentError";
-import { DecoratorUsageError } from "../../../src/lib/errors/DecoratorUsageError";
+import { DecoratorUsageError } from "../../../src/lib/errors/DecoratorUsageErrors";
 
 describe('ImportDecorator', function () {
 

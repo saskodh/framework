@@ -8,7 +8,7 @@ import { ComponentScanUtil } from "../../../src/lib/decorators/ComponentScanDeco
 import { Environment } from "../../../src/lib/di/Environment";
 import { Profile } from "../../../src/lib/decorators/ProfileDecorators";
 import { ComponentUtil } from "../../../src/lib/decorators/ComponentDecorator";
-import { DecoratorUsageError } from "../../../src/lib/errors/DecoratorUsageError";
+import { DecoratorUsageError } from "../../../src/lib/errors/DecoratorUsageErrors";
 
 describe('ConfigurationData', function () {
 

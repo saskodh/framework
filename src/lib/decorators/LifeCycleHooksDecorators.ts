@@ -1,4 +1,4 @@
-import { DecoratorUsageError } from "../errors/DecoratorUsageError";
+import { DecoratorUsageError } from "../errors/DecoratorUsageErrors";
 import { DecoratorUtil, DecoratorType } from "../helpers/DecoratorUtils";
 
 const LIFE_CYCLE_HOOKS_TOKEN = Symbol('life_cycle_hooks_token');
@@ -13,15 +13,11 @@ export class LifeCycleHooksConfig {
  */
 export function PostConstruct() {
     return function (target, methodName, descriptor: PropertyDescriptor) {
-        let args = Array.prototype.slice.call(arguments);
-        if (!DecoratorUtil.isType(DecoratorType.METHOD, args)) {
-            let sub = DecoratorUtil.getSubjectName(args);
-            throw new DecoratorUsageError(`@PostConstruct can be set only on methods of a @Component class! (${sub})`);
-        }
+        DecoratorUtil.throwOnWrongType("@PostConstruct", DecoratorType.METHOD, Array.prototype.slice.call(arguments));
         let conf = LifeCycleHooksUtil.initIfDoesntExist(target);
         if (conf.postConstructMethod) {
             let errorParams = [conf.postConstructMethod, methodName].join(', ');
-            let subjectName = DecoratorUtil.getSubjectName(args);
+            let subjectName = DecoratorUtil.getSubjectName(Array.prototype.slice.call(arguments));
             // tslint:disable-next-line
             throw new DecoratorUsageError(`@PostConstruct used on multiple methods (${errorParams}) within a @Component (${subjectName})`);
         }
@@ -34,15 +30,11 @@ export function PostConstruct() {
  */
 export function PreDestroy() {
     return function (target, methodName, descriptor: PropertyDescriptor) {
-        let args = Array.prototype.slice.call(arguments);
-        if (!DecoratorUtil.isType(DecoratorType.METHOD, args)) {
-            let subject = DecoratorUtil.getSubjectName(args);
-            throw new DecoratorUsageError(`@PreDestroy can be set only on methods of a @Component class! (${subject})`);
-        }
+        DecoratorUtil.throwOnWrongType("@PreDestroy", DecoratorType.METHOD, Array.prototype.slice.call(arguments));
         let conf = LifeCycleHooksUtil.initIfDoesntExist(target);
         if (conf.preDestroyMethod) {
             let errorParams = [conf.preDestroyMethod, methodName].join(', ');
-            let subjectName = DecoratorUtil.getSubjectName(args);
+            let subjectName = DecoratorUtil.getSubjectName(Array.prototype.slice.call(arguments));
             // tslint:disable-next-line
             throw new DecoratorUsageError(`@PreDestroy used on multiple methods (${errorParams}) within a @Component (${subjectName})`);
         }

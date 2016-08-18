@@ -15,11 +15,10 @@ export class Injector {
         this.components.get(token).push(component);
     }
 
-    // TODO: user should know for which type the error is thrown
     getComponent(token: Symbol): Object {
         let components = this.components.get(token);
         if (_.isUndefined(components)) {
-            throw new InjectionError('No such component');
+            throw new InjectionError('No such component scanned');
         }
         if (components.length > 1) {
             throw new InjectionError(`Ambiguous injection. ${components.length} components found in the injector.`);

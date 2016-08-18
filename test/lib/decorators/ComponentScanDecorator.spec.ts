@@ -10,7 +10,7 @@ import { ComponentScanUtil, ComponentScan } from "../../../src/lib/decorators/Co
 import { RequireUtils } from "../../../src/lib/helpers/RequireUtils";
 import { ComponentUtil } from "../../../src/lib/decorators/ComponentDecorator";
 import { Environment } from "../../../src/lib/di/Environment";
-import { DecoratorUsageError } from "../../../src/lib/errors/DecoratorUsageError";
+import { DecoratorUsageError } from "../../../src/lib/errors/DecoratorUsageErrors";
 
 describe('ComponentScanDecorator', function () {
 
@@ -37,7 +37,10 @@ describe('ComponentScanDecorator', function () {
         }
 
         // when / then
-        expect(ComponentScan('somePath').bind(null, A)).to.throw(Error);
+        expect(ComponentScan('somePath').bind(undefined, MyClass)).to.throw(DecoratorUsageError);
+        expect(ComponentScan('somePath').bind(undefined, MyClass, 'myFunction', MyClass.prototype.myFunction))
+            .to.throw(DecoratorUsageError);
+        expect(ComponentScan('somePath').bind(undefined, MyClass, 'myProperty')).to.throw(DecoratorUsageError);
     });
 });
 

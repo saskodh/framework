@@ -3,7 +3,7 @@ import { CONTROLLER_DECORATOR_TOKEN } from "./ControllerDecorator";
 import { INTERCEPTOR_DECORATOR_TOKEN } from "./InterceptorDecorator";
 import { COMPONENT_DEFINITION_POST_PROCESSOR_DECORATOR_TOKEN } from "../processors/ComponentDefinitionPostProcessor";
 import { COMPONENT_POST_PROCESSOR_DECORATOR_TOKEN } from "../processors/ComponentPostProcessor";
-import { DecoratorUsageError } from "../errors/DecoratorUsageError";
+import { DecoratorUsageError, DecoratorUsageTypeError } from "../errors/DecoratorUsageErrors";
 import { DecoratorUtil, DecoratorType } from "../helpers/DecoratorUtils";
 
 export class ComponentData {
@@ -25,9 +25,11 @@ const COMPONENT_DECORATOR_TOKEN = Symbol('component_decorator_token');
 export function Component() {
     return function (target) {
         let args = Array.prototype.slice.call(arguments);
-        if (!DecoratorUtil.isType(DecoratorType.CLASS, args)) {
+        DecoratorUtil.throwOnWrongType("@Component", DecoratorType.CLASS, args);
+        if (target[COMPONENT_DECORATOR_TOKEN]
+            && target[COMPONENT_DECORATOR_TOKEN] !== target.__proto__[COMPONENT_DECORATOR_TOKEN]) {
             let subjectName = DecoratorUtil.getSubjectName(args);
-            throw new DecoratorUsageError(`@Component can be set only on a class! (${subjectName})`);
+            throw new DecoratorUsageError(`Duplicate @Component decorator' (${subjectName})`);
         }
         let componentData = new ComponentData();
         componentData.injectionData = InjectUtil.initIfDoesntExist(target.prototype);
@@ -73,5 +75,12 @@ export class ComponentUtil {
 
     static isComponentPostProcessor(target): boolean {
         return !!target[COMPONENT_POST_PROCESSOR_DECORATOR_TOKEN];
+    }
+
+    static throwWhenNotOnComponentClass (decoratorName: string, args: Array<any>, rootCause?: Error) {
+        if (!this.isComponent(args[0])) {
+            let subjectName = DecoratorUtil.getSubjectName(args);
+            throw new DecoratorUsageTypeError(decoratorName, "@Component classes", subjectName, rootCause);
+        }
     }
 }

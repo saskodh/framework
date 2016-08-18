@@ -8,8 +8,7 @@ import { Controller } from "../../../src/lib/decorators/ControllerDecorator";
 import { Interceptor } from "../../../src/lib/decorators/InterceptorDecorator";
 import { ComponentPostProcessor } from "../../../src/lib/processors/ComponentPostProcessor";
 import { ComponentDefinitionPostProcessor } from "../../../src/lib/processors/ComponentDefinitionPostProcessor";
-import { Profile } from "../../../src/lib/decorators/ProfileDecorators";
-import { DecoratorUsageError } from "../../../src/lib/errors/DecoratorUsageError";
+import { DecoratorUsageError } from "../../../src/lib/errors/DecoratorUsageErrors";
 
 class MyClass {
     myProperty: string;
@@ -34,36 +33,23 @@ describe('ComponentDecorator', function () {
         expect(componentData.profiles.length).to.be.eq(0);
     });
 
+    it('should throw error when @Component is used more than once on the same class', function () {
+        // given
+        let createConfiguration = () => {
+            @Component()
+            @Component()
+            class A {}
+        };
+
+        // when / then
+        expect(createConfiguration).to.throw(DecoratorUsageError);
+    });
+
     it('should throw when not on a class', function () {
         // given / when / then
         expect(Component().bind(undefined, MyClass, 'myFunction', MyClass.prototype.myFunction))
             .to.throw(DecoratorUsageError);
         expect(Component().bind(undefined, MyClass, 'myProperty')).to.throw(DecoratorUsageError);
-    });
-});
-
-describe('ProfileDecorator', function () {
-
-    it('should add metadata to Component classes', function () {
-        // given
-        @Profile('dev')
-        @Component()
-        class A {}
-
-        // when
-        let componentData = ComponentUtil.getComponentData(A);
-
-        // then
-        expect(componentData.profiles.length).to.eq(1);
-        expect(componentData.profiles[0]).to.eq('dev');
-    });
-
-    it('should throw error when @Profile is used on non Component', function () {
-        // given / when / then
-        expect(Profile('dev').bind(undefined, MyClass)).to.throw(DecoratorUsageError);
-        expect(Profile('dev').bind(undefined, MyClass, 'myFunction', MyClass.prototype.myFunction))
-            .to.throw(DecoratorUsageError);
-        expect(Profile('dev').bind(undefined, MyClass, 'myProperty')).to.throw(DecoratorUsageError);
     });
 });
 

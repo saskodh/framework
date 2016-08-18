@@ -18,6 +18,8 @@ import { OrderUtil } from "../../../src/lib/decorators/OrderDecorator";
 import { LifeCycleHooksUtil } from "../../../src/lib/decorators/LifeCycleHooksDecorators";
 import { ActiveProfiles } from "../../../src/lib/decorators/ProfileDecorators";
 import { Environment } from "../../../src/lib/di/Environment";
+import { BadArgumentError } from "../../../src/lib/errors/BadArgumentError";
+import { PostProcessError } from "../../../src/lib/errors/ApplicationContextErrors";
 
 describe('ApplicationContext', function () {
 
@@ -81,12 +83,17 @@ describe('ApplicationContext', function () {
         let stubOnVerifyContextReady = stub(localAppContext, 'verifyContextReady');
         let stubOnGetComponent = stub(localAppContext.injector, 'getComponent').returns('component');
         let stubOnGetClassToken = stub(ComponentUtil, 'getClassToken').returns('class token');
+        let stubOnIsComponent = stub(ComponentUtil, 'isComponent').returns(false);
+        stubOnIsComponent.withArgs('class').returns(true);
 
         // when
         let component = appContext.getComponent('class');
+        expect(appContext.getComponent.bind(appContext, 'wrong class')).to.throw(BadArgumentError);
 
         // then
-        expect(stubOnVerifyContextReady.calledOnce).to.be.true;
+        expect(stubOnVerifyContextReady.calledTwice).to.be.true;
+        expect(stubOnIsComponent.calledWith('class')).to.be.true;
+        expect(stubOnIsComponent.calledWith('wrong class')).to.be.true;
         expect(stubOnGetClassToken.calledWith('class')).to.be.true;
         expect(stubOnGetComponent.calledWith('class token')).to.be.true;
         expect(component).to.be.eq('component');
@@ -94,6 +101,7 @@ describe('ApplicationContext', function () {
         stubOnVerifyContextReady.restore();
         stubOnGetComponent.restore();
         stubOnGetClassToken.restore();
+        stubOnIsComponent.restore();
     });
 
     it('should return Component with token', async function () {
@@ -667,9 +675,10 @@ describe('DefinitionPostProcessors', function() {
     it('should throw error if definition post processor return something other than function', async function () {
         // given
         let stub1 = stub().returns(1);
-        let definitionPostProcessor1 = {
-            postProcessDefinition : stub1
-        };
+        class DefinitionPostProcessor1 {
+            postProcessDefinition = stub1;
+        }
+        let definitionPostProcessor1 = new DefinitionPostProcessor1();
         localAppContext.configurationData.componentFactory.components = ['comp1'];
         let stubOnGetOrderedDefinitionPostProcessors = stub(appContext, 'getOrderedDefinitionPostProcessors')
             .returns([definitionPostProcessor1]);
@@ -680,6 +689,7 @@ describe('DefinitionPostProcessors', function() {
         try {
             await localAppContext.postProcessDefinition();
         } catch (err) {
+            expect(err).to.be.instanceOf(PostProcessError);
             hasThrown = true;
         }
 
@@ -930,7 +940,7 @@ describe('PostProcessors', function() {
 
 
         // when
-        localAppContext.postProcessBeforeInit();
+        await localAppContext.postProcessBeforeInit();
 
         // then
         expect(stubOnGetOrderedPostProcessors.calledOnce).to.be.true;
@@ -978,7 +988,7 @@ describe('PostProcessors', function() {
 
 
         // when
-        localAppContext.postProcessAfterInit();
+        await localAppContext.postProcessAfterInit();
 
         // then
         expect(stubOnGetOrderedPostProcessors.calledOnce).to.be.true;

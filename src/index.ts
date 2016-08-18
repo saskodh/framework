@@ -21,3 +21,11 @@ export {Dispatcher} from "./lib/web/Dispatcher";
 export {ComponentDefinitionPostProcessor} from "./lib/processors/ComponentDefinitionPostProcessor";
 export {ComponentPostProcessor} from "./lib/processors/ComponentPostProcessor";
 export {Environment} from "./lib/di/Environment";
+
+export {ApplcationContextError, ComponentInitializationError, ComponentWiringError,
+    PostConstructionError, PreDestroyError, PostProcessError } from "./lib/errors/ApplicationContextErrors"
+export {BadArgumentError} from "./lib/errors/BadArgumentError"
+export {BaseError} from "./lib/errors/BaseError"
+export {DecoratorUsageError, DecoratorUsageTypeError} from "./lib/errors/DecoratorUsageErrors"
+export {InjectionError} from "./lib/errors/InjectionError"
+export {WebError, RouteHandlerError, InterceptorError} from "./lib/errors/WebErrors"

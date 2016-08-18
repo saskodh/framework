@@ -3,7 +3,7 @@ import { spy, stub } from "sinon";
 import { Configuration, ConfigurationUtil } from "../../../src/lib/decorators/ConfigurationDecorator";
 import { PropertySource, PropertySourceUtil } from "../../../src/lib/decorators/PropertySourceDecorator";
 import { RequireUtils } from "../../../src/lib/helpers/RequireUtils";
-import { DecoratorUsageError } from "../../../src/lib/errors/DecoratorUsageError";
+import { DecoratorUsageError } from "../../../src/lib/errors/DecoratorUsageErrors";
 
 describe('PropertySourceDecorator', function () {
 

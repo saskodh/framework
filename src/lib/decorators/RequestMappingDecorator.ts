@@ -1,6 +1,6 @@
 import * as _ from "lodash";
 import { DecoratorUtil, DecoratorType } from "../helpers/DecoratorUtils";
-import { DecoratorUsageError } from "../errors/DecoratorUsageError";
+import { DecoratorUsageTypeError } from "../errors/DecoratorUsageErrors";
 import { BadArgumentError } from "../errors/BadArgumentError";
 
 // NOTE: These are methods defined on the Express Router
@@ -54,6 +54,7 @@ export function RequestMapping(config: RequestMappingConfig) {
             let method = args[1];
             let routerConfig = RequestMappingUtil.initRouterConfigIfDoesntExist(target);
             let routeConfig = _.find(routerConfig.routes, {methodHandler: method});
+            // TODO: Override bug #51
             if (routeConfig) {
                 routeConfig.requestConfig = config;
             } else {
@@ -64,7 +65,7 @@ export function RequestMapping(config: RequestMappingConfig) {
             target[CLASS_ROUTER_CONFIG] = config.path;
         } else {
             let subjectName = DecoratorUtil.getSubjectName(Array.prototype.slice.call(arguments));
-            throw new DecoratorUsageError(`@RequestMapping can only be used on classes and methods! (${subjectName})`);
+            throw new DecoratorUsageTypeError("@RequestMapping", "classes and methods", subjectName);
         }
     };
 }

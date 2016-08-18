@@ -2,7 +2,7 @@ import { ComponentFactory } from "../di/ComponentFactory";
 import { ComponentScanUtil } from "./ComponentScanDecorator";
 import { Component, ComponentUtil } from "./ComponentDecorator";
 import { Environment } from "../di/Environment";
-import { DecoratorUsageError } from "../errors/DecoratorUsageError";
+import { DecoratorUsageError, DecoratorUsageTypeError } from "../errors/DecoratorUsageErrors";
 import { DecoratorUtil, DecoratorType } from "../helpers/DecoratorUtils";
 
 const CONFIGURATION_HOLDER_TOKEN = Symbol('configuration_holder_token');
@@ -54,12 +54,10 @@ export class ConfigurationData {
 
 export function Configuration() {
     return function (target) {
-        if (!DecoratorUtil.isType(DecoratorType.CLASS, Array.prototype.slice.call(arguments))) {
-            let subjectName = DecoratorUtil.getSubjectName(Array.prototype.slice.call(arguments));
-            throw new DecoratorUsageError(`@Configuration can be set only on classes! (${subjectName})`);
-        }
+        DecoratorUtil.throwOnWrongType("@Configuration", DecoratorType.CLASS, Array.prototype.slice.call(arguments));
         if (target[CONFIGURATION_HOLDER_TOKEN]) {
-            throw new DecoratorUsageError(`Duplicate @Configuration decorator' (${target.name})`);
+            let subjectName = DecoratorUtil.getSubjectName(Array.prototype.slice.call(arguments));
+            throw new DecoratorUsageError(`Duplicate @Configuration decorator' (${subjectName})`);
         }
         Component()(target);
         target[CONFIGURATION_HOLDER_TOKEN] = new ConfigurationData();
@@ -90,5 +88,12 @@ export class ConfigurationUtil {
     static addPropertySourcePath(target, path: string) {
         this.getConfigurationData(target).propertySourcePaths.push(new ProfiledPath(
             ComponentUtil.getComponentData(target).profiles, path));
+    }
+
+    static throwWhenNotOnConfigurationClass (decoratorName: string, args: Array<any>, rootCause?: Error) {
+        if (!this.isConfigurationClass(args[0])) {
+            let subjectName = DecoratorUtil.getSubjectName(args);
+                throw new DecoratorUsageTypeError(decoratorName, "@Configuration classes", subjectName, rootCause);
+        }
     }
 }

@@ -1,3 +1,4 @@
+import { DecoratorUsageTypeError } from "../errors/DecoratorUsageErrors";
 export class DecoratorType {
     static CLASS = 'class';
     static METHOD = 'method';
@@ -41,5 +42,23 @@ export class DecoratorUtil {
             return `${args[0].constructor.name}.${args[1]}()`;
         }
         return [args[0].constructor.name, args[1]].join('.');
+    }
+
+    static throwOnWrongType (decoratorName: string, decoratorType: DecoratorType, args: Array<any>, rootCause?: Error) {
+        if (!this.isType(decoratorType, args)) {
+            let subjectName = this.getSubjectName(args);
+            if (decoratorType === DecoratorType.CLASS) {
+                throw new DecoratorUsageTypeError(decoratorName, "classes", subjectName, rootCause);
+            }
+            if (decoratorType === DecoratorType.METHOD) {
+                throw new DecoratorUsageTypeError(decoratorName, "methods", subjectName, rootCause);
+            }
+            if (decoratorType === DecoratorType.PROPERTY) {
+                throw new DecoratorUsageTypeError(decoratorName, "properties", subjectName, rootCause);
+            }
+            if (decoratorType === DecoratorType.PARAMETER) {
+                throw new DecoratorUsageTypeError(decoratorName, "parameters", subjectName, rootCause);
+            }
+        }
     }
 }

@@ -1,5 +1,5 @@
 import {expect} from "chai";
-import { DecoratorUsageError } from "../../../src/lib/errors/DecoratorUsageError";
+import { DecoratorUsageError } from "../../../src/lib/errors/DecoratorUsageErrors";
 import { Controller } from "../../../src/lib/decorators/ControllerDecorator";
 import { ComponentUtil } from "../../../src/lib/decorators/ComponentDecorator";
 

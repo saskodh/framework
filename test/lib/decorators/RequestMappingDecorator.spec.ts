@@ -5,7 +5,7 @@ import {
 } from "../../../src/lib/decorators/RequestMappingDecorator";
 import { View } from "../../../src/lib/decorators/ViewDecorator";
 import { stub } from "sinon";
-import { DecoratorUsageError } from "../../../src/lib/errors/DecoratorUsageError";
+import { DecoratorUsageError } from "../../../src/lib/errors/DecoratorUsageErrors";
 import { BadArgumentError } from "../../../src/lib/errors/BadArgumentError";
 
 describe('RequestMappingDecorator', function () {

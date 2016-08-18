@@ -2,6 +2,7 @@ import * as _ from "lodash";
 import { Router } from "express-serve-static-core";
 import { OrderUtil } from "../decorators/OrderDecorator";
 import { RouterConfigItem } from "../decorators/RequestMappingDecorator";
+import { RouteHandlerError, InterceptorError } from "../errors/WebErrors";
 
 /**
  * RouteConfigurer responsible for configuring the Express 4.x router that will be exposed by the dispatcher.
@@ -60,7 +61,13 @@ export class RouterConfigurer {
             console.log(`Registering route. Path: '${path}', method: ${httpMethod}.`);
 
             this.router[httpMethod](path, this.wrap(async(request, response, next) => {
-                let result = await handler[route.methodHandler](request, response);
+                let result;
+                try {
+                    result = await handler[route.methodHandler](request, response);
+                } catch (err) {
+                    throw new RouteHandlerError(`${handler.constructor.name}.${route.
+                        methodHandler} failed on ${httpMethod.toUpperCase()} ${path}`, err);
+                }
                 // TODO #3 saskodh: Check whether is more convenient to store in the request zone or pass on next
                 response.$$frameworkData = {
                     view: route.view,
@@ -76,7 +83,13 @@ export class RouterConfigurer {
             for (let i = this.interceptors.length - 1; i >= 0; i -= 1) {
                 let interceptor = this.interceptors[i];
                 if (_.isFunction(interceptor.afterCompletion)) {
-                    await interceptor.afterCompletion(request, response);
+                    try {
+                        await interceptor.afterCompletion(request, response);
+                    } catch (err) {
+                        // TODO: this doesnt throw because it is async and on an event listener (response on finish)
+                        throw new InterceptorError(`${interceptor.constructor.
+                            name}.afterCompletion failed on ${request.method} ${request.url}`, err);
+                    }
                 }
             }
         });
@@ -85,8 +98,13 @@ export class RouterConfigurer {
             let interceptor = this.interceptors[i];
             if (_.isFunction(interceptor.preHandle)) {
                 // NOTE: when the the preHandle function returns nothing the middleware chain is not broken
-                if (await interceptor.preHandle(request, response) === false) {
-                    return;
+                try {
+                    if (await interceptor.preHandle(request, response) === false) {
+                        return;
+                    }
+                } catch (err) {
+                    throw new InterceptorError(`${interceptor.constructor.name}.preHandle failed on ${request.
+                        method} ${request.url}`, err);
                 }
             }
         }
@@ -98,7 +116,12 @@ export class RouterConfigurer {
         for (let i = this.interceptors.length - 1; i >= 0; i -= 1) {
             let interceptor = this.interceptors[i];
             if (_.isFunction(interceptor.postHandle)) {
-                await interceptor.postHandle(request, response);
+                try {
+                    await interceptor.postHandle(request, response);
+                } catch (err) {
+                    throw new InterceptorError(`${interceptor.constructor.name}.postHandle failed on ${request.
+                        method} ${request.url}`, err);
+                }
             }
         }
         next();

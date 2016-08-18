@@ -5,7 +5,7 @@ import {
 import {
     PostConstruct, LifeCycleHooksUtil, PreDestroy
 } from "../../../src/lib/decorators/LifeCycleHooksDecorators";
-import { DecoratorUsageError } from "../../../src/lib/errors/DecoratorUsageError";
+import { DecoratorUsageError } from "../../../src/lib/errors/DecoratorUsageErrors";
 
 class MyClass {
     myProperty: string;

@@ -4,7 +4,7 @@ import {
     RequestMethod, RequestMappingUtil, RequestMapping
 } from "../../../src/lib/decorators/RequestMappingDecorator";
 import {View} from "../../../src/lib/decorators/ViewDecorator";
-import { DecoratorUsageError } from "../../../src/lib/errors/DecoratorUsageError";
+import { DecoratorUsageError } from "../../../src/lib/errors/DecoratorUsageErrors";
 require('reflect-metadata');
 
 describe('ViewDecorator', function () {

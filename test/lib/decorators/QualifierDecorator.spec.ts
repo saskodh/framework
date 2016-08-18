@@ -3,7 +3,7 @@ import {
     Component, ComponentUtil
 } from "../../../src/lib/decorators/ComponentDecorator";
 import {Qualifier} from "../../../src/lib/decorators/QualifierDecorator";
-import { DecoratorUsageError } from "../../../src/lib/errors/DecoratorUsageError";
+import { DecoratorUsageError } from "../../../src/lib/errors/DecoratorUsageErrors";
 
 describe('QualifierDecorator', function () {
 

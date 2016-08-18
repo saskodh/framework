@@ -8,7 +8,7 @@ import {
 import "reflect-metadata";
 import { Qualifier } from "../../../src/lib/decorators/QualifierDecorator";
 import { InjectionError } from "../../../src/lib/errors/InjectionError";
-import { DecoratorUsageError } from "../../../src/lib/errors/DecoratorUsageError";
+import { DecoratorUsageError } from "../../../src/lib/errors/DecoratorUsageErrors";
 
 class MyClass {
     myProperty: String;
