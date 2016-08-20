@@ -2,7 +2,7 @@ import * as _ from "lodash";
 import { Router } from "express-serve-static-core";
 import { OrderUtil } from "../decorators/OrderDecorator";
 import { RouterConfigItem } from "../decorators/RequestMappingDecorator";
-import { RequestContext } from "./RequestContext";
+import { RequestContextInitializer } from "./context/RequestContextInitializer";
 
 /**
  * RouteConfigurer responsible for configuring the Express 4.x router that will be exposed by the dispatcher.
@@ -46,18 +46,15 @@ export class RouterConfigurer {
     }
 
     private configureMiddlewares() {
-        this.router.use(this.requestContextMiddleware.bind(this));
+        // NOTE: The request context middleware should always be registered first
+        this.router.use(RequestContextInitializer.getMiddleware());
+
         this.router.use(this.wrap(this.preHandler.bind(this)));
         // NOTE: we will have our middleware handler when we drop the dependency to express
         // That would require the dispatching by path to be implemented on our side
         this.registerRouteHandlers();
         this.router.use(this.wrap(this.postHandler.bind(this)));
         this.router.use(this.wrap(this.resolver.bind(this)));
-    }
-
-    private requestContextMiddleware(request, response, next) {
-        let requestContext = new RequestContext(request, response);
-        requestContext.run(next);
     }
 
     private registerRouteHandlers() {
