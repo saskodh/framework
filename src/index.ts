@@ -15,12 +15,13 @@ export {Controller} from "./lib/decorators/ControllerDecorator";
 export {Inject, Value, Autowire, ThreadLocal} from "./lib/decorators/InjectionDecorators";
 export {Profile} from "./lib/decorators/ComponentDecorator";
 export {PropertySource} from "./lib/decorators/PropertySourceDecorator";
-export {RequestMapping, RequestMappingConfig, RequestMethod} from "./lib/decorators/RequestMappingDecorator";
 export {View} from "./lib/decorators/ViewDecorator";
-
+export {RequestMapping, RequestMappingConfig, RequestMethod} from "./lib/decorators/RequestMappingDecorator";
+export {Interceptor} from "./lib/decorators/InterceptorDecorator";
+export {Order} from "./lib/decorators/OrderDecorator";
 
 export {ApplicationContext} from "./lib/di/ApplicationContext";
-export {Dispatcher} from "./lib/dispatcher/Dispatcher";
-export {Interceptor} from "./lib/interceptors/InterceptorDecorator";
+export {Dispatcher} from "./lib/web/Dispatcher";
 export {ComponentDefinitionPostProcessor} from "./lib/processors/ComponentDefinitionPostProcessor";
 export {ComponentPostProcessor} from "./lib/processors/ComponentPostProcessor";
+export {Environment} from "./lib/di/Environment";
