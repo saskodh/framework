@@ -135,14 +135,9 @@ export class ApplicationContext {
                     this.injector.getComponent(dependencyData.token);
                 Reflect.set(instance, fieldName, dependency);
             });
-            injectionData.dynamicDependencies.forEach((token, fieldName) => {
-               let dynamicResolver = new DynamicDependencyResolver(token);
-                Object.defineProperty(instance, fieldName, {
-                    get: dynamicResolver.getFieldGetter(),
-                    set: dynamicResolver.getFieldSetter(),
-                    enumerable: true,
-                    configurable: true
-                });
+            injectionData.dynamicDependencies.forEach((dependencyData, fieldName) => {
+               let dynamicResolver = new DynamicDependencyResolver(this.injector, dependencyData);
+                Object.defineProperty(instance, fieldName, dynamicResolver.getPropertyDescriptor());
             });
             injectionData.properties.forEach((propertyKey, fieldName) => {
                 Reflect.set(instance, fieldName, this.environment.getProperty(propertyKey));
