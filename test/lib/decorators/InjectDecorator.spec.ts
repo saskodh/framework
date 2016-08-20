@@ -1,9 +1,10 @@
 import { expect } from "chai";
+import { stub } from "sinon";
 import {
     Component, ComponentUtil
 } from "../../../src/lib/decorators/ComponentDecorator";
 import {
-    Inject, InjectUtil, Value, Autowire
+    Inject, InjectUtil, Value, Autowire, DynamicInject, InjectionData, ThreadLocal
 } from "../../../src/lib/decorators/InjectionDecorators";
 import "reflect-metadata";
 import { Qualifier } from "../../../src/lib/decorators/QualifierDecorator";
@@ -160,6 +161,62 @@ describe('ValueDecorator', function () {
         //then
         expect(propertiesA.size).to.be.eq(1);
         expect(propertiesA.get('name')).to.be.eq('default.name');
+    });
+});
+
+describe('DynamicInjectDecorator', function () {
+
+    it('should add metadata', function () {
+        // given
+        let givenToken = Symbol('given_token');
+        let givenInjectionData = new InjectionData();
+        let stubOnGetInjectionData = stub(InjectUtil, 'initIfDoesntExist').returns(givenInjectionData);
+        let stubOnCreateDependencyData = stub(InjectUtil, 'createDependencyData').returns('dependency-data');
+
+        class GivenDependency { }
+
+        // when
+        @Component()
+        class A {
+
+            @DynamicInject(givenToken)
+            dependency: GivenDependency;
+        }
+
+        // then
+        expect(givenInjectionData.dynamicDependencies.size).to.be.eq(1);
+        expect(givenInjectionData.dynamicDependencies.get('dependency')).to.be.eq('dependency-data');
+        expect(stubOnGetInjectionData.calledWith(A.prototype)).to.be.eql(true);
+        expect(stubOnCreateDependencyData.calledWith(givenToken, GivenDependency)).to.be.eql(true);
+
+        // clean-up
+        stubOnGetInjectionData.restore();
+        stubOnCreateDependencyData.restore();
+    });
+});
+
+describe('ThreadLocalDecorator', function () {
+
+    it('should add metadata', function () {
+        // given
+        let givenInjectionData = new InjectionData();
+        let stubOnGetInjectionData = stub(InjectUtil, 'initIfDoesntExist').returns(givenInjectionData);
+
+        // when
+        @Component()
+        class A {
+
+            @ThreadLocal()
+            dependency: string;
+        }
+
+        // then
+        expect(givenInjectionData.dynamicDependencies.size).to.be.eq(1);
+        expect(givenInjectionData.dynamicDependencies.get('dependency').isArray).to.be.eq(false);
+        expect(stubOnGetInjectionData.calledWith(A.prototype)).to.be.eql(true);
+
+        // clean-up
+        stubOnGetInjectionData.restore();
     });
 });
 
