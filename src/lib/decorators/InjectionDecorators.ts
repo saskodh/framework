@@ -57,7 +57,7 @@ export function ThreadLocal() {
         let className = target.constructor.name;
         let token = Symbol(`thread-local:${className}#${fieldName}`);
         InjectUtil.initIfDoesntExist(target).dynamicDependencies.set(fieldName, token);
-    }
+    };
 }
 
 export class InjectUtil {

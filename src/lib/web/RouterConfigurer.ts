@@ -2,6 +2,7 @@ import * as _ from "lodash";
 import { Router } from "express-serve-static-core";
 import { OrderUtil } from "../decorators/OrderDecorator";
 import { RouterConfigItem } from "../decorators/RequestMappingDecorator";
+import { RequestContext } from "./RequestContext";
 
 /**
  * RouteConfigurer responsible for configuring the Express 4.x router that will be exposed by the dispatcher.
@@ -45,12 +46,18 @@ export class RouterConfigurer {
     }
 
     private configureMiddlewares() {
+        this.router.use(this.requestContextMiddleware.bind(this));
         this.router.use(this.wrap(this.preHandler.bind(this)));
         // NOTE: we will have our middleware handler when we drop the dependency to express
         // That would require the dispatching by path to be implemented on our side
         this.registerRouteHandlers();
         this.router.use(this.wrap(this.postHandler.bind(this)));
         this.router.use(this.wrap(this.resolver.bind(this)));
+    }
+
+    private requestContextMiddleware(request, response, next) {
+        let requestContext = new RequestContext(request, response);
+        requestContext.run(next);
     }
 
     private registerRouteHandlers() {
@@ -60,6 +67,7 @@ export class RouterConfigurer {
             console.log(`Registering route. Path: '${path}', method: ${httpMethod}.`);
 
             this.router[httpMethod](path, this.wrap(async(request, response, next) => {
+                // TODO saskodh: proper error handling is missing
                 let result = await handler[route.methodHandler](request, response);
                 // TODO #3 saskodh: Check whether is more convenient to store in the request zone or pass on next
                 response.$$frameworkData = {

@@ -1,6 +1,4 @@
-// NOTE: reference path is temporary workaround (see https://github.com/angular/zone.js/issues/297)
-///<reference path="../node_modules/zone.js/dist/zone.js.d.ts"/>
-require('zone.js');
+import 'zone.js';
 import "zone.js/dist/long-stack-trace-zone.js";
 
 // NOTE: prototype for the ES7 Reflect API. Added for easier manipulating with metadata.
@@ -13,7 +11,8 @@ export {Import} from "./lib/decorators/ImportDecorator";
 export {Configuration} from "./lib/decorators/ConfigurationDecorator";
 export {Controller} from "./lib/decorators/ControllerDecorator";
 export {Inject, Value, Autowire, ThreadLocal} from "./lib/decorators/InjectionDecorators";
-export {Profile} from "./lib/decorators/ComponentDecorator";
+export {PostConstruct, PreDestroy} from "./lib/decorators/LifeCycleHooksDecorators";
+export {Profile, ActiveProfiles} from "./lib/decorators/ProfileDecorators";
 export {PropertySource} from "./lib/decorators/PropertySourceDecorator";
 export {View} from "./lib/decorators/ViewDecorator";
 export {RequestMapping, RequestMappingConfig, RequestMethod} from "./lib/decorators/RequestMappingDecorator";

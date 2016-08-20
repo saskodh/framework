@@ -1,4 +1,4 @@
-import {RequestContext} from "./RequestContext";
+import {RequestContext} from "../web/RequestContext";
 
 export class DynamicDependencyResolver {
 
@@ -11,12 +11,12 @@ export class DynamicDependencyResolver {
     getFieldGetter() {
         return () => {
             return RequestContext.getInjector().getComponent(this.fieldToken);
-        }
+        };
     }
 
     getFieldSetter() {
         return (value) => {
             RequestContext.getInjector().register(this.fieldToken, value);
-        }
+        };
     }
 }

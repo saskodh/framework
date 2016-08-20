@@ -350,6 +350,7 @@ describe('ApplicationContext', function () {
         properties.set('prop 1', 'value 1');
         let injectionData = {
             dependencies: dependencies,
+            dynamicDependencies: [],
             properties: properties
         };
         let stubOnGetActiveComponents = stub(appContext, 'getActiveComponents').returns(['comp1']);

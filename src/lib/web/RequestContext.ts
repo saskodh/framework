@@ -1,5 +1,5 @@
 import {Request, Response} from "express-serve-static-core";
-import {Injector} from "./Injector";
+import {Injector} from "../di/Injector";
 
 export const REQUEST_TOKEN = Symbol('request');
 export const RESPONSE_TOKEN = Symbol('response');
@@ -23,7 +23,7 @@ export class RequestContext {
     }
 
     static getInjector(): Injector {
-        let injector = Zone.current.get(REQUEST_CONTEXT_TOKEN);
+        let injector = (<any> Zone).current.get(REQUEST_CONTEXT_TOKEN);
         if (!injector) {
             throw new Error('This method cannot be called outside request context.');
         }
@@ -31,11 +31,11 @@ export class RequestContext {
     }
 
     private createRequestZone(injector: Injector) {
-        let requestZoneSpec: ZoneSpec = {
+        let requestZoneSpec = {
             name: REQUEST_CONTEXT_TOKEN,
             properties: {}
         };
         requestZoneSpec.properties[REQUEST_CONTEXT_TOKEN] = injector;
-        return Zone.current.fork(requestZoneSpec).fork(Zone['longStackTraceZoneSpec']);
+        return (<any> Zone).current.fork(requestZoneSpec).fork(Zone['longStackTraceZoneSpec']);
     }
 }
