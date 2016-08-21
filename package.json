@@ -22,7 +22,7 @@
     "test": "tsc && npm run test:clean && npm run test:run && npm run test:coverage",
     "lint": "tslint ./src/**/*.ts",
     "prepare": "cp package.json typings.json README.md ./dist/src",
-    "prepublish": "npm run build",
+    "_prepublish": "npm run build",
     "postinstall": "npm run typings && npm run disable_zonejs_typings"
   },
   "engines": {
