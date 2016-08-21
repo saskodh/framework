@@ -3,6 +3,10 @@
   "version": "0.0.1",
   "description": "Lightweight web framework inspired by Spring framework.",
   "author": "Sashe Klechkovski <sasko_dh@hotmail.com>",
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/saskodh/framework.git"
+  },
   "license": "MIT",
   "keywords": [],
   "scripts": {
