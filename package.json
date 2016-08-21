@@ -8,7 +8,8 @@
   "scripts": {
     "clean": "rm -rf dist",
     "typings": "typings install",
-    "build": "npm run clean && npm run typings &&  tsc && npm run lint && npm run test && npm run prepare",
+    "disable_zonejs_typings": "ts-node ./scripts/disable_zonejs_typings.ts",
+    "build": "npm run clean && tsc && npm run lint && npm run test && npm run prepare",
     "test:clean": "rm -rf coverage",
     "test:run": "istanbul cover node_modules/mocha/bin/_mocha --report none -- --recursive ./dist",
     "test:coverage:lcov": "remap-istanbul -i ./coverage/coverage.json -o ./coverage/lcov.info -t lcovonly",
@@ -17,7 +18,8 @@
     "test": "tsc && npm run test:clean && npm run test:run && npm run test:coverage",
     "lint": "tslint ./src/**/*.ts",
     "prepare": "cp package.json typings.json README.md ./dist/src",
-    "prepublish": "npm run build"
+    "prepublish": "npm run build",
+    "postinstall": "npm run typings && npm run disable_zonejs_typings"
   },
   "engines": {
     "node": ">=6.0.0"
