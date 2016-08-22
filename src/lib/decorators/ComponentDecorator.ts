@@ -6,12 +6,14 @@ import { COMPONENT_POST_PROCESSOR_DECORATOR_TOKEN } from "../processors/Componen
 import {ASPECT_DECORATOR_TOKEN} from "./AspectDecorator";
 
 export class ComponentData {
+    componentName: string;
     classToken: Symbol;
     aliasTokens: Array<Symbol>;
     injectionData: InjectionData;
     profiles: Array<string>;
 
-    constructor() {
+    constructor(componentName: string) {
+        this.componentName = componentName;
         this.classToken = Symbol('classToken');
         this.aliasTokens = [];
         this.profiles = [];
@@ -23,7 +25,7 @@ const COMPONENT_DECORATOR_TOKEN = Symbol('component_decorator_token');
 
 export function Component() {
     return function (target) {
-        let componentData = new ComponentData();
+        let componentData = new ComponentData(target.name);
         componentData.injectionData = InjectUtil.initIfDoesntExist(target.prototype);
         target[COMPONENT_DECORATOR_TOKEN] = componentData;
     };

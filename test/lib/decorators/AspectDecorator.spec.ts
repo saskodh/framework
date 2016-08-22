@@ -1,9 +1,10 @@
 import {expect} from 'chai';
 import {
     Aspect, Before, After, AfterThrowing, AfterReturning,
-    Around, AspectUtil, PointcutList, AdviceType, ProceedingJoinPoint
+    Around, AdviceType, ProceedingJoinPoint, AspectUtil, PointcutList
 } from "../../../src/lib/decorators/AspectDecorator";
 import { stub } from "sinon";
+import { ComponentUtil } from "../../../src/lib/decorators/ComponentDecorator";
 
 describe('AspectDecorator', function () {
 
@@ -15,8 +16,8 @@ describe('AspectDecorator', function () {
         class B {}
 
         // when
-        let isAspectA = AspectUtil.isAspect(A);
-        let isAspectB = AspectUtil.isAspect(B);
+        let isAspectA = ComponentUtil.isAspect(A);
+        let isAspectB = ComponentUtil.isAspect(B);
 
         //  then
         expect(isAspectA).to.be.true;
@@ -31,24 +32,20 @@ describe('AspectDecorator', function () {
 
         @Aspect()
         class A {
-            @Before(B, 'methodOne')
+            @Before({classRegex: 'B', methodRegex: 'methodOne'})
             doSomething() { return; }
         }
 
         // when
-        let hasBeforeA = AspectUtil.hasBefore(A.prototype);
-        let hasBeforeB = AspectUtil.hasBefore(B.prototype);
-        let beforeDataA = AspectUtil.getBeforePointcuts(A.prototype);
+        let beforeDataA = AspectUtil.getPointcuts(A.prototype, AdviceType.BEFORE);
+        let isAspectB = ComponentUtil.isAspect(B.prototype);
 
         //  then
-        expect(hasBeforeA).to.be.true;
-        expect(hasBeforeB).to.be.false;
-        expect(beforeDataA).to.be.instanceOf(PointcutList);
-        expect(beforeDataA.pointcuts.length).to.be.eq(1);
-        expect(beforeDataA.pointcuts[0].clazz).to.be.eq(B);
-        expect(beforeDataA.pointcuts[0].originalMethod).to.be.eq('methodOne');
-        expect(beforeDataA.pointcuts[0].targetMethod).to.be.eq('doSomething');
-
+        expect(beforeDataA.length).to.be.eq(1);
+        expect(beforeDataA[0].pointcutConfig.classRegex).to.be.eq('B');
+        expect(beforeDataA[0].pointcutConfig.methodRegex).to.be.eq('methodOne');
+        expect(beforeDataA[0].targetMethod).to.be.eq('doSomething');
+        expect(isAspectB).to.be.false;
     });
 
     it('should add metadata for @After', async function () {
@@ -59,24 +56,20 @@ describe('AspectDecorator', function () {
 
         @Aspect()
         class A {
-            @After(B, 'methodOne')
+            @After({classRegex: 'B', methodRegex: 'methodOne'})
             doSomething() { return; }
         }
 
         // when
-        let hasAfterA = AspectUtil.hasAfter(A.prototype);
-        let hasAfterB = AspectUtil.hasAfter(B.prototype);
-        let afterDataA = AspectUtil.getAfterPointcuts(A.prototype);
+        let beforeDataA = AspectUtil.getPointcuts(A.prototype, AdviceType.AFTER);
+        let isAspectB = ComponentUtil.isAspect(B.prototype);
 
         //  then
-        expect(hasAfterA).to.be.true;
-        expect(hasAfterB).to.be.false;
-        expect(afterDataA).to.be.instanceOf(PointcutList);
-        expect(afterDataA.pointcuts.length).to.be.eq(1);
-        expect(afterDataA.pointcuts[0].clazz).to.be.eq(B);
-        expect(afterDataA.pointcuts[0].originalMethod).to.be.eq('methodOne');
-        expect(afterDataA.pointcuts[0].targetMethod).to.be.eq('doSomething');
-
+        expect(beforeDataA.length).to.be.eq(1);
+        expect(beforeDataA[0].pointcutConfig.classRegex).to.be.eq('B');
+        expect(beforeDataA[0].pointcutConfig.methodRegex).to.be.eq('methodOne');
+        expect(beforeDataA[0].targetMethod).to.be.eq('doSomething');
+        expect(isAspectB).to.be.false;
     });
 
     it('should add metadata for @AfterReturning', async function () {
@@ -87,24 +80,20 @@ describe('AspectDecorator', function () {
 
         @Aspect()
         class A {
-            @AfterReturning(B, 'methodOne')
+            @AfterReturning({classRegex: 'B', methodRegex: 'methodOne'})
             doSomething() { return; }
         }
 
         // when
-        let hasAfterReturningA = AspectUtil.hasAfterReturning(A.prototype);
-        let hasAfterReturningB = AspectUtil.hasAfterReturning(B.prototype);
-        let afterReturningDataA = AspectUtil.getAfterReturningPointcuts(A.prototype);
+        let beforeDataA = AspectUtil.getPointcuts(A.prototype, AdviceType.AFTER_RETURNING);
+        let isAspectB = ComponentUtil.isAspect(B.prototype);
 
         //  then
-        expect(hasAfterReturningA).to.be.true;
-        expect(hasAfterReturningB).to.be.false;
-        expect(afterReturningDataA).to.be.instanceOf(PointcutList);
-        expect(afterReturningDataA.pointcuts.length).to.be.eq(1);
-        expect(afterReturningDataA.pointcuts[0].clazz).to.be.eq(B);
-        expect(afterReturningDataA.pointcuts[0].originalMethod).to.be.eq('methodOne');
-        expect(afterReturningDataA.pointcuts[0].targetMethod).to.be.eq('doSomething');
-
+        expect(beforeDataA.length).to.be.eq(1);
+        expect(beforeDataA[0].pointcutConfig.classRegex).to.be.eq('B');
+        expect(beforeDataA[0].pointcutConfig.methodRegex).to.be.eq('methodOne');
+        expect(beforeDataA[0].targetMethod).to.be.eq('doSomething');
+        expect(isAspectB).to.be.false;
     });
 
     it('should add metadata for @AfterThrowing', async function () {
@@ -115,24 +104,20 @@ describe('AspectDecorator', function () {
 
         @Aspect()
         class A {
-            @AfterThrowing(B, 'methodOne')
+            @AfterThrowing({classRegex: 'B', methodRegex: 'methodOne'})
             doSomething() { return; }
         }
 
         // when
-        let hasAfterThrowingA = AspectUtil.hasAfterThrowing(A.prototype);
-        let hasAfterThrowingB = AspectUtil.hasAfterThrowing(B.prototype);
-        let afterThrowingDataA = AspectUtil.getAfterThrowingPointcuts(A.prototype);
+        let beforeDataA = AspectUtil.getPointcuts(A.prototype, AdviceType.AFTER_THROWING);
+        let isAspectB = ComponentUtil.isAspect(B.prototype);
 
         //  then
-        expect(hasAfterThrowingA).to.be.true;
-        expect(hasAfterThrowingB).to.be.false;
-        expect(afterThrowingDataA).to.be.instanceOf(PointcutList);
-        expect(afterThrowingDataA.pointcuts.length).to.be.eq(1);
-        expect(afterThrowingDataA.pointcuts[0].clazz).to.be.eq(B);
-        expect(afterThrowingDataA.pointcuts[0].originalMethod).to.be.eq('methodOne');
-        expect(afterThrowingDataA.pointcuts[0].targetMethod).to.be.eq('doSomething');
-
+        expect(beforeDataA.length).to.be.eq(1);
+        expect(beforeDataA[0].pointcutConfig.classRegex).to.be.eq('B');
+        expect(beforeDataA[0].pointcutConfig.methodRegex).to.be.eq('methodOne');
+        expect(beforeDataA[0].targetMethod).to.be.eq('doSomething');
+        expect(isAspectB).to.be.false;
     });
 
     it('should add metadata for @Around', async function () {
@@ -143,24 +128,20 @@ describe('AspectDecorator', function () {
 
         @Aspect()
         class A {
-            @Around(B, 'methodOne')
+            @Around({classRegex: 'B', methodRegex: 'methodOne'})
             doSomething() { return; }
         }
 
         // when
-        let hasAroundA = AspectUtil.hasAround(A.prototype);
-        let hasAroundB = AspectUtil.hasAround(B.prototype);
-        let aroungDataA = AspectUtil.getAroundPointcuts(A.prototype);
+        let beforeDataA = AspectUtil.getPointcuts(A.prototype, AdviceType.AROUND);
+        let isAspectB = ComponentUtil.isAspect(B.prototype);
 
         //  then
-        expect(hasAroundA).to.be.true;
-        expect(hasAroundB).to.be.false;
-        expect(aroungDataA).to.be.instanceOf(PointcutList);
-        expect(aroungDataA.pointcuts.length).to.be.eq(1);
-        expect(aroungDataA.pointcuts[0].clazz).to.be.eq(B);
-        expect(aroungDataA.pointcuts[0].originalMethod).to.be.eq('methodOne');
-        expect(aroungDataA.pointcuts[0].targetMethod).to.be.eq('doSomething');
-
+        expect(beforeDataA.length).to.be.eq(1);
+        expect(beforeDataA[0].pointcutConfig.classRegex).to.be.eq('B');
+        expect(beforeDataA[0].pointcutConfig.methodRegex).to.be.eq('methodOne');
+        expect(beforeDataA[0].targetMethod).to.be.eq('doSomething');
+        expect(isAspectB).to.be.false;
     });
 
     it('should return all advice types', async function () {
@@ -222,5 +203,66 @@ describe('AspectDecorator', function () {
 
         // cleanup
         stubOnReflectApply.restore();
+    });
+});
+
+describe('AspectUtil', function () {
+
+    it('should init the pointcut list', function () {
+        // given
+        @Aspect()
+        class AspectA {}
+
+        // when
+        let pointcutList = AspectUtil.initPointcutListDoesntExist(AspectA);
+
+        // then
+        expect(pointcutList).to.be.instanceOf(PointcutList);
+    });
+
+    it('should return the complete pointcut list', function () {
+        // given
+        class ClassA {
+            methodOne() {} // tslint:disable-line
+        }
+        @Aspect()
+        class AspectA {
+            @Before({ classRegex: 'ClassA', methodRegex: 'methodOne'})
+            doSomethingBefore() {} // tslint:disable-line
+
+            @After({ classRegex: 'ClassA', methodRegex: 'methodOne'})
+            doSomethingAfter() {} // tslint:disable-line
+        }
+
+        // when
+        let pointcutList = AspectUtil.getPointcutList(AspectA.prototype);
+
+        // then
+        expect(pointcutList).to.be.instanceOf(PointcutList);
+    });
+
+    it('should return the pointcuts for the given advice type', function () {
+        // given
+        let localPointcutConfig = { classRegex: 'ClassA', methodRegex: 'methodOne'};
+        class ClassA {
+            methodOne() {} // tslint:disable-line
+        }
+        @Aspect()
+        class AspectA {
+            @Before(localPointcutConfig)
+            doSomethingBefore() {} // tslint:disable-line
+        }
+
+        // when
+        let pointcutsBefore = AspectUtil.getPointcuts(AspectA.prototype, 'before');
+        let pointcutsAfter = AspectUtil.getPointcuts(AspectA.prototype, 'after');
+        let pointcutsAfterEmpty = AspectUtil.getPointcuts(AspectA, 'after');
+
+        // then
+        expect(pointcutsBefore.length).to.be.eq(1);
+        expect(pointcutsBefore[0].pointcutConfig).to.be.eq(localPointcutConfig);
+        expect(pointcutsBefore[0].targetMethod).to.be.eq('doSomethingBefore');
+        expect(pointcutsAfter.length).to.be.eq(0);
+        expect(pointcutsAfterEmpty.length).to.be.eq(0);
     });
 });

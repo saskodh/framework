@@ -9,8 +9,13 @@ export class AdviceType {
     static AROUND = 'around';
 
     static getAllAdviceTypes (): Array<any> {
-        return [this.BEFORE, this.AFTER, this.AFTER_RETURNING, this.AFTER_THROWING, this.AROUND];
+        return [this.AFTER, this.AFTER_RETURNING, this.AFTER_THROWING, this.AROUND, this.BEFORE];
     }
+}
+
+export interface PointcutConfig {
+    classRegex?: string;
+    methodRegex?: string;
 }
 
 export class ProceedingJoinPoint {
@@ -30,7 +35,7 @@ export class ProceedingJoinPoint {
     }
 }
 
-export const ASPECT_DECORATOR_TOKEN = Symbol('aspect-decoraor-token');
+export const ASPECT_DECORATOR_TOKEN = Symbol('ASPECT_DECORATOR_TOKEN');
 export function Aspect() {
     return function(target) {
         Component()(target);
@@ -38,115 +43,84 @@ export function Aspect() {
     };
 }
 
-
 export class Pointcut {
-    public clazz;
-    public originalMethod;
-    public targetMethod;
+    public pointcutConfig: PointcutConfig;
+    public targetMethod: string;
 
-    constructor(clazz, originalMethod, targetMethod) {
-        this.clazz = clazz;
-        this.originalMethod = originalMethod;
+    constructor(aspectConfig, targetMethod) {
+        this.pointcutConfig = aspectConfig;
         this.targetMethod = targetMethod;
     }
 }
 
+
 export class PointcutList {
-    pointcuts: Array<Pointcut> = [];
+    pointcuts: Map<string, Array<Pointcut>>;
+
+    constructor () {
+        this.pointcuts = new Map();
+        this.pointcuts.set(AdviceType.BEFORE, []);
+        this.pointcuts.set(AdviceType.AFTER, []);
+        this.pointcuts.set(AdviceType.AFTER_RETURNING, []);
+        this.pointcuts.set(AdviceType.AFTER_THROWING, []);
+        this.pointcuts.set(AdviceType.AROUND, []);
+    }
 }
 
-export const ASPECT_BEFORE_TOKEN = Symbol('aspect_before_token');
-export function Before(clazz, method) {
+export const ASPECT_POINTCUT_TOKEN = Symbol('ASPECT_POINTCUT_TOKEN');
+
+export function Before(config: PointcutConfig) {
     return function(target, targetMethod) {
-        if (!target[ASPECT_BEFORE_TOKEN]) {
-            target[ASPECT_BEFORE_TOKEN] = new PointcutList();
-        }
-        target[ASPECT_BEFORE_TOKEN].pointcuts.push(new Pointcut(clazz, method, targetMethod));
+        AspectUtil.initPointcutListDoesntExist(target).pointcuts.get(AdviceType.BEFORE)
+            .push(new Pointcut(config, targetMethod));
     };
 }
 
-export const ASPECT_AFTER_TOKEN = Symbol('aspect_after_token');
-export function After(clazz, method) {
+export function After(config: PointcutConfig) {
     return function (target, targetMethod) {
-        if (!target[ASPECT_AFTER_TOKEN]) {
-            target[ASPECT_AFTER_TOKEN] = new PointcutList();
-        }
-        target[ASPECT_AFTER_TOKEN].pointcuts.push(new Pointcut(clazz, method, targetMethod));
+        AspectUtil.initPointcutListDoesntExist(target).pointcuts.get(AdviceType.AFTER)
+            .push(new Pointcut(config, targetMethod));
     };
 }
 
-export const ASPECT_AFTER_RETURNING_TOKEN = Symbol('aspect_after_throwing_token');
-export function AfterReturning(clazz, method) {
+export function AfterReturning(config: PointcutConfig) {
     return function (target, targetMethod) {
-        if (!target[ASPECT_AFTER_RETURNING_TOKEN]) {
-            target[ASPECT_AFTER_RETURNING_TOKEN] = new PointcutList();
-        }
-        target[ASPECT_AFTER_RETURNING_TOKEN].pointcuts.push(new Pointcut(clazz, method, targetMethod));
+        AspectUtil.initPointcutListDoesntExist(target).pointcuts.get(AdviceType.AFTER_RETURNING)
+            .push(new Pointcut(config, targetMethod));
     };
 }
 
-export const ASPECT_AFTER_THROWING_TOKEN = Symbol('aspect_after_throwing_token');
-export function AfterThrowing(clazz, method) {
+export function AfterThrowing(config: PointcutConfig) {
     return function (target, targetMethod) {
-        if (!target[ASPECT_AFTER_THROWING_TOKEN]) {
-            target[ASPECT_AFTER_THROWING_TOKEN] = new PointcutList();
-        }
-        target[ASPECT_AFTER_THROWING_TOKEN].pointcuts.push(new Pointcut(clazz, method, targetMethod));
+        AspectUtil.initPointcutListDoesntExist(target).pointcuts.get(AdviceType.AFTER_THROWING)
+            .push(new Pointcut(config, targetMethod));
     };
 }
 
-export const ASPECT_AROUND_TOKEN = Symbol('aspect_around_token');
-export function Around(clazz, method) {
+export function Around(config: PointcutConfig) {
     return function (target, targetMethod) {
-        if (!target[ASPECT_AROUND_TOKEN]) {
-            target[ASPECT_AROUND_TOKEN] = new PointcutList();
-        }
-        target[ASPECT_AROUND_TOKEN].pointcuts.push(new Pointcut(clazz, method, targetMethod));
+        let pointcutList = AspectUtil.initPointcutListDoesntExist(target);
+        pointcutList.pointcuts.get(AdviceType.AROUND).push(new Pointcut(config, targetMethod));
     };
 }
 
 export class AspectUtil {
-    static isAspect(target) {
-        return !!target[ASPECT_DECORATOR_TOKEN];
+
+    static initPointcutListDoesntExist(target): PointcutList {
+        if (_.isUndefined(target[ASPECT_POINTCUT_TOKEN])) {
+            target[ASPECT_POINTCUT_TOKEN] = new PointcutList();
+        }
+        return target[ASPECT_POINTCUT_TOKEN];
     }
 
-    static getBeforePointcuts(target) {
-        return target[ASPECT_BEFORE_TOKEN];
+    static getPointcutList (target): PointcutList {
+        return target[ASPECT_POINTCUT_TOKEN];
     }
 
-    static getAfterPointcuts(target) {
-        return target[ASPECT_AFTER_TOKEN];
-    }
-
-    static getAfterReturningPointcuts(target) {
-        return target[ASPECT_AFTER_RETURNING_TOKEN];
-    }
-
-    static getAfterThrowingPointcuts(target) {
-        return target[ASPECT_AFTER_THROWING_TOKEN];
-    }
-
-    static getAroundPointcuts(target) {
-        return target[ASPECT_AROUND_TOKEN];
-    }
-
-    static hasBefore(target): boolean {
-        return !_.isEmpty(target[ASPECT_BEFORE_TOKEN]);
-    }
-
-    static hasAfter(target): boolean {
-        return !_.isEmpty(target[ASPECT_AFTER_TOKEN]);
-    }
-
-    static hasAfterReturning(target): boolean {
-        return !_.isEmpty(target[ASPECT_AFTER_RETURNING_TOKEN]);
-    }
-
-    static hasAfterThrowing(target): boolean {
-        return !_.isEmpty(target[ASPECT_AFTER_THROWING_TOKEN]);
-    }
-
-    static hasAround(target): boolean {
-        return !_.isEmpty(target[ASPECT_AROUND_TOKEN]);
+    static getPointcuts(target, adviceType): Array<Pointcut> {
+        if (this.getPointcutList(target) === undefined) {
+            return [];
+        }
+        return this.getPointcutList(target).pointcuts.get(adviceType);
     }
 }
