@@ -129,6 +129,30 @@ describe('Environment', function () {
         stubOnGetDefaultProfiles.restore();
     });
 
+    it('should check if profiles are acceptable', async function () {
+        // given
+        let stubOnGetActiveProfiles =
+            stub(environment, 'getActiveProfiles').returns(['dev']);
+
+        // when / then
+        expect(environment.acceptsProfiles('dev')).to.be.true;
+        expect(environment.acceptsProfiles('other', '!dev')).to.be.false;
+        expect(environment.acceptsProfiles('other', '!mongo')).to.be.true;
+        // cleanup
+        stubOnGetActiveProfiles.restore();
+    });
+
+    it('should throw when called without args', async function () {
+        // given
+        let stubOnGetActiveProfiles =
+            stub(environment, 'getActiveProfiles').returns(['dev']);
+
+        // when / then
+        expect(environment.acceptsProfiles.bind()).to.throw(Error);
+        // cleanup
+        stubOnGetActiveProfiles.restore();
+    });
+
     it('should get active profiles', function () {
         // given
         localEnvironment.activeProfiles = ['activeProfile'];
