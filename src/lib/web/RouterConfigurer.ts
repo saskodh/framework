@@ -2,6 +2,7 @@ import * as _ from "lodash";
 import { Router } from "express-serve-static-core";
 import { OrderUtil } from "../decorators/OrderDecorator";
 import { RouterConfigItem } from "../decorators/RequestMappingDecorator";
+import { RequestContextInitializer } from "./context/RequestContextInitializer";
 import { RouteHandlerError, InterceptorError } from "../errors/WebErrors";
 
 /**
@@ -46,6 +47,9 @@ export class RouterConfigurer {
     }
 
     private configureMiddlewares() {
+        // NOTE: The request context middleware should always be registered first
+        this.router.use(RequestContextInitializer.getMiddleware());
+
         this.router.use(this.wrap(this.preHandler.bind(this)));
         // NOTE: we will have our middleware handler when we drop the dependency to express
         // That would require the dispatching by path to be implemented on our side

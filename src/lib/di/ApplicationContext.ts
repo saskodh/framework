@@ -24,6 +24,7 @@ export class ApplicationContextState {
     static INITIALIZING = 'INITIALIZING';
     static READY = 'READY';
 }
+import {DynamicDependencyResolver} from "./DynamicDependencyResolver";
 
 export class ApplicationContext {
 
@@ -155,6 +156,10 @@ export class ApplicationContext {
                     }
                 }
                 Reflect.set(instance, fieldName, dependency);
+            });
+            injectionData.dynamicDependencies.forEach((dependencyData, fieldName) => {
+               let dynamicResolver = new DynamicDependencyResolver(this.injector, dependencyData);
+                Object.defineProperty(instance, fieldName, dynamicResolver.getPropertyDescriptor());
             });
             injectionData.properties.forEach((propertyKey, fieldName) => {
                 Reflect.set(instance, fieldName, this.environment.getProperty(propertyKey));
