@@ -18,6 +18,7 @@ import { OrderUtil } from "../../../src/lib/decorators/OrderDecorator";
 import { LifeCycleHooksUtil } from "../../../src/lib/decorators/LifeCycleHooksDecorators";
 import { ActiveProfiles } from "../../../src/lib/decorators/ProfileDecorators";
 import { Environment } from "../../../src/lib/di/Environment";
+import { DynamicDependencyResolver } from "../../../src/lib/di/DynamicDependencyResolver";
 
 describe('ApplicationContext', function () {
 
@@ -373,63 +374,112 @@ describe('ApplicationContext', function () {
         stubOnInjectorRegister.restore();
     });
 
-    it('should wire components', async function () {
-        // given
-        let componentData = {
-            classToken : 'class token'
-        };
-        let dependencyData1 = {
-            token: 'token 1',
-            isArray: false
-        };
-        let dependencyData2 = {
-            token: 'token 2',
-            isArray: true
-        };
-        let dependencies = new Map();
-        dependencies.set('dependency data 1', dependencyData1);
-        dependencies.set('dependency data 2', dependencyData2);
-        let properties = new Map();
-        properties.set('prop 1', 'value 1');
-        let injectionData = {
-            dependencies: dependencies,
-            properties: properties
-        };
-        let stubOnGetActiveComponents = stub(appContext, 'getActiveComponents').returns(['comp1']);
-        let stubOnGetComponentData = stub(ComponentUtil, 'getComponentData').returns(componentData);
-        let stubOnGetInjectionData = stub(ComponentUtil, 'getInjectionData').returns(injectionData);
-        let stubOnGetComponent = stub(localAppContext.injector, 'getComponent').returns('instance 1');
-        stubOnGetComponent.withArgs('class token').returns('instance 1');
-        stubOnGetComponent.withArgs('token 1').returns('injected instance 1');
-        let stubOnGetComponents = stub(localAppContext.injector, 'getComponents');
-        stubOnGetComponents.withArgs('token 2').returns(['injected instance 2', 'injected instance 3']);
-        let stubOnReflectSet = stub(Reflect, 'set');
-        let stubOnEnvironmentGetProperty = stub(Environment.prototype, 'getProperty').returns('value 1');
-        let stubOnProcessAfterInit = stub(Dispatcher.prototype, 'processAfterInit');
+    describe('wiring components', function () {
 
-        // when
-        await localAppContext.wireComponents();
+        let givenComponentData = { classToken : 'class token' };
 
-        // then
-        expect(stubOnGetActiveComponents.calledOnce).to.be.true;
-        expect(stubOnGetComponentData.calledWith('comp1')).to.be.true;
-        expect(stubOnGetInjectionData.calledWith('comp1')).to.be.true;
-        expect(stubOnGetComponent.calledWith('class token')).to.be.true;
-        expect(stubOnGetComponent.calledWith('token 1')).to.be.true;
-        expect(stubOnReflectSet.calledWith('instance 1', 'dependency data 1', 'injected instance 1')).to.be.true;
-        expect(stubOnReflectSet
-            .calledWith('instance 1', 'dependency data 2', ['injected instance 2', 'injected instance 3'])).to.be.true;
-        expect(stubOnReflectSet.calledWith('instance 1', 'prop 1', 'value 1')).to.be.true;
-        expect(stubOnProcessAfterInit.calledWith('comp1', 'instance 1')).to.be.true;
-        expect(stubOnEnvironmentGetProperty.calledWith('value 1')).to.be.true;
-        // cleanup
-        stubOnGetActiveComponents.restore();
-        stubOnGetComponentData.restore();
-        stubOnGetInjectionData.restore();
-        stubOnGetComponent.restore();
-        stubOnReflectSet.restore();
-        stubOnEnvironmentGetProperty.restore();
-        stubOnProcessAfterInit.restore();
+        let dependencyData1 = { token: 'token 1', isArray: false };
+        let dependencyData2 = { token: 'token 2', isArray: true };
+        let dynamicDepData1 = { token: 'dtoken 1', isArray: false };
+        let dynamicDepData2 = { token: 'dtoken 2', isArray: true };
+
+        let mockInjectionData = {
+            dependencies: new Map([['d1', dependencyData1], ['d2', dependencyData2]]),
+            dynamicDependencies: new Map([['dd1', dynamicDepData1], ['dd2', dynamicDepData2]]),
+            properties: new Map([['p1', 'p.name']])
+        };
+
+        beforeEach(function () {
+            this.givenInjectionData = { dependencies: new Map(), dynamicDependencies: new Map(), properties: new Map()};
+
+            this.stubOnGetActiveComponents = stub(appContext, 'getActiveComponents').returns(['comp1']);
+            this.stubOnGetComponentData = stub(ComponentUtil, 'getComponentData').returns(givenComponentData);
+            this.stubOnGetInjectionData = stub(ComponentUtil, 'getInjectionData').returns(this.givenInjectionData);
+            this.stubOnGetComponent = stub(localAppContext.injector, 'getComponent').returns('instance 1');
+            this.stubOnReflectSet = stub(Reflect, 'set');
+        });
+
+        afterEach(function () {
+            this.stubOnGetActiveComponents.restore();
+            this.stubOnGetComponentData.restore();
+            this.stubOnGetInjectionData.restore();
+            this.stubOnGetComponent.restore();
+            this.stubOnReflectSet.restore();
+        });
+
+        it('should wire dependencies', async function () {
+            // given
+            this.givenInjectionData.dependencies = mockInjectionData.dependencies;
+
+            this.stubOnGetComponent.withArgs('class token').returns('instance 1');
+            this.stubOnGetComponent.withArgs('token 1').returns('injected instance 1');
+            let stubOnGetComponents = stub(localAppContext.injector, 'getComponents');
+            stubOnGetComponents.withArgs('token 2').returns(['injected instance 2', 'injected instance 3']);
+
+            // when
+            await localAppContext.wireComponents();
+
+            // then
+            expect(this.stubOnGetActiveComponents.calledOnce).to.be.eq(true);
+            expect(this.stubOnGetComponentData.calledWith('comp1')).to.be.eq(true);
+            expect(this.stubOnGetInjectionData.calledWith('comp1')).to.be.eq(true);
+            expect(this.stubOnGetComponent.calledWith('class token')).to.be.eq(true);
+            expect(this.stubOnGetComponent.calledWith('token 1')).to.be.eq(true);
+            expect(stubOnGetComponents.calledWith('token 2')).to.be.eq(true);
+            expect(this.stubOnReflectSet.calledWith('instance 1', 'd1', 'injected instance 1')).to.be.eq(true);
+            expect(this.stubOnReflectSet.calledWith('instance 1', 'd2', ['injected instance 2', 'injected instance 3']))
+                .to.be.eq(true);
+
+            // clean-up
+            stubOnGetComponents.restore();
+        });
+
+        it('should wire dynamic dependencies', async function () {
+            // given
+            this.givenInjectionData.dynamicDependencies = mockInjectionData.dynamicDependencies;
+            let stubOnObjectDefineProperty = stub(Object, 'defineProperty');
+
+            // when
+            await localAppContext.wireComponents();
+
+            // then
+            expect(stubOnObjectDefineProperty.calledWith('instance 1', 'dd1', match.any)).to.be.eq(true);
+            expect(stubOnObjectDefineProperty.calledWith('instance 1', 'dd2', match.any)).to.be.eq(true);
+            // clean-up
+            stubOnObjectDefineProperty.restore();
+        });
+
+        it('should wire properties', async function () {
+            // given
+            this.givenInjectionData.properties = mockInjectionData.properties;
+
+            let stubOnEnvironmentGetProperty = stub(Environment.prototype, 'getProperty').returns('value 1');
+
+            // when
+            await localAppContext.wireComponents();
+
+            // then
+            expect(this.stubOnReflectSet.calledWith('instance 1', 'p1', 'value 1')).to.be.eq(true);
+            expect(stubOnEnvironmentGetProperty.calledWith('p.name')).to.be.eq(true);
+
+            // clean-up
+            stubOnEnvironmentGetProperty.restore();
+        });
+
+        it('should process after init', async function () {
+            // given
+            let stubOnProcessAfterInit = stub(Dispatcher.prototype, 'processAfterInit');
+
+            // when
+            await localAppContext.wireComponents();
+
+            // then
+            expect(stubOnProcessAfterInit.calledWith('comp1', 'instance 1')).to.be.eq(true);
+
+            // clean-up
+            stubOnProcessAfterInit.restore();
+        });
+
     });
 
     it('should execute post construction', async function () {
