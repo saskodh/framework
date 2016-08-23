@@ -55,10 +55,14 @@ export class Environment {
         if (profiles.length === 0) {
             throw new BadArgumentError('function called with no profiles');
         }
-        if (this.getActiveProfiles().length === 0) {
-            return (_.intersection(this.getDefaultProfiles(), profiles).length > 0);
+        let notUsedProfiles = profiles.filter((profile) => (profile[0] === '!'))
+            .map((profile: string) => profile.substr(1));
+        let activatedProfiles = this.getActiveProfiles();
+        if (activatedProfiles.length === 0) {
+            activatedProfiles = this.getDefaultProfiles();
         }
-        return (_.intersection(this.getActiveProfiles(), profiles).length > 0);
+        return (_.intersection(activatedProfiles, profiles).length > 0) ||
+            _.some(notUsedProfiles, (profile) => activatedProfiles.indexOf(profile) < 0);
     }
 
     getActiveProfiles(): Array<string> {

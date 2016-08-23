@@ -6,51 +6,82 @@ describe('ReflectUtils', function () {
     it('should get all method names', function () {
         // given
         class A {
-            methodA(){}
+            methodA() {} // tslint:disable-line
         }
         class B extends A {
-            methodB(){}
+            methodB() {} // tslint:disable-line
         }
         class C extends A {
-            methodC(){}
+            methodC() {} // tslint:disable-line
         }
         class D extends C {
-            methodD(){}
+            methodD() {} // tslint:disable-line
         }
 
         // when
-        // TODO: ReflectUtils.getAllMethodsNames should not return duplicate entries
         let methodNamesD = ReflectUtils.getAllMethodsNames(D);
         let methodNamesB = ReflectUtils.getAllMethodsNames(B);
 
         // then
-        expect(methodNamesD.length).to.be.eq(6);
+        expect(methodNamesD.length).to.be.eq(4);
         expect(methodNamesD).to.include.members(['constructor',
             'methodD',
-            'constructor',
             'methodC',
-            'constructor',
             'methodA']);
-        expect(methodNamesB.length).to.be.eq(4);
+        expect(methodNamesB.length).to.be.eq(3);
         expect(methodNamesB).to.include.members(['constructor',
             'methodB',
-            'constructor',
+            'methodA']);
+    });
+
+    it('should not return symbols', function () {
+        // given
+        class A {
+            methodA() {} // tslint:disable-line
+        }
+        class B extends A {
+            methodB() {} // tslint:disable-line
+        }
+        class C extends A {
+            methodC() {} // tslint:disable-line
+        }
+        class D extends C {
+            methodD() {} // tslint:disable-line
+        }
+        let symbolOne = Symbol('SYMBOL_ONE');
+        let symbolTwo = Symbol('SYMBOL_TWO');
+        B[symbolOne] = 'value one';
+        D[symbolTwo] = 'value two';
+
+        // when
+        let methodNamesD = ReflectUtils.getAllMethodsNames(D);
+        let methodNamesB = ReflectUtils.getAllMethodsNames(B);
+
+        // then
+        expect(methodNamesD.length).to.be.eq(4);
+        expect(methodNamesD).to.include.members(['constructor',
+            'methodD',
+            'methodC',
+            'methodA']);
+        expect(methodNamesB.length).to.be.eq(3);
+        expect(methodNamesB).to.include.members(['constructor',
+            'methodB',
             'methodA']);
     });
 
     it('should get class hierarchy', function () {
         // given
         class A {
-            methodA(){}
+            methodA() {} // tslint:disable-line
         }
         class B extends A {
-            methodB(){}
+            methodB() {} // tslint:disable-line
         }
         class C extends A {
-            methodC(){}
+            methodC() {} // tslint:disable-line
         }
         class D extends C {
-            methodD(){}
+            methodD() {} // tslint:disable-line
         }
 
         // when

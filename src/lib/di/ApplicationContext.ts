@@ -12,6 +12,7 @@ import {
 } from "../processors/ComponentDefinitionPostProcessor";
 import { OrderUtil } from "../decorators/OrderDecorator";
 import { Environment } from "./Environment";
+import {AspectDefinitionPostProcessor} from "../processors/aspect/AspectDefinitionPostProcessor";
 import { DecoratorUsageError } from "../errors/DecoratorUsageErrors";
 import { BadArgumentError } from "../errors/BadArgumentErrors";
 import {
@@ -97,6 +98,13 @@ export class ApplicationContext {
         this.state = ApplicationContextState.READY;
     }
 
+    private wireAspectDefinitionPostProcessor() {
+        let aspectDefinitionPostProcessor = <AspectDefinitionPostProcessor>
+            this.injector.getComponent(ComponentUtil.getClassToken(AspectDefinitionPostProcessor));
+        aspectDefinitionPostProcessor.setInjector(this.injector);
+        aspectDefinitionPostProcessor.setAspectComponentDefinitions(this.getActiveAspects());
+    }
+
     /**
      * Manually destroys the application context. Running @PreDestroy method on all components.
      */
@@ -167,6 +175,10 @@ export class ApplicationContext {
     }
 
     private initializeDefinitionPostProcessors() {
+        // NOTE: add custom defined component definition post processors
+        this.configurationData.componentDefinitionPostProcessorFactory.components.push(AspectDefinitionPostProcessor);
+
+        // NOTE: initialize all component definition post processors
         for (let CompConstructor of this.getActiveDefinitionPostProcessors()) {
             let componentData = ComponentUtil.getComponentData(CompConstructor);
 
@@ -181,6 +193,7 @@ export class ApplicationContext {
                 this.injector.register(token, instance);
             }
         }
+        this.wireAspectDefinitionPostProcessor();
     }
 
     private initializePostProcessors() {
@@ -296,47 +309,48 @@ export class ApplicationContext {
         return _.filter(this.configurationData.componentFactory.components, (CompConstructor) => {
             let profiles = ComponentUtil.getComponentData(CompConstructor).profiles;
             if (profiles.length > 0) {
-                let notUsedProfiles = _.map(_.filter(profiles, (profile) => (profile[0] === '!')),
-                    (profile: string) => profile.substr(1));
-                return _.some(notUsedProfiles, (profile) => !this.environment.acceptsProfiles(profile))
-                    || this.environment.acceptsProfiles(...profiles);
+                return this.environment.acceptsProfiles(...profiles);
             }
             return true;
         });
     }
 
     private getActiveDefinitionPostProcessors() {
-        let activeProfiles = this.environment.getActiveProfiles();
         let definitionPostProcessors = _.filter(
             this.configurationData.componentDefinitionPostProcessorFactory.components, (CompConstructor) => {
                 let profiles = ComponentUtil.getComponentData(CompConstructor).profiles;
-                if (profiles.length === 0) {
-                    return true;
+                if (profiles.length > 0) {
+                    return this.environment.acceptsProfiles(...profiles);
                 }
-                for (let profile of profiles) {
-                    for (let activeProfile of activeProfiles) {
-                        return profile === activeProfile;
-                    }
-                }
+                return true;
             });
         return OrderUtil.orderList(definitionPostProcessors);
     }
 
     private getActivePostProcessors() {
-        let activeProfiles = this.environment.getActiveProfiles();
         let postProcessors = _.filter(
             this.configurationData.componentPostProcessorFactory.components, (CompConstructor) => {
                 let profiles = ComponentUtil.getComponentData(CompConstructor).profiles;
-                if (profiles.length === 0) {
-                    return true;
+                if (profiles.length > 0) {
+                    return this.environment.acceptsProfiles(...profiles);
                 }
-                for (let profile of profiles) {
-                    for (let activeProfile of activeProfiles) {
-                        return profile === activeProfile;
-                    }
-                }
+                return true;
             });
         return OrderUtil.orderList(postProcessors);
+    }
+
+    private getActiveAspects() {
+        let aspects =  _.filter(this.configurationData.componentFactory.components, (CompConstructor) => {
+            if (!ComponentUtil.isAspect(CompConstructor)) {
+                return false;
+            }
+            let profiles = ComponentUtil.getComponentData(CompConstructor).profiles;
+            if (profiles.length > 0) {
+                return this.environment.acceptsProfiles(...profiles);
+            }
+            return true;
+        });
+        return OrderUtil.orderList(aspects).reverse();
     }
 
     // return the definitionPostProcessors ordered by the value extracted if it implements the IOrdered interface

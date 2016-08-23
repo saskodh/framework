@@ -23,9 +23,9 @@ export { RequestContext, REQUEST_TOKEN, RESPONSE_TOKEN } from "./lib/web/context
 export { RequestContextHolder } from "./lib/web/context/RequestContextHolder";
 
 export {ApplicationContext} from "./lib/di/ApplicationContext";
-export {Dispatcher} from "./lib/web/Dispatcher";
 export {ComponentDefinitionPostProcessor} from "./lib/processors/ComponentDefinitionPostProcessor";
 export {ComponentPostProcessor} from "./lib/processors/ComponentPostProcessor";
+export {Aspect, Before, After, AfterReturning, AfterThrowing, Around} from "./lib/decorators/AspectDecorator";
 export {Environment} from "./lib/di/Environment";
 
 export {ApplcationContextError, ComponentInitializationError, ComponentWiringError,

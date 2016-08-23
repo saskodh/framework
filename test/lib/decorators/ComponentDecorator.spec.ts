@@ -8,6 +8,8 @@ import { Controller } from "../../../src/lib/decorators/ControllerDecorator";
 import { Interceptor } from "../../../src/lib/decorators/InterceptorDecorator";
 import { ComponentPostProcessor } from "../../../src/lib/processors/ComponentPostProcessor";
 import { ComponentDefinitionPostProcessor } from "../../../src/lib/processors/ComponentDefinitionPostProcessor";
+import { Profile } from "../../../src/lib/decorators/ProfileDecorators";
+import { Aspect } from "../../../src/lib/decorators/AspectDecorator";
 import { DecoratorUsageError } from "../../../src/lib/errors/DecoratorUsageErrors";
 
 function SomeDecorator(...args) {} // tslint:disable-line
@@ -177,5 +179,21 @@ describe('ComponentUtil', function () {
         expect(ComponentUtil.isComponentPostProcessor(A)).to.be.true;
         expect(ComponentUtil.isComponentPostProcessor(B)).to.be.false;
         expect(ComponentUtil.isComponentPostProcessor(C)).to.be.false;
+    });
+
+    it('should return if instance is aspect', function () {
+        // given
+        @Aspect()
+        class A {}
+
+        @Controller()
+        class B {}
+
+        class C {}
+
+        // when / then
+        expect(ComponentUtil.isAspect(A)).to.be.true;
+        expect(ComponentUtil.isAspect(B)).to.be.false;
+        expect(ComponentUtil.isAspect(C)).to.be.false;
     });
 });
