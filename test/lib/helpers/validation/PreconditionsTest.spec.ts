@@ -1,7 +1,7 @@
 import * as _ from "lodash";
 import {expect} from 'chai';
 import {Preconditions} from "../../../../src/lib/helpers/validation/Preconditions";
-import { BadArgumentError } from "../../../../src/lib/errors/BadArgumentError";
+import { BadArgumentError } from "../../../../src/lib/errors/BadArgumentErrors";
 
 describe('Preconditions', function () {
 

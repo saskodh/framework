@@ -72,15 +72,18 @@ describe('ConfigurationDecorator', function () {
 
     it('should throw when not on a class', function () {
         // given
+        function SomeDecorator(...args) {} // tslint:disable-line
+
         class MyClass {
             myProperty: string;
-            myFunction() {} // tslint:disable-line
+            @SomeDecorator
+            myFunction(str: string) {} // tslint:disable-line
         }
 
         // when / then
-        expect(Configuration().bind(undefined, MyClass, 'myFunction', MyClass.prototype.myFunction))
+        expect(Configuration().bind(undefined, MyClass.prototype, 'myFunction', MyClass.prototype.myFunction))
             .to.throw(DecoratorUsageError);
-        expect(Configuration().bind(undefined, MyClass, 'myProperty')).to.throw(DecoratorUsageError);
+        expect(Configuration().bind(undefined, MyClass.prototype, 'myProperty')).to.throw(DecoratorUsageError);
     });
 });
 

@@ -6,9 +6,12 @@ import { DecoratorUsageError } from "../../../src/lib/errors/DecoratorUsageError
 @Interceptor()
 class A {}
 
+function SomeDecorator(...args) {} // tslint:disable-line
+
 class MyClass {
     myProperty: string;
-    myFunction() {} // tslint:disable-line
+    @SomeDecorator
+    myFunction(str: string) {} // tslint:disable-line
 }
 
 describe('InterceptorDecorator', function () {
@@ -24,8 +27,8 @@ describe('InterceptorDecorator', function () {
 
     it('should throw when not on a class', function () {
         // given / when / then
-        expect(Interceptor().bind(undefined, MyClass, 'myFunction', MyClass.prototype.myFunction))
+        expect(Interceptor().bind(undefined, MyClass.prototype, 'myFunction', MyClass.prototype.myFunction))
             .to.throw(DecoratorUsageError);
-        expect(Interceptor().bind(undefined, MyClass, 'myProperty')).to.throw(DecoratorUsageError);
+        expect(Interceptor().bind(undefined, MyClass.prototype, 'myProperty')).to.throw(DecoratorUsageError);
     });
 });

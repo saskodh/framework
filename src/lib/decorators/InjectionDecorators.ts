@@ -2,6 +2,7 @@ import { ComponentUtil } from "./ComponentDecorator";
 import { TypeUtils } from "../helpers/TypeUtils";
 import { InjectionError } from "../errors/InjectionError";
 import { DecoratorType, DecoratorUtil } from "../helpers/DecoratorUtils";
+import "reflect-metadata";
 
 const INJECT_DECORATOR_TOKEN = Symbol('injector_decorator_token');
 
@@ -28,7 +29,7 @@ export class InjectionData {
 
 export function Inject(dependencyToken?: Symbol) {
     return function (target: any, fieldName: string) {
-        DecoratorUtil.throwOnWrongType("@Inject", DecoratorType.PROPERTY, Array.prototype.slice.call(arguments));
+        DecoratorUtil.throwOnWrongType(Inject, DecoratorType.PROPERTY, [...arguments]);
         let type = Reflect.getMetadata('design:type', target, fieldName);
         let dependencyData = InjectUtil.createDependencyData(dependencyToken, type, [...arguments]);
         InjectUtil.initIfDoesntExist(target).dependencies.set(fieldName, dependencyData);
@@ -36,15 +37,15 @@ export function Inject(dependencyToken?: Symbol) {
 }
 
 export function Autowired() {
-    return function (...args) {
-        DecoratorUtil.throwOnWrongType("@Autowired", DecoratorType.PROPERTY, args);
-        return Inject()(...args);
+    return function (target: any, fieldName: string) {
+        DecoratorUtil.throwOnWrongType(Autowired, DecoratorType.PROPERTY, [...arguments]);
+        return Inject()(target, fieldName);
     };
 }
 
 export function Value(preopertyKey) {
     return function (target: any, fieldName: string) {
-        DecoratorUtil.throwOnWrongType("@Value", DecoratorType.PROPERTY, Array.prototype.slice.call(arguments));
+        DecoratorUtil.throwOnWrongType(Value, DecoratorType.PROPERTY, [...arguments]);
         InjectUtil.initIfDoesntExist(target).properties.set(fieldName, preopertyKey);
     };
 }
@@ -52,7 +53,7 @@ export function Value(preopertyKey) {
 export function DynamicInject(dependencyToken?: Symbol) {
     return function (target: any, fieldName: string) {
         let type = Reflect.getMetadata('design:type', target, fieldName);
-        let dependencyData = InjectUtil.createDependencyData(dependencyToken, type);
+        let dependencyData = InjectUtil.createDependencyData(dependencyToken, type, [...arguments]);
         InjectUtil.initIfDoesntExist(target).dynamicDependencies.set(fieldName, dependencyData);
     };
 }
@@ -75,7 +76,7 @@ export class InjectUtil {
                 token = ComponentUtil.getClassToken(type);
             } else {
                 let subjectName = DecoratorUtil.getSubjectName(args);
-                throw new Error('Cannot inject dependency which is not a @Component! (${subjectName})');
+                throw new InjectionError(`Cannot inject dependency which is not a @Component! (${subjectName})`);
             }
         }
         // NOTE assumption: if type not declared or any then type is Object and isArray is false

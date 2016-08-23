@@ -1,5 +1,6 @@
 import { ConfigurationUtil } from "./ConfigurationDecorator";
-import { BadArgumentError } from "../errors/BadArgumentError";
+import { DecoratorBadArgumentError } from "../errors/BadArgumentErrors";
+import { DecoratorType, DecoratorUtil } from "../helpers/DecoratorUtils";
 
 /**
  * Decorator used for composing configuration classes by importing other configuration classes.
@@ -9,11 +10,13 @@ import { BadArgumentError } from "../errors/BadArgumentError";
  * */
 export function Import(...configurationClasses) {
     return function (targetConfigurationClass) {
-        ConfigurationUtil.throwWhenNotOnConfigurationClass("@Import", Array.prototype.slice.call(arguments));
+        DecoratorUtil.throwOnWrongType(Import, DecoratorType.CLASS, [...arguments]);
+        ConfigurationUtil.throwWhenNotOnConfigurationClass(Import, [...arguments]);
         let targetConfigurationData = ConfigurationUtil.getConfigurationData(targetConfigurationClass);
         for (let configurationClass of configurationClasses) {
             if (!ConfigurationUtil.isConfigurationClass(configurationClass)) {
-                throw new BadArgumentError(`${configurationClass.name} is not a @Configuration() class`);
+                throw new DecoratorBadArgumentError(`${configurationClass.name} is not a configuration class.`,
+                    Import, [...arguments]);
             }
             let configurationData = ConfigurationUtil.getConfigurationData(configurationClass);
             targetConfigurationData.componentFactory.components.push(...configurationData.componentFactory.components);

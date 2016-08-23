@@ -29,9 +29,10 @@ export {ComponentPostProcessor} from "./lib/processors/ComponentPostProcessor";
 export {Environment} from "./lib/di/Environment";
 
 export {ApplcationContextError, ComponentInitializationError, ComponentWiringError,
-    PostConstructionError, PreDestroyError, PostProcessError } from "./lib/errors/ApplicationContextErrors"
-export {BadArgumentError} from "./lib/errors/BadArgumentError"
+    PostConstructionError, PreDestructionError, PostProcessError } from "./lib/errors/ApplicationContextErrors"
+export {BadArgumentError, DecoratorBadArgumentError} from "./lib/errors/BadArgumentErrors"
 export {BaseError} from "./lib/errors/BaseError"
 export {DecoratorUsageError, DecoratorUsageTypeError} from "./lib/errors/DecoratorUsageErrors"
 export {InjectionError} from "./lib/errors/InjectionError"
+export {InvalidUsageError} from "./lib/errors/InvalidUsageError"
 export {WebError, RouteHandlerError, InterceptorError} from "./lib/errors/WebErrors"

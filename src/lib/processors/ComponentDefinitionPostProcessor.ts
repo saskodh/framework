@@ -10,8 +10,7 @@ export const COMPONENT_DEFINITION_POST_PROCESSOR_DECORATOR_TOKEN =
 
 export function ComponentDefinitionPostProcessor() {
     return function (target) {
-        DecoratorUtil.throwOnWrongType("@ComponentDefinitionPostProcessor",
-            DecoratorType.CLASS, Array.prototype.slice.call(arguments));
+        DecoratorUtil.throwOnWrongType(ComponentDefinitionPostProcessor, DecoratorType.CLASS, [...arguments]);
         Component()(target);
         target[COMPONENT_DEFINITION_POST_PROCESSOR_DECORATOR_TOKEN] = true;
     };

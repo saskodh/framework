@@ -3,7 +3,7 @@ import { ProcessHandler } from "../helpers/ProcessHandler";
 import { Component } from "../decorators/ComponentDecorator";
 import { PropertySourceUtil } from "../decorators/PropertySourceDecorator";
 import { ProfiledPath } from "../decorators/ConfigurationDecorator";
-import { BadArgumentError } from "../errors/BadArgumentError";
+import { BadArgumentError } from "../errors/BadArgumentErrors";
 
 @Component()
 export class Environment {

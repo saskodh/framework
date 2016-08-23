@@ -1,16 +1,19 @@
 import { ComponentUtil } from "./ComponentDecorator";
 import { ConfigurationUtil } from "./ConfigurationDecorator";
+import { DecoratorUtil, DecoratorType } from "../helpers/DecoratorUtils";
 
 export function Profile(...profiles: Array<string>) {
     return function (target) {
-        ComponentUtil.throwWhenNotOnComponentClass("@Profile", Array.prototype.slice.call(arguments));
+        DecoratorUtil.throwOnWrongType(Profile, DecoratorType.CLASS, [...arguments]);
+        ComponentUtil.throwWhenNotOnComponentClass(Profile, [...arguments]);
         profiles.forEach((profile) => ComponentUtil.getComponentData(target).profiles.push(profile));
     };
 }
 
 export function ActiveProfiles(...profiles: Array<string>) {
     return function (target) {
-        ConfigurationUtil.throwWhenNotOnConfigurationClass("@ActiveProfiles", Array.prototype.slice.call(arguments));
+        DecoratorUtil.throwOnWrongType(ActiveProfiles, DecoratorType.CLASS, [...arguments]);
+        ConfigurationUtil.throwWhenNotOnConfigurationClass(ActiveProfiles, [...arguments]);
         ConfigurationUtil.getConfigurationData(target).activeProfiles.push(...profiles);
     };
 }

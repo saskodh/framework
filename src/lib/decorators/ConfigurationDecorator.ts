@@ -54,9 +54,9 @@ export class ConfigurationData {
 
 export function Configuration() {
     return function (target) {
-        DecoratorUtil.throwOnWrongType("@Configuration", DecoratorType.CLASS, Array.prototype.slice.call(arguments));
+        DecoratorUtil.throwOnWrongType(Configuration, DecoratorType.CLASS, [...arguments]);
         if (target[CONFIGURATION_HOLDER_TOKEN]) {
-            let subjectName = DecoratorUtil.getSubjectName(Array.prototype.slice.call(arguments));
+            let subjectName = DecoratorUtil.getSubjectName([...arguments]);
             throw new DecoratorUsageError(`Duplicate @Configuration decorator' (${subjectName})`);
         }
         Component()(target);
@@ -70,7 +70,7 @@ export class ConfigurationUtil {
 
     static getConfigurationData(target): ConfigurationData {
         if (!this.isConfigurationClass(target)) {
-            let subjectName = DecoratorUtil.getSubjectName(Array.prototype.slice.call(arguments));
+            let subjectName = DecoratorUtil.getSubjectName([...arguments]);
             throw new Error(`${subjectName} is not a @Configuration class`);
         }
         return target[CONFIGURATION_HOLDER_TOKEN];
@@ -90,10 +90,11 @@ export class ConfigurationUtil {
             ComponentUtil.getComponentData(target).profiles, path));
     }
 
-    static throwWhenNotOnConfigurationClass (decoratorName: string, args: Array<any>, rootCause?: Error) {
-        if (!this.isConfigurationClass(args[0])) {
-            let subjectName = DecoratorUtil.getSubjectName(args);
-                throw new DecoratorUsageTypeError(decoratorName, "@Configuration classes", subjectName, rootCause);
+    static throwWhenNotOnConfigurationClass (decorator: Function, decoratorArgs: Array<any>, rootCause?: Error) {
+        if (!this.isConfigurationClass(decoratorArgs[0])) {
+            let subjectName = DecoratorUtil.getSubjectName(decoratorArgs);
+                throw new DecoratorUsageTypeError(decorator, `@${Configuration.name} classes`,
+                    subjectName, rootCause);
         }
     }
 }

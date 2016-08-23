@@ -18,7 +18,7 @@ export class Injector {
     getComponent(token: Symbol): Object {
         let components = this.components.get(token);
         if (_.isUndefined(components)) {
-            throw new InjectionError('No such component scanned');
+            throw new InjectionError('No such component registered');
         }
         if (components.length > 1) {
             throw new InjectionError(`Ambiguous injection. ${components.length} components found in the injector.`);

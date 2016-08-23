@@ -55,6 +55,7 @@ export class RouterConfigurer {
         // That would require the dispatching by path to be implemented on our side
         this.registerRouteHandlers();
         this.router.use(this.wrap(this.postHandler.bind(this)));
+        this.router.use(this.errorResolver);
         this.router.use(this.wrap(this.resolver.bind(this)));
     }
 
@@ -67,10 +68,11 @@ export class RouterConfigurer {
             this.router[httpMethod](path, this.wrap(async(request, response, next) => {
                 let result;
                 try {
-                    result = await handler[route.methodHandler](request, response);
+                    result = await handler[route.methodHandler](request, response); // .catch((err) => {throw err; });
                 } catch (err) {
-                    throw new RouteHandlerError(`${handler.constructor.name}.${route.
-                        methodHandler} failed on ${httpMethod.toUpperCase()} ${path}`, err);
+                    next(new RouteHandlerError(`${handler.constructor.name}.${route.
+                        methodHandler} failed on ${httpMethod.toUpperCase()} ${path}`, err));
+                    return;
                 }
                 // TODO #3 saskodh: Check whether is more convenient to store in the request zone or pass on next
                 response.$$frameworkData = {
@@ -107,8 +109,9 @@ export class RouterConfigurer {
                         return;
                     }
                 } catch (err) {
-                    throw new InterceptorError(`${interceptor.constructor.name}.preHandle failed on ${request.
-                        method} ${request.url}`, err);
+                    next(new InterceptorError(`${interceptor.constructor.name}.preHandle failed on ${request.
+                        method} ${request.url}`, err));
+                    return;
                 }
             }
         }
@@ -123,12 +126,18 @@ export class RouterConfigurer {
                 try {
                     await interceptor.postHandle(request, response);
                 } catch (err) {
-                    throw new InterceptorError(`${interceptor.constructor.name}.postHandle failed on ${request.
-                        method} ${request.url}`, err);
+                    next(new InterceptorError(`${interceptor.constructor.name}.postHandle failed on ${request.
+                        method} ${request.url}`, err));
+                    return;
                 }
             }
         }
         next();
+    }
+    private errorResolver(error: Error, request, response, next) {
+        console.error(error.stack);
+        response.status(500);
+        response.send("Code 500: Internal Server error");
     }
 
     private async resolver(request, response) {

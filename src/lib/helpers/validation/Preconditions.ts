@@ -1,4 +1,4 @@
-import { BadArgumentError } from "../../errors/BadArgumentError";
+import { BadArgumentError } from "../../errors/BadArgumentErrors";
 
 export class Preconditions {
 

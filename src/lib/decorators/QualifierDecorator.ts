@@ -1,8 +1,10 @@
 import { ComponentUtil } from "./ComponentDecorator";
+import { DecoratorType, DecoratorUtil } from "../helpers/DecoratorUtils";
 
 export function Qualifier(token: Symbol) {
     return function (target) {
-        ComponentUtil.throwWhenNotOnComponentClass("@Qualifier", Array.prototype.slice.call(arguments));
+        DecoratorUtil.throwOnWrongType(Qualifier, DecoratorType.CLASS, [...arguments]);
+        ComponentUtil.throwWhenNotOnComponentClass(Qualifier, [...arguments]);
         ComponentUtil.getAliasTokens(target).push(token);
     };
 }

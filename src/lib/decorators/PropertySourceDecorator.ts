@@ -2,6 +2,8 @@ import * as _ from "lodash";
 import { ConfigurationUtil } from "./ConfigurationDecorator";
 import { GeneralUtils } from "../helpers/GeneralUtils";
 import {RequireUtils} from "../helpers/RequireUtils";
+import { DecoratorType, DecoratorUtil } from "../helpers/DecoratorUtils";
+import { BadArgumentError } from "../errors/BadArgumentErrors";
 
 /**
  * A decorator for defining a JSON property source for the configuration properties.
@@ -10,7 +12,8 @@ import {RequireUtils} from "../helpers/RequireUtils";
  */
 export function PropertySource(path: string) {
     return function (target) {
-        ConfigurationUtil.throwWhenNotOnConfigurationClass("@PropertySource", Array.prototype.slice.call(arguments));
+        DecoratorUtil.throwOnWrongType(PropertySource, DecoratorType.CLASS, [...arguments]);
+        ConfigurationUtil.throwWhenNotOnConfigurationClass(PropertySource, [...arguments]);
         ConfigurationUtil.addPropertySourcePath(target, path);
     };
 }
@@ -21,7 +24,12 @@ export class PropertySourceUtil {
         let resultPropertiesMap = new Map<string, string>();
         for (let path of propertySourcePaths) {
             console.log(`Loading properties by @PropertySource from "${path}"`);
-            let properties = RequireUtils.require(path);
+            let properties;
+            try {
+                properties = RequireUtils.require(path);
+            } catch (err) {
+                throw new BadArgumentError(`couldn't read property source at ${path}`, err);
+            }
             this.parseProperties(properties).forEach((value, prop) => resultPropertiesMap.set(prop, value));
         }
         return resultPropertiesMap;

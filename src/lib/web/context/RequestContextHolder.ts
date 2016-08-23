@@ -1,6 +1,7 @@
 import { Request, Response } from "express-serve-static-core";
 import { RequestContext, REQUEST_TOKEN, RESPONSE_TOKEN } from "./RequestContext";
 import { Injector } from "../../di/Injector";
+import { InvalidUsageError } from "../../errors/InvalidUsageError";
 
 /** The token under which the RequestContext is stored as a property on the Zone (zone.js). */
 export const REQUEST_CONTEXT_TOKEN = 'request-context';
@@ -18,7 +19,7 @@ export class RequestContextHolder {
     static get(): RequestContext {
         let currentRequestContext = (<any> Zone).current.get(REQUEST_CONTEXT_TOKEN);
         if (!currentRequestContext) {
-            throw new Error('This method cannot be called outside request context.');
+            throw new InvalidUsageError('This method cannot be called outside request context.');
         }
         return currentRequestContext;
     }

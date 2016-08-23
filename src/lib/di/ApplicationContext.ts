@@ -13,10 +13,10 @@ import {
 import { OrderUtil } from "../decorators/OrderDecorator";
 import { Environment } from "./Environment";
 import { DecoratorUsageError } from "../errors/DecoratorUsageErrors";
-import { BadArgumentError } from "../errors/BadArgumentError";
+import { BadArgumentError } from "../errors/BadArgumentErrors";
 import {
     ComponentInitializationError, ComponentWiringError,
-    PostConstructionError, PreDestroyError, ApplcationContextError, PostProcessError
+    PostConstructionError, PreDestructionError, ApplcationContextError, PostProcessError
 } from "../errors/ApplicationContextErrors";
 
 export class ApplicationContextState {
@@ -145,15 +145,12 @@ export class ApplicationContext {
 
             injectionData.dependencies.forEach((dependencyData, fieldName) => {
                 let dependency;
-                if (dependencyData.isArray) {
-                    dependency = this.injector.getComponents(dependencyData.token);
-                } else {
-                    try {
-                        dependency = this.injector.getComponent(dependencyData.token);
-                    } catch (err) {
-                        throw new ComponentWiringError(
-                            `Cannot inject dependency into ${CompConstructor.name}.${fieldName}.`, err);
-                    }
+                try {
+                    dependency = dependencyData.isArray ? this.injector.getComponents(dependencyData.token) :
+                        this.injector.getComponent(dependencyData.token);
+                } catch (err) {
+                    throw new ComponentWiringError(
+                        `Cannot inject dependency into ${CompConstructor.name}.${fieldName}.`, err);
                 }
                 Reflect.set(instance, fieldName, dependency);
             });
@@ -207,7 +204,7 @@ export class ApplicationContext {
         this.configurationData.componentFactory.components = _.map(
             this.configurationData.componentFactory.components, (componentDefinition) => {
                 for (let componentDefinitionPostProcessor of this.getOrderedDefinitionPostProcessors()) {
-                    let result; //  = componentDefinitionPostProcessor.postProcessDefinition(componentDefinition);
+                    let result;
                     try {
                         result = componentDefinitionPostProcessor.postProcessDefinition(componentDefinition);
                     } catch (err) {
@@ -289,8 +286,7 @@ export class ApplicationContext {
                 try {
                     await instance[preDestroyMethod]();
                 } catch (err) {
-                    throw new PreDestroyError(`Could not pre-destroy component ${CompConstructor.name}.`, err);
-
+                    throw new PreDestructionError(`Could not pre-destroy component ${CompConstructor.name}.`, err);
                 }
             }
         }

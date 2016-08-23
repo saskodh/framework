@@ -1,4 +1,7 @@
 import { DecoratorUsageTypeError } from "../errors/DecoratorUsageErrors";
+import { GeneralUtils } from "./GeneralUtils";
+import "reflect-metadata";
+
 export class DecoratorType {
     static CLASS = 'class';
     static METHOD = 'method';
@@ -13,16 +16,16 @@ export class DecoratorType {
 
 export class DecoratorUtil {
 
-    static getType(args: Array<any>): string {
-        if (args.length === 1) {
+    static getType(decoratorArgs: Array<any>): string {
+        if (decoratorArgs.length === 1) {
             return DecoratorType.CLASS;
-        } else if (args.length === 2) {
+        } else if (decoratorArgs.length === 2) {
             // NOTE: assumption valid for ES6+, if target is ES5 then the method decorators will also have 2 arguments
             return DecoratorType.PROPERTY;
-        } else if (args.length === 3) {
-            if (typeof args[2] === 'number') {
+        } else if (decoratorArgs.length === 3) {
+            if (typeof decoratorArgs[2] === 'number') {
                 return DecoratorType.PARAMETER;
-            } else if (typeof args[2] === "undefined") {
+            } else if (typeof decoratorArgs[2] === "undefined") {
                 return DecoratorType.PROPERTY;
             } else {
                 return DecoratorType.METHOD;
@@ -30,34 +33,48 @@ export class DecoratorUtil {
         }
     }
 
-    static isType(decoratorType: DecoratorType, args: Array<any>): boolean {
-        return this.getType(args) === decoratorType;
+    static isType(decoratorType: DecoratorType, decoratorArgs: Array<any>): boolean {
+        return this.getType(decoratorArgs) === decoratorType;
     }
 
-    static getSubjectName (args: Array<any>) {
-        if (this.isType(DecoratorType.CLASS, args)) {
-            return args[0].name;
+    /**
+     * Returns the name of the thing where the decorator is put. "ClassName" for classes,
+     * "ClassName.propertyName" for properties, "ClassName.methodName(Environment, String)" for methods
+     * and "0th param of ClassName.methodName(Environment, String)" for parameters
+     * @param decoratorArgs: The arguments to the decorator function (decoratorArgs[0] is the target)
+     * @returns string
+     */
+    static getSubjectName (decoratorArgs: Array<any>) {
+        if (this.isType(DecoratorType.CLASS, decoratorArgs)) {
+            return decoratorArgs[0].name;
         }
-        if (this.isType(DecoratorType.METHOD, args)) {
-            return `${args[0].constructor.name}.${args[1]}()`;
+        if (this.isType(DecoratorType.PROPERTY, decoratorArgs)) {
+            return [decoratorArgs[0].constructor.name, decoratorArgs[1]].join('.');
         }
-        return [args[0].constructor.name, args[1]].join('.');
+        let parameterTypes = Reflect.getMetadata('design:paramtypes', decoratorArgs[0], decoratorArgs[1])
+            .map((param) => param.name).join(", ");
+        if (this.isType(DecoratorType.METHOD, decoratorArgs)) {
+            return `${decoratorArgs[0].constructor.name}.${decoratorArgs[1]}(${parameterTypes})`;
+        }
+        return `${GeneralUtils.getOrdinalNumber(decoratorArgs[2])} param of ${decoratorArgs[0]
+            .constructor.name}.${decoratorArgs[1]}(${parameterTypes})`;
     }
 
-    static throwOnWrongType (decoratorName: string, decoratorType: DecoratorType, args: Array<any>, rootCause?: Error) {
-        if (!this.isType(decoratorType, args)) {
-            let subjectName = this.getSubjectName(args);
+    static throwOnWrongType (decorator: Function, decoratorType: DecoratorType,
+                             decoratorArgs: Array<any>, rootCause?: Error) {
+        if (!this.isType(decoratorType, decoratorArgs)) {
+            let subjectName = this.getSubjectName(decoratorArgs);
             if (decoratorType === DecoratorType.CLASS) {
-                throw new DecoratorUsageTypeError(decoratorName, "classes", subjectName, rootCause);
+                throw new DecoratorUsageTypeError(decorator, "classes", subjectName, rootCause);
             }
             if (decoratorType === DecoratorType.METHOD) {
-                throw new DecoratorUsageTypeError(decoratorName, "methods", subjectName, rootCause);
+                throw new DecoratorUsageTypeError(decorator, "methods", subjectName, rootCause);
             }
             if (decoratorType === DecoratorType.PROPERTY) {
-                throw new DecoratorUsageTypeError(decoratorName, "properties", subjectName, rootCause);
+                throw new DecoratorUsageTypeError(decorator, "properties", subjectName, rootCause);
             }
             if (decoratorType === DecoratorType.PARAMETER) {
-                throw new DecoratorUsageTypeError(decoratorName, "parameters", subjectName, rootCause);
+                throw new DecoratorUsageTypeError(decorator, "parameters", subjectName, rootCause);
             }
         }
     }

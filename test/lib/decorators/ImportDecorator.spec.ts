@@ -2,7 +2,7 @@ import {expect} from "chai";
 import { Configuration, ConfigurationUtil, ProfiledPath } from "../../../src/lib/decorators/ConfigurationDecorator";
 import {Import} from "../../../src/lib/decorators/ImportDecorator";
 import "reflect-metadata";
-import { BadArgumentError } from "../../../src/lib/errors/BadArgumentError";
+import { BadArgumentError } from "../../../src/lib/errors/BadArgumentErrors";
 import { DecoratorUsageError } from "../../../src/lib/errors/DecoratorUsageErrors";
 
 describe('ImportDecorator', function () {
@@ -52,16 +52,19 @@ describe('ImportDecorator', function () {
         @Configuration()
         class A { }
 
+        function SomeDecorator(...args) {} // tslint:disable-line
+
         class MyClass {
             myProperty: string;
-            myFunction() {} // tslint:disable-line
+            @SomeDecorator
+            myFunction(str: string) {} // tslint:disable-line
         }
 
         // when / then
         expect(Import(A).bind(undefined, MyClass)).to.throw(DecoratorUsageError);
-        expect(Import(A).bind(undefined, MyClass, 'myFunction', MyClass.prototype.myFunction))
+        expect(Import(A).bind(undefined, MyClass.prototype, 'myFunction', MyClass.prototype.myFunction))
             .to.throw(DecoratorUsageError);
-        expect(Import(A).bind(undefined, MyClass, 'myProperty')).to.throw(DecoratorUsageError);
+        expect(Import(A).bind(undefined, MyClass.prototype, 'myProperty')).to.throw(DecoratorUsageError);
     });
 
     it('should throw when non-configuration is passed', function () {

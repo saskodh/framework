@@ -1,7 +1,7 @@
 import * as _ from "lodash";
 import { DecoratorUtil, DecoratorType } from "../helpers/DecoratorUtils";
 import { DecoratorUsageTypeError } from "../errors/DecoratorUsageErrors";
-import { BadArgumentError } from "../errors/BadArgumentError";
+import { BadArgumentError } from "../errors/BadArgumentErrors";
 
 // NOTE: These are methods defined on the Express Router
 // http://expressjs.com/en/4x/api.html#router
@@ -48,8 +48,8 @@ export function RequestMapping(config: RequestMappingConfig) {
         let target = args[0];
         if (type === DecoratorType.METHOD) {
             if (config.method === undefined) {
-                // tslint:disable-next-line
-                throw new BadArgumentError('When using @RequestMapping on methods you must provide the request method type');
+                throw new BadArgumentError
+                        (`When using @${RequestMapping.name} on methods you must provide the request method type`);
             }
             let method = args[1];
             let routerConfig = RequestMappingUtil.initRouterConfigIfDoesntExist(target);
@@ -64,8 +64,8 @@ export function RequestMapping(config: RequestMappingConfig) {
             // TODO: refactor when new options are added on @RequestMapping for classes
             target[CLASS_ROUTER_CONFIG] = config.path;
         } else {
-            let subjectName = DecoratorUtil.getSubjectName(Array.prototype.slice.call(arguments));
-            throw new DecoratorUsageTypeError("@RequestMapping", "classes and methods", subjectName);
+            let subjectName = DecoratorUtil.getSubjectName(args);
+            throw new DecoratorUsageTypeError(RequestMapping, "classes and methods", subjectName);
         }
     };
 }

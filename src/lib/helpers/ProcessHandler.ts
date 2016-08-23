@@ -1,6 +1,6 @@
 import * as _ from "lodash";
 import { GeneralUtils } from "./GeneralUtils";
-import { BadArgumentError } from "../errors/BadArgumentError";
+import { BadArgumentError } from "../errors/BadArgumentErrors";
 
 export class ProcessHandler {
 

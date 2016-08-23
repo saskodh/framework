@@ -10,9 +10,13 @@ import { ComponentPostProcessor } from "../../../src/lib/processors/ComponentPos
 import { ComponentDefinitionPostProcessor } from "../../../src/lib/processors/ComponentDefinitionPostProcessor";
 import { DecoratorUsageError } from "../../../src/lib/errors/DecoratorUsageErrors";
 
+function SomeDecorator(...args) {} // tslint:disable-line
+
+@SomeDecorator
 class MyClass {
     myProperty: string;
-    myFunction() {} // tslint:disable-line
+    @SomeDecorator
+    myFunction(@SomeDecorator str: string) {} // tslint:disable-line
 }
 
 describe('ComponentDecorator', function () {
@@ -47,9 +51,9 @@ describe('ComponentDecorator', function () {
 
     it('should throw when not on a class', function () {
         // given / when / then
-        expect(Component().bind(undefined, MyClass, 'myFunction', MyClass.prototype.myFunction))
+        expect(Component().bind(undefined, MyClass.prototype, 'myFunction', MyClass.prototype.myFunction))
             .to.throw(DecoratorUsageError);
-        expect(Component().bind(undefined, MyClass, 'myProperty')).to.throw(DecoratorUsageError);
+        expect(Component().bind(undefined, MyClass.prototype, 'myProperty')).to.throw(DecoratorUsageError);
     });
 });
 

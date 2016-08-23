@@ -13,13 +13,13 @@ export class LifeCycleHooksConfig {
  */
 export function PostConstruct() {
     return function (target, methodName, descriptor: PropertyDescriptor) {
-        DecoratorUtil.throwOnWrongType("@PostConstruct", DecoratorType.METHOD, Array.prototype.slice.call(arguments));
+        DecoratorUtil.throwOnWrongType(PostConstruct, DecoratorType.METHOD, [...arguments]);
         let conf = LifeCycleHooksUtil.initIfDoesntExist(target);
         if (conf.postConstructMethod) {
             let errorParams = [conf.postConstructMethod, methodName].join(', ');
-            let subjectName = DecoratorUtil.getSubjectName(Array.prototype.slice.call(arguments));
-            // tslint:disable-next-line
-            throw new DecoratorUsageError(`@PostConstruct used on multiple methods (${errorParams}) within a @Component (${subjectName})`);
+            let subjectName = DecoratorUtil.getSubjectName([...arguments]);
+            throw new DecoratorUsageError(`@${PostConstruct.name} used on multiple methods (${errorParams}) ` +
+                `within a @Component (${subjectName})`);
         }
         conf.postConstructMethod = methodName;
     };
@@ -30,13 +30,13 @@ export function PostConstruct() {
  */
 export function PreDestroy() {
     return function (target, methodName, descriptor: PropertyDescriptor) {
-        DecoratorUtil.throwOnWrongType("@PreDestroy", DecoratorType.METHOD, Array.prototype.slice.call(arguments));
+        DecoratorUtil.throwOnWrongType(PreDestroy, DecoratorType.METHOD, [...arguments]);
         let conf = LifeCycleHooksUtil.initIfDoesntExist(target);
         if (conf.preDestroyMethod) {
             let errorParams = [conf.preDestroyMethod, methodName].join(', ');
-            let subjectName = DecoratorUtil.getSubjectName(Array.prototype.slice.call(arguments));
-            // tslint:disable-next-line
-            throw new DecoratorUsageError(`@PreDestroy used on multiple methods (${errorParams}) within a @Component (${subjectName})`);
+            let subjectName = DecoratorUtil.getSubjectName([...arguments]);
+            throw new DecoratorUsageError(`@${PreDestroy.name} used on multiple methods (${errorParams}) ` +
+                `within a @Component (${subjectName})`);
         }
         conf.preDestroyMethod = methodName;
     };

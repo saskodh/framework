@@ -4,9 +4,12 @@ import { Profile, ActiveProfiles } from "../../../src/lib/decorators/ProfileDeco
 import { ComponentUtil, Component } from "../../../src/lib/decorators/ComponentDecorator";
 import { DecoratorUsageError } from "../../../src/lib/errors/DecoratorUsageErrors";
 
+function SomeDecorator(...args) {} // tslint:disable-line
+
 class MyClass {
     myProperty: string;
-    myFunction() {} // tslint:disable-line
+    @SomeDecorator
+    myFunction(str: string) {} // tslint:disable-line
 }
 
 describe('ActiveProfilesDecorator', function () {
@@ -27,9 +30,10 @@ describe('ActiveProfilesDecorator', function () {
     it('should throw when not on @Configuration', function () {
         // given / when / then
         expect(ActiveProfiles('somePath').bind(undefined, MyClass)).to.throw(DecoratorUsageError);
-        expect(ActiveProfiles('somePath').bind(undefined, MyClass, 'myFunction', MyClass.prototype.myFunction))
-            .to.throw(DecoratorUsageError);
-        expect(ActiveProfiles('somePath').bind(undefined, MyClass, 'myProperty')).to.throw(DecoratorUsageError);
+        expect(ActiveProfiles('somePath').bind(undefined, MyClass.prototype,
+            'myFunction', MyClass.prototype.myFunction)).to.throw(DecoratorUsageError);
+        expect(ActiveProfiles('somePath').bind(undefined, MyClass.prototype,
+            'myProperty')).to.throw(DecoratorUsageError);
     });
 });
 
@@ -51,8 +55,8 @@ describe('ProfileDecorator', function () {
     it('should throw error when @Profile is used on non Component', function () {
         // given / when / then
         expect(Profile('dev').bind(undefined, MyClass)).to.throw(DecoratorUsageError);
-        expect(Profile('dev').bind(undefined, MyClass, 'myFunction', MyClass.prototype.myFunction))
+        expect(Profile('dev').bind(undefined, MyClass.prototype, 'myFunction', MyClass.prototype.myFunction))
             .to.throw(DecoratorUsageError);
-        expect(Profile('dev').bind(undefined, MyClass, 'myProperty')).to.throw(DecoratorUsageError);
+        expect(Profile('dev').bind(undefined, MyClass.prototype, 'myProperty')).to.throw(DecoratorUsageError);
     });
 });

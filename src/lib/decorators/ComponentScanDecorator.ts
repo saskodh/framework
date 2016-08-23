@@ -5,6 +5,7 @@ import { ConfigurationUtil, ProfiledPath } from "./ConfigurationDecorator";
 import { ComponentUtil } from "./ComponentDecorator";
 import { RequireUtils } from "../helpers/RequireUtils";
 import { Environment } from "../di/Environment";
+import { DecoratorType, DecoratorUtil } from "../helpers/DecoratorUtils";
 
 /**
  *A decorator for setting up project files to be component-scanned.
@@ -13,7 +14,8 @@ import { Environment } from "../di/Environment";
  */
 export function ComponentScan(path) {
     return function (target) {
-        ConfigurationUtil.throwWhenNotOnConfigurationClass("@ComponentScan", Array.prototype.slice.call(arguments));
+        DecoratorUtil.throwOnWrongType(ComponentScan, DecoratorType.CLASS, [...arguments]);
+        ConfigurationUtil.throwWhenNotOnConfigurationClass(ComponentScan, [...arguments]);
         ConfigurationUtil.addComponentScanPath(target, path);
     };
 }

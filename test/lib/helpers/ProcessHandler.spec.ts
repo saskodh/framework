@@ -2,7 +2,6 @@ import {expect} from "chai";
 import {stub} from "sinon";
 import {ProcessHandler} from "../../../src/lib/helpers/ProcessHandler";
 import { GeneralUtils } from "../../../src/lib/helpers/GeneralUtils";
-import { BadArgumentError } from "../../../src/lib/errors/BadArgumentError";
 
 describe('ProcessHandler', function () {
 

@@ -6,14 +6,16 @@ import {
 import {
     Inject, InjectUtil, Value, Autowired, DynamicInject, InjectionData, ThreadLocal
 } from "../../../src/lib/decorators/InjectionDecorators";
-import "reflect-metadata";
 import { Qualifier } from "../../../src/lib/decorators/QualifierDecorator";
 import { InjectionError } from "../../../src/lib/errors/InjectionError";
 import { DecoratorUsageError } from "../../../src/lib/errors/DecoratorUsageErrors";
 
+function SomeDecorator(...args) {} // tslint:disable-line
+
 class MyClass {
-    myProperty: String;
-    myFunction() {} // tslint:disable-line
+    myProperty: string;
+    @SomeDecorator
+    myFunction(str: string) {} // tslint:disable-line
 }
 
 describe('InjectDecorator', function () {
@@ -123,7 +125,7 @@ describe('InjectDecorator', function () {
     it('should throw error when used on non property', function () {
         // given / when / then
         expect(Inject().bind(undefined, MyClass)).to.throw(DecoratorUsageError);
-        expect(Inject().bind(undefined, MyClass, 'myFunction', MyClass.prototype.myFunction))
+        expect(Inject().bind(undefined, MyClass.prototype, 'myFunction', MyClass.prototype.myFunction))
             .to.throw(DecoratorUsageError);
     });
 });
@@ -160,7 +162,7 @@ describe('AutowiredDecorator', function () {
     it('should throw error when used on non property', function () {
         // given / when / then
         expect(Autowired().bind(undefined, MyClass)).to.throw(DecoratorUsageError);
-        expect(Autowired().bind(undefined, MyClass, 'myFunction', MyClass.prototype.myFunction))
+        expect(Autowired().bind(undefined, MyClass.prototype, 'myFunction', MyClass.prototype.myFunction))
             .to.throw(DecoratorUsageError);
     });
 });
@@ -187,7 +189,7 @@ describe('ValueDecorator', function () {
     it('should throw error when used on non property', function () {
         // given / when / then
         expect(Value('someKey').bind(undefined, MyClass)).to.throw(DecoratorUsageError);
-        expect(Value('someKey').bind(undefined, MyClass, 'myFunction', MyClass.prototype.myFunction))
+        expect(Value('someKey').bind(undefined, MyClass.prototype, 'myFunction', MyClass.prototype.myFunction))
             .to.throw(DecoratorUsageError);
     });
 });

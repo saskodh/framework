@@ -8,6 +8,6 @@ export class ComponentWiringError extends ApplcationContextError {}
 
 export class PostConstructionError extends ApplcationContextError {}
 
-export class PreDestroyError extends ApplcationContextError {}
+export class PreDestructionError extends ApplcationContextError {}
 
 export class PostProcessError extends ApplcationContextError {}

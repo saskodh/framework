@@ -6,7 +6,7 @@ import {
 import { View } from "../../../src/lib/decorators/ViewDecorator";
 import { stub } from "sinon";
 import { DecoratorUsageError } from "../../../src/lib/errors/DecoratorUsageErrors";
-import { BadArgumentError } from "../../../src/lib/errors/BadArgumentError";
+import { BadArgumentError } from "../../../src/lib/errors/BadArgumentErrors";
 
 describe('RequestMappingDecorator', function () {
 

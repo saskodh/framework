@@ -24,11 +24,11 @@ const COMPONENT_DECORATOR_TOKEN = Symbol('component_decorator_token');
 
 export function Component() {
     return function (target) {
-        let args = Array.prototype.slice.call(arguments);
-        DecoratorUtil.throwOnWrongType("@Component", DecoratorType.CLASS, args);
+        DecoratorUtil.throwOnWrongType(Component, DecoratorType.CLASS, [...arguments]);
+        // TODO: Make Duplicate @Controller error which distinguishes from extended classes #52
         if (target[COMPONENT_DECORATOR_TOKEN]
             && target[COMPONENT_DECORATOR_TOKEN] !== target.__proto__[COMPONENT_DECORATOR_TOKEN]) {
-            let subjectName = DecoratorUtil.getSubjectName(args);
+            let subjectName = DecoratorUtil.getSubjectName([...arguments]);
             throw new DecoratorUsageError(`Duplicate @Component decorator' (${subjectName})`);
         }
         let componentData = new ComponentData();
@@ -77,10 +77,10 @@ export class ComponentUtil {
         return !!target[COMPONENT_POST_PROCESSOR_DECORATOR_TOKEN];
     }
 
-    static throwWhenNotOnComponentClass (decoratorName: string, args: Array<any>, rootCause?: Error) {
-        if (!this.isComponent(args[0])) {
-            let subjectName = DecoratorUtil.getSubjectName(args);
-            throw new DecoratorUsageTypeError(decoratorName, "@Component classes", subjectName, rootCause);
+    static throwWhenNotOnComponentClass (decorator: Function, decoratorArgs: Array<any>, rootCause?: Error) {
+        if (!this.isComponent(decoratorArgs[0])) {
+            let subjectName = DecoratorUtil.getSubjectName(decoratorArgs);
+            throw new DecoratorUsageTypeError(decorator, `@${Component.name} classes`, subjectName, rootCause);
         }
     }
 }
