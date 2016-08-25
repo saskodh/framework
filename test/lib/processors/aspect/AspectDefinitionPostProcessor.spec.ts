@@ -26,27 +26,28 @@ describe('AspectDefinitionPostProcessor', function () {
         }
         @Aspect()
         class AspectA {
-            @Before({ classRegex: 'ClassA', methodRegex: 'methodOne'})
+            @Before({ classRegex: /^ClassA$/, methodRegex: /^methodOne$/ })
             doSomethingBefore() { return; }
 
-            @Before({ classRegex: 'NonExistingClass', methodRegex: 'methodThree'})
+            @Before({ classRegex: 'NonExistingClass', methodRegex: 'methodThree' })
             doNothingBefore() { return; }
         }
         @Aspect()
         class AspectB {
-            @After({ classRegex: 'ClassA', methodRegex: 'methodTwo'})
+            @After({ classRegex: /^ClassA$/, methodRegex: /^methodTwo$/})
             doSomethingAfter() { return; }
         }
         let localAspectDefinitionPostProcessor = <any> aspectDefinitionPostProcessor;
         let classAName = { componentName: 'ClassA'};
         let methodNames = ['constructor', 'methodOne', 'methodTwo'];
-        let pointcut1 = new Pointcut({ classRegex: 'ClassA', methodRegex: 'methodOne' }, 'doSomethingBefore');
-        let pointcut3 = new Pointcut({ classRegex: 'NonExistingClass', methodRegex: 'methodThree' }, 'doNothingBefore');
+        let pointcut1 = new Pointcut({ classRegex: /^ClassA$/, methodRegex: /^methodOne$/ }, 'doSomethingBefore');
+        let pointcut3 =
+            new Pointcut({ classRegex: 'NonExistingClass', methodRegex: 'methodThree' }, 'doNothingBefore');
         let pointCutList1 = new PointcutList();
         pointCutList1.pointcuts.get('before').push(pointcut1);
         pointCutList1.pointcuts.get('before').push(pointcut3);
 
-        let pointcut2 = new Pointcut({ classRegex: 'ClassA', methodRegex: 'methodTwo' }, 'doSomethingAfter');
+        let pointcut2 = new Pointcut({ classRegex: /^ClassA$/, methodRegex: /^methodTwo$/ }, 'doSomethingAfter');
         let pointCutList2 = new PointcutList();
         pointCutList2.pointcuts.get('after').push(pointcut2);
 
