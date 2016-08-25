@@ -3,7 +3,7 @@ import {
     IComponentDefinitionPostProcessor,
     COMPONENT_DEFINITION_POST_PROCESSOR_DECORATOR_TOKEN, ComponentDefinitionPostProcessor,
     ComponentDefinitionPostProcessorUtil
-} from "../../../src/lib/processors/ComponentDefinitionPostProcessor";
+} from "../../../src/lib/processors/CacheDefinitionPostProcessor";
 import { ComponentUtil } from "../../../src/lib/decorators/ComponentDecorator";
 
 describe('ComponentDefinitionPostProcessor', function () {

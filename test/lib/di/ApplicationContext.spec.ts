@@ -10,7 +10,7 @@ import { spy, stub, match, assert } from "sinon";
 import { ProcessHandler } from "../../../src/lib/helpers/ProcessHandler";
 import {
     ComponentDefinitionPostProcessorUtil
-} from "../../../src/lib/processors/ComponentDefinitionPostProcessor";
+} from "../../../src/lib/processors/CacheDefinitionPostProcessor";
 import {
     ComponentPostProcessorUtil
 } from "../../../src/lib/processors/ComponentPostProcessor";
@@ -18,6 +18,7 @@ import { LifeCycleHooksUtil } from "../../../src/lib/decorators/LifeCycleHooksDe
 import { ActiveProfiles } from "../../../src/lib/decorators/ProfileDecorators";
 import { Environment } from "../../../src/lib/di/Environment";
 import { AspectDefinitionPostProcessor } from "../../../src/lib/processors/aspect/AspectDefinitionPostProcessor";
+import { CacheDefinitionPostProcessor } from "../../../src/lib/processors/cache/CacheDefinitionPostProcessor";
 
 describe('ApplicationContext', function () {
 
@@ -31,6 +32,9 @@ describe('ApplicationContext', function () {
     beforeEach(() => {
         appContext = new ApplicationContext(AppConfig);
         localAppContext = <any> appContext;
+
+        let configData = ConfigurationUtil.getConfigurationData(AppConfig);
+        configData.componentDefinitionPostProcessorFactory.components.push(CacheDefinitionPostProcessor);
     });
 
     afterEach(() => {
@@ -737,6 +741,7 @@ describe('DefinitionPostProcessors', function() {
         let stubOnIsComponentDefinitionPostProcessor =
             stub(ComponentDefinitionPostProcessorUtil, 'isIComponentDefinitionPostProcessor').returns(true);
         let stubOnWireAspectDefinitionPostProcessor = stub(appContext, 'wireAspectDefinitionPostProcessor');
+        let stubOnWireCacheDefinitionPostProcessor = stub(appContext, 'wireCacheDefinitionPostProcessor');
         let instance1 = new DefinitionPostProcessor1();
         let instance2 = new DefinitionPostProcessor2();
 
@@ -762,6 +767,7 @@ describe('DefinitionPostProcessors', function() {
         stubOnInjectorRegister.restore();
         stubOnIsComponentDefinitionPostProcessor.restore();
         stubOnWireAspectDefinitionPostProcessor.restore();
+        stubOnWireCacheDefinitionPostProcessor.restore();
     });
 
     it('should apply the postProcess definition method from all the definition post processors', async function () {

@@ -9,17 +9,18 @@ import { ProcessHandler } from "../helpers/ProcessHandler";
 import { IComponentPostProcessor, ComponentPostProcessorUtil } from "../processors/ComponentPostProcessor";
 import {
     IComponentDefinitionPostProcessor, ComponentDefinitionPostProcessorUtil
-} from "../processors/ComponentDefinitionPostProcessor";
+} from "../processors/CacheDefinitionPostProcessor";
 import { OrderUtil } from "../decorators/OrderDecorator";
 import { Environment } from "./Environment";
 import {AspectDefinitionPostProcessor} from "../processors/aspect/AspectDefinitionPostProcessor";
+import {DynamicDependencyResolver} from "./DynamicDependencyResolver";
+import { CacheDefinitionPostProcessor } from "../processors/cache/CacheDefinitionPostProcessor";
 
 export class ApplicationContextState {
     static NOT_INITIALIZED = 'NOT_INITIALIZED';
     static INITIALIZING = 'INITIALIZING';
     static READY = 'READY';
 }
-import {DynamicDependencyResolver} from "./DynamicDependencyResolver";
 
 export class ApplicationContext {
 
@@ -95,6 +96,12 @@ export class ApplicationContext {
             this.injector.getComponent(ComponentUtil.getClassToken(AspectDefinitionPostProcessor));
         aspectDefinitionPostProcessor.setInjector(this.injector);
         aspectDefinitionPostProcessor.setAspectComponentDefinitions(this.getActiveAspects());
+    }
+
+    private wireCacheDefinitionPostProcessor() {
+        let cacheDefinitionPostProcessor = <CacheDefinitionPostProcessor>
+            this.injector.getComponent(ComponentUtil.getClassToken(CacheDefinitionPostProcessor));
+        cacheDefinitionPostProcessor.setInjector(this.injector);
     }
 
     /**
@@ -175,6 +182,7 @@ export class ApplicationContext {
             }
         }
         this.wireAspectDefinitionPostProcessor();
+        this.wireCacheDefinitionPostProcessor();
     }
 
     private initializePostProcessors() {

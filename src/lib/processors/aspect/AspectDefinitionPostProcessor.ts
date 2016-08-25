@@ -3,7 +3,7 @@ import {ProxyUtils} from "../../helpers/ProxyUtils";
 import {
     ComponentDefinitionPostProcessor,
     IComponentDefinitionPostProcessor
-} from "../ComponentDefinitionPostProcessor";
+} from "../CacheDefinitionPostProcessor";
 import { Injector } from "../../di/Injector";
 import { ReflectUtils } from "../../helpers/ReflectUtils";
 import { Order } from "../../decorators/OrderDecorator";

@@ -9,6 +9,7 @@ import { Configuration, ConfigurationUtil } from "../../../../src/lib/decorators
 import { ActiveProfiles } from "../../../../src/lib/decorators/ProfileDecorators";
 import { ApplicationContext } from "../../../../src/lib/di/ApplicationContext";
 import { Order } from "../../../../src/lib/decorators/OrderDecorator";
+import { CacheDefinitionPostProcessor } from "../../../../src/lib/processors/cache/CacheDefinitionPostProcessor";
 require("reflect-metadata");
 
 describe('AspectDefinitionPostProcessor Integration Test', function () {
@@ -117,6 +118,9 @@ describe('AspectDefinitionPostProcessor Integration Test', function () {
         localAppContext.configurationData.componentFactory.components.push(AspectA);
         localAppContext.configurationData.componentFactory.components.push(AspectB);
         localAppContext.configurationData.componentFactory.components.push(AspectC);
+
+        localAppContext.configurationData.componentDefinitionPostProcessorFactory.components
+            .push(CacheDefinitionPostProcessor);
     });
 
     afterEach(() => {
