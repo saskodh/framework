@@ -68,7 +68,7 @@ export class RouterConfigurer {
             this.router[httpMethod](path, this.wrap(async(request, response, next) => {
                 let result;
                 try {
-                    result = await handler[route.methodHandler](request, response); // .catch((err) => {throw err; });
+                    result = await handler[route.methodHandler](request, response);
                 } catch (err) {
                     next(new RouteHandlerError(`${handler.constructor.name}.${route.
                         methodHandler} failed on ${httpMethod.toUpperCase()} ${path}`, err));

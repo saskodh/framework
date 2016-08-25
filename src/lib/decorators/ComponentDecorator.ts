@@ -4,7 +4,7 @@ import { INTERCEPTOR_DECORATOR_TOKEN } from "./InterceptorDecorator";
 import { COMPONENT_DEFINITION_POST_PROCESSOR_DECORATOR_TOKEN } from "../processors/ComponentDefinitionPostProcessor";
 import { COMPONENT_POST_PROCESSOR_DECORATOR_TOKEN } from "../processors/ComponentPostProcessor";
 import {ASPECT_DECORATOR_TOKEN} from "./AspectDecorator";
-import { DecoratorUsageError, DecoratorUsageTypeError } from "../errors/DecoratorUsageErrors";
+import { DecoratorUsageTypeError } from "../errors/DecoratorUsageErrors";
 import { DecoratorUtil, DecoratorType } from "../helpers/DecoratorUtils";
 
 export class ComponentData {

@@ -2,13 +2,17 @@ import {expect} from 'chai';
 import {
     Aspect, Before, After, AdviceType, Pointcut, ProceedingJoinPoint,
     PointcutList, AspectUtil
-} from "../../../../src/lib/decorators/AspectDecorator";
-import { stub, spy, match } from "sinon";
-import {AspectDefinitionPostProcessor} from "../../../../src/lib/processors/aspect/AspectDefinitionPostProcessor";
-import {ProxyUtils} from "../../../../src/lib/helpers/ProxyUtils";
-import { ReflectUtils } from "../../../../src/lib/helpers/ReflectUtils";
-import { ComponentUtil } from "../../../../src/lib/decorators/ComponentDecorator";
-require("reflect-metadata");
+} from '../../../../src/lib/decorators/AspectDecorator';
+import { stub, spy, match } from 'sinon';
+import {AspectDefinitionPostProcessor} from '../../../../src/lib/processors/aspect/AspectDefinitionPostProcessor';
+import {ProxyUtils} from '../../../../src/lib/helpers/ProxyUtils';
+import { ReflectUtils } from '../../../../src/lib/helpers/ReflectUtils';
+import { ComponentUtil } from '../../../../src/lib/decorators/ComponentDecorator';
+import {
+    AspectErrorInfo, BeforeAdviceError, AspectError,
+    AfterReturningAdviceError, AfterAdviceError
+} from '../../../../src/lib/errors/AspectErrors';
+require('reflect-metadata');
 
 describe('AspectDefinitionPostProcessor', function () {
     let aspectDefinitionPostProcessor;
@@ -75,6 +79,8 @@ describe('AspectDefinitionPostProcessor', function () {
         });
         let stubOnGetComponentData = stub(ComponentUtil, 'getComponentData');
         stubOnGetComponentData.withArgs(ClassA).returns(classAName);
+        stubOnGetComponentData.withArgs(AspectA).returns({ componentName: 'AspectA'});
+        stubOnGetComponentData.withArgs(AspectB).returns({ componentName: 'AspectB'});
         let stubOnGetAllMethodsNames = stub(ReflectUtils, 'getAllMethodsNames').returns(methodNames);
         let stub1 = stub().returns('proxied_method_before');
         let stub2 = stub().returns('proxied_method_after');
@@ -95,7 +101,7 @@ describe('AspectDefinitionPostProcessor', function () {
         expect(stubOnGetPointcuts.calledWith(AspectA.prototype, 'after')).to.be.true;
         expect(stubOnGetPointcuts.calledWith(AspectB.prototype, 'before')).to.be.true;
         expect(stubOnGetPointcuts.calledWith(AspectB.prototype, 'after')).to.be.true;
-        expect(stubOnGetComponentData.callCount).to.be.eq(3);
+        expect(stubOnGetComponentData.callCount).to.be.eq(5);
         expect(stubOnGetComponentData.calledWith(ClassA)).to.be.true;
         expect(stubOnGetAllMethodsNames.callCount).to.be.eq(2);
         expect(stubOnGetAllMethodsNames.calledWith(ClassA)).to.be.true;
@@ -145,10 +151,10 @@ describe('AspectDefinitionPostProcessor', function () {
     it('should create proxy method which will execute the target method before the original', async function () {
         // given
         class A {
-            methodOne() { return; }
+            methodOne() { return 'methodOneResult'; }
         }
         class B {
-            methodTwo() { return; }
+            methodTwo() { return 'methodTwoResult'; }
         }
         let instanceOfA = new A();
         let instanceOfB = new B();
@@ -163,7 +169,6 @@ describe('AspectDefinitionPostProcessor', function () {
         let stubOnGetComponent = stub(MyAspectDefinitionPostProcessor.injector, 'getComponent').returns(instanceOfB);
         let stubOnReflectApply = stub(Reflect, 'apply').returns(Promise.resolve('resolved'));
         let stubOnPromiseRace = stub(Promise, 'race').returns(Promise.resolve('resolved'));
-
         // when
         let beforeProxy = MyAspectDefinitionPostProcessor
             .createBeforeProxyMethod(methodOne, methodTwo, clazz);
@@ -187,10 +192,10 @@ describe('AspectDefinitionPostProcessor', function () {
     it('should create proxy method which will execute the target method after the original-return', async function () {
         // given
         class A {
-            methodOne() { return; }
+            methodOne() { return 'methodOneResult'; }
         }
         class B {
-            methodTwo() { return; }
+            methodTwo() { return 'methodTwoResult'; }
         }
         let instanceOfA = new A();
         let instanceOfB = new B();
@@ -216,6 +221,7 @@ describe('AspectDefinitionPostProcessor', function () {
         try {
             promiseResult = await instanceOfA.methodOne();
         } catch (err) {
+            expect(err).to.not.be.instanceOf(AspectError);
             promiseResult = err;
             hasThrown = true;
         }
@@ -238,10 +244,10 @@ describe('AspectDefinitionPostProcessor', function () {
     it('should create proxy method which will execute the target method after the original-throw', async function () {
         // given
         class A {
-            methodOne() { return; }
+            methodOne() { return 'methodOneResult'; }
         }
         class B {
-            methodTwo() { return; }
+            methodTwo() { return 'methodTwoResult'; }
         }
         let instanceOfA = new A();
         let instanceOfB = new B();
@@ -255,8 +261,9 @@ describe('AspectDefinitionPostProcessor', function () {
         let error = new Error('new error');
         let spyOnCreateMethodProxy = spy(ProxyUtils, 'createMethodProxy');
         let stubOnGetComponent = stub(MyAspectDefinitionPostProcessor.injector, 'getComponent').returns(instanceOfB);
-        let stubOnReflectApply = stub(Reflect, 'apply');
-        let stubOnPromiseRace = stub(Promise, 'race').throws(error);
+        let stubOnReflectApply = spy(Reflect, 'apply');
+        let stubOnPromiseRace = stub(Promise, 'race');
+        stubOnPromiseRace.withArgs(['methodOneResult']).throws(error);
 
         // when
         let afterProxy = MyAspectDefinitionPostProcessor
@@ -268,6 +275,7 @@ describe('AspectDefinitionPostProcessor', function () {
         try {
             promiseResult = await instanceOfA.methodOne();
         } catch (err) {
+            expect(err).to.not.be.instanceOf(AspectError);
             promiseResult = err;
             hasThrown = true;
         }
@@ -290,10 +298,10 @@ describe('AspectDefinitionPostProcessor', function () {
     it('should create proxy method which will execute the target method after the original returns', async function () {
         // given
         class A {
-            methodOne() { return; }
+            methodOne() { return 'methodOneResult'; }
         }
         class B {
-            methodTwo() { return; }
+            methodTwo() { return 'methodTwoResult'; }
         }
         let instanceOfA = new A();
         let instanceOfB = new B();
@@ -332,10 +340,10 @@ describe('AspectDefinitionPostProcessor', function () {
     it('should create proxy method which will execute the target method after the original throws', async function () {
         // given
         class A {
-            methodOne() { return; }
+            methodOne() { return 'methodOneResult'; }
         }
         class B {
-            methodTwo() { return; }
+            methodTwo() { return 'methodTwoResult'; }
         }
         let instanceOfA = new A();
         let instanceOfB = new B();
@@ -365,6 +373,7 @@ describe('AspectDefinitionPostProcessor', function () {
         try {
             await instanceOfA.methodOne();
         } catch (err) {
+            expect(err).to.not.be.instanceOf(AspectError);
             promiseResult = err;
             hasThrown = true;
         }
@@ -389,10 +398,10 @@ describe('AspectDefinitionPostProcessor', function () {
     it('should create proxy method which will execute the target method around the original', async function () {
         // given
         class A {
-            methodOne() { return; }
+            methodOne() { return 'methodOneResult'; }
         }
         class B {
-            methodTwo() { return; }
+            methodTwo() { return 'methodTwoResult'; }
         }
         let instanceOfA = new A();
         let instanceOfB = new B();
@@ -428,5 +437,165 @@ describe('AspectDefinitionPostProcessor', function () {
         stubOnReflectApply.restore();
         stubOnPromiseRace.restore();
         stubOnNewProceedingJoinPoint.restore();
+    });
+});
+
+describe('AspectDefinitionPostProcessor should throw on advice throw', function () {
+    let aspectDefinitionPostProcessor;
+    let MyAspectDefinitionPostProcessor;
+    let aspectErrorInfo = new AspectErrorInfo('AspectClass', 'adviceMethod', 'ComponentClass', 'advisedMethod');
+    beforeEach(() => {
+        aspectDefinitionPostProcessor = new AspectDefinitionPostProcessor();
+        MyAspectDefinitionPostProcessor = <any> aspectDefinitionPostProcessor;
+    });
+
+    it('should throw on before advice', async function () {
+        // given
+        class A {
+            methodOne() { return 'methodOneResult'; }
+        }
+        class B {
+            methodTwo() { return 'methodTwoResult'; }
+        }
+        let instanceOfA = new A();
+        let instanceOfB = new B();
+        let methodOne = instanceOfA.methodOne;
+        let methodTwo = instanceOfB.methodTwo;
+        let clazz =  'clazz';
+        let injector =  {
+            getComponent: () => { return; }
+        };
+        MyAspectDefinitionPostProcessor.injector = injector;
+        let spyOnCreateMethodProxy = spy(ProxyUtils, 'createMethodProxy');
+        let stubOnGetComponent = stub(MyAspectDefinitionPostProcessor.injector, 'getComponent').returns(instanceOfB);
+        let stubOnReflectApply = stub(Reflect, 'apply').returns(Promise.resolve('resolved'));
+        let stubOnPromiseRace = stub(Promise, 'race');
+        stubOnPromiseRace.onFirstCall().throws(new Error('someError'));
+        stubOnPromiseRace.onSecondCall().returns(Promise.resolve('resolved'));
+        let promiseResult;
+        let hasThrown = false;
+
+        // when
+        let beforeProxy = MyAspectDefinitionPostProcessor
+            .createBeforeProxyMethod(methodOne, methodTwo, clazz, aspectErrorInfo);
+        Reflect.set(A.prototype, 'methodOne', beforeProxy);
+
+        try {
+            promiseResult = await instanceOfA.methodOne();
+        } catch (error) {
+            expect(error).to.be.instanceOf(BeforeAdviceError);
+            hasThrown = true;
+        }
+
+        // then
+        expect(hasThrown).to.be.true;
+        // cleanup
+        spyOnCreateMethodProxy.restore();
+        stubOnGetComponent.restore();
+        stubOnReflectApply.restore();
+        stubOnPromiseRace.restore();
+    });
+
+    it('should throw when after advice throws', async function () {
+        // given
+        class A {
+            methodOne() { return 'methodOneResult'; }
+        }
+        class B {
+            methodTwo() { return 'methodTwoResult'; }
+        }
+        let instanceOfA = new A();
+        let instanceOfB = new B();
+        let methodOne = instanceOfA.methodOne;
+        let methodTwo = instanceOfB.methodTwo;
+        let clazz =  'clazz';
+        let injector =  {
+            getComponent: () => { return; }
+        };
+        MyAspectDefinitionPostProcessor.injector = injector;
+        let spyOnCreateMethodProxy = spy(ProxyUtils, 'createMethodProxy');
+        let stubOnGetComponent = stub(MyAspectDefinitionPostProcessor.injector, 'getComponent').returns(instanceOfB);
+        let stubOnReflectApply = stub(Reflect, 'apply');
+        let stubOnPromiseRace = stub(Promise, 'race');
+        stubOnPromiseRace.onCall(0).returns(Promise.resolve('resolved'));
+        stubOnPromiseRace.onCall(1).throws(new Error('someError'));
+        stubOnPromiseRace.onCall(2).throws(new Error('someError'));
+        stubOnPromiseRace.onCall(3).throws(new Error('someError'));
+        let promiseResult;
+        let hasThrown = false;
+
+        // when
+        let afterProxy = MyAspectDefinitionPostProcessor
+            .createAfterProxyMethod(methodOne, methodTwo, clazz, aspectErrorInfo);
+        Reflect.set(A.prototype, 'methodOne', afterProxy);
+
+        try {
+            promiseResult = await instanceOfA.methodOne();
+        } catch (error) {
+            expect(error).to.be.instanceOf(AfterAdviceError);
+            hasThrown = true;
+        }
+        expect(hasThrown).to.be.true;
+        hasThrown = false;
+        try {
+            promiseResult = await instanceOfA.methodOne();
+        } catch (error) {
+            expect(error).to.not.be.instanceOf(AspectError);
+            hasThrown = true;
+        }
+        // then
+        expect(hasThrown).to.be.true;
+        // cleanup
+        spyOnCreateMethodProxy.restore();
+        stubOnGetComponent.restore();
+        stubOnReflectApply.restore();
+        stubOnPromiseRace.restore();
+    });
+
+    it('should throw when afterReturning advice throws', async function () {
+        // given
+        class A {
+            methodOne() { return 'methodOneResult'; }
+        }
+        class B {
+            methodTwo() { return 'methodTwoResult'; }
+        }
+        let instanceOfA = new A();
+        let instanceOfB = new B();
+        let methodOne = instanceOfA.methodOne;
+        let methodTwo = instanceOfB.methodTwo;
+        let clazz =  'clazz';
+        let injector =  {
+            getComponent: () => { return; }
+        };
+        MyAspectDefinitionPostProcessor.injector = injector;
+        let spyOnCreateMethodProxy = spy(ProxyUtils, 'createMethodProxy');
+        let stubOnGetComponent = stub(MyAspectDefinitionPostProcessor.injector, 'getComponent').returns(instanceOfB);
+        let stubOnReflectApply = stub(Reflect, 'apply');
+        let stubOnPromiseRace = stub(Promise, 'race').returns(Promise.resolve('resolved'));
+        stubOnPromiseRace.onFirstCall().returns(Promise.resolve('resolved'));
+        stubOnPromiseRace.onSecondCall().throws(new Error('someError'));
+        let promiseResult;
+        let hasThrown = false;
+
+        // when
+        let afterReturningProxy = MyAspectDefinitionPostProcessor
+            .createAfterReturningProxyMethod(methodOne, methodTwo, clazz, aspectErrorInfo);
+        Reflect.set(A.prototype, 'methodOne', afterReturningProxy);
+
+        try {
+            promiseResult = await instanceOfA.methodOne();
+        } catch (error) {
+            expect(error).to.be.instanceOf(AfterReturningAdviceError);
+            hasThrown = true;
+        }
+
+        // then
+        expect(hasThrown).to.be.true;
+        // cleanup
+        spyOnCreateMethodProxy.restore();
+        stubOnGetComponent.restore();
+        stubOnReflectApply.restore();
+        stubOnPromiseRace.restore();
     });
 });

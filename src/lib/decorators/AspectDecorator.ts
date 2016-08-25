@@ -1,5 +1,6 @@
 import {Component} from "./ComponentDecorator";
 import * as _ from "lodash";
+import { DecoratorType, DecoratorUtil } from "../helpers/DecoratorUtils";
 
 export class AdviceType {
     static BEFORE = 'before';
@@ -38,6 +39,7 @@ export class ProceedingJoinPoint {
 export const ASPECT_DECORATOR_TOKEN = Symbol('ASPECT_DECORATOR_TOKEN');
 export function Aspect() {
     return function(target) {
+        DecoratorUtil.throwOnWrongType(Aspect, DecoratorType.CLASS, [...arguments]);
         Component()(target);
         target[ASPECT_DECORATOR_TOKEN] = true;
     };
@@ -71,6 +73,7 @@ export const ASPECT_POINTCUT_TOKEN = Symbol('ASPECT_POINTCUT_TOKEN');
 
 export function Before(config: PointcutConfig) {
     return function(target, targetMethod) {
+        DecoratorUtil.throwOnWrongType(Before, DecoratorType.METHOD, [...arguments]);
         AspectUtil.initPointcutListDoesntExist(target).pointcuts.get(AdviceType.BEFORE)
             .push(new Pointcut(config, targetMethod));
     };
@@ -78,6 +81,7 @@ export function Before(config: PointcutConfig) {
 
 export function After(config: PointcutConfig) {
     return function (target, targetMethod) {
+        DecoratorUtil.throwOnWrongType(After, DecoratorType.METHOD, [...arguments]);
         AspectUtil.initPointcutListDoesntExist(target).pointcuts.get(AdviceType.AFTER)
             .push(new Pointcut(config, targetMethod));
     };
@@ -85,6 +89,7 @@ export function After(config: PointcutConfig) {
 
 export function AfterReturning(config: PointcutConfig) {
     return function (target, targetMethod) {
+        DecoratorUtil.throwOnWrongType(AfterReturning, DecoratorType.METHOD, [...arguments]);
         AspectUtil.initPointcutListDoesntExist(target).pointcuts.get(AdviceType.AFTER_RETURNING)
             .push(new Pointcut(config, targetMethod));
     };
@@ -92,6 +97,7 @@ export function AfterReturning(config: PointcutConfig) {
 
 export function AfterThrowing(config: PointcutConfig) {
     return function (target, targetMethod) {
+        DecoratorUtil.throwOnWrongType(AfterThrowing, DecoratorType.METHOD, [...arguments]);
         AspectUtil.initPointcutListDoesntExist(target).pointcuts.get(AdviceType.AFTER_THROWING)
             .push(new Pointcut(config, targetMethod));
     };
@@ -99,6 +105,7 @@ export function AfterThrowing(config: PointcutConfig) {
 
 export function Around(config: PointcutConfig) {
     return function (target, targetMethod) {
+        DecoratorUtil.throwOnWrongType(Around, DecoratorType.METHOD, [...arguments]);
         let pointcutList = AspectUtil.initPointcutListDoesntExist(target);
         pointcutList.pointcuts.get(AdviceType.AROUND).push(new Pointcut(config, targetMethod));
     };

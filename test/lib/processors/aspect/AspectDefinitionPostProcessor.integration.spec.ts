@@ -103,7 +103,7 @@ describe('AspectDefinitionPostProcessor Integration Test', function () {
             this.componentAInstance.spyMethod();
         }
 
-        @AfterThrowing({ classRegex: 'ClassA', methodRegex: 'methodTwo' })
+        @AfterThrowing({ classRegex: 'ClassA', methodRegex: ''})
         doAfterThrowing() {
             this.componentAInstance.spyMethod();
         }
@@ -146,8 +146,7 @@ describe('AspectDefinitionPostProcessor Integration Test', function () {
 
         //  then
         assert.callOrder(spyOnDoEverythingElseBefore, spyOnDoSomethingElseBefore, spyOnDoSomethingBefore, spyOnDoBefore,
-            spyOnDoAround, spyOnMethodOne, spyOnDoAfterReturning, spyOnDoSomethingAfter,
-            spyOnDoSomethingAfter);
+            spyOnDoAround, spyOnMethodOne, spyOnDoAfterReturning, spyOnDoSomethingAfter, spyOnDoSomethingAfter);
         expect(spyOnSpyMethod.callCount).to.be.eq(9);
 
         // cleanup

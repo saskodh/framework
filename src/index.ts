@@ -18,17 +18,19 @@ export {View} from "./lib/decorators/ViewDecorator";
 export {RequestMapping, RequestMappingConfig, RequestMethod} from "./lib/decorators/RequestMappingDecorator";
 export {Interceptor} from "./lib/decorators/InterceptorDecorator";
 export {Order} from "./lib/decorators/OrderDecorator";
+export {Aspect, Before, After, AfterReturning, AfterThrowing, Around} from "./lib/decorators/AspectDecorator";
 
 export { RequestContext, REQUEST_TOKEN, RESPONSE_TOKEN } from "./lib/web/context/RequestContext";
 export { RequestContextHolder } from "./lib/web/context/RequestContextHolder";
 
 export {ApplicationContext} from "./lib/di/ApplicationContext";
-export {ComponentDefinitionPostProcessor} from "./lib/processors/ComponentDefinitionPostProcessor";
-export {ComponentPostProcessor} from "./lib/processors/ComponentPostProcessor";
-export {Aspect, Before, After, AfterReturning, AfterThrowing, Around} from "./lib/decorators/AspectDecorator";
+export {ComponentDefinitionPostProcessor, IComponentDefinitionPostProcessor}
+    from "./lib/processors/ComponentDefinitionPostProcessor";
+export {ComponentPostProcessor, IComponentPostProcessor} from "./lib/processors/ComponentPostProcessor";
 export {Environment} from "./lib/di/Environment";
 
-export {ApplcationContextError, ComponentInitializationError, ComponentWiringError,
+// exported error definitions
+export {ApplicationContextError, ComponentInitializationError, ComponentWiringError,
     PostConstructionError, PreDestructionError, PostProcessError } from "./lib/errors/ApplicationContextErrors"
 export {BadArgumentError, DecoratorBadArgumentError} from "./lib/errors/BadArgumentErrors"
 export {BaseError} from "./lib/errors/BaseError"
@@ -36,3 +38,4 @@ export {DecoratorUsageError, DecoratorUsageTypeError} from "./lib/errors/Decorat
 export {InjectionError} from "./lib/errors/InjectionError"
 export {InvalidUsageError} from "./lib/errors/InvalidUsageError"
 export {WebError, RouteHandlerError, InterceptorError} from "./lib/errors/WebErrors"
+export {AspectError, AfterAdviceError, AfterReturningAdviceError, BeforeAdviceError} from "./lib/errors/AspectErrors"

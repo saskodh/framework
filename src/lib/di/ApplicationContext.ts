@@ -17,7 +17,7 @@ import { DecoratorUsageError } from "../errors/DecoratorUsageErrors";
 import { BadArgumentError } from "../errors/BadArgumentErrors";
 import {
     ComponentInitializationError, ComponentWiringError,
-    PostConstructionError, PreDestructionError, ApplcationContextError, PostProcessError
+    PostConstructionError, PreDestructionError, ApplicationContextError, PostProcessError
 } from "../errors/ApplicationContextErrors";
 
 export class ApplicationContextState {
@@ -387,7 +387,7 @@ export class ApplicationContext {
 
     private verifyContextReady() {
         if (this.state !== ApplicationContextState.READY) {
-            throw new ApplcationContextError
+            throw new ApplicationContextError
                 ('Application context is not yet initialized. Start method needs to be called first.');
         }
     }

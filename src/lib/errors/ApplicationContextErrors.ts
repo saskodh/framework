@@ -1,13 +1,13 @@
 import {BaseError} from "./BaseError";
 
-export class ApplcationContextError extends BaseError {}
+export class ApplicationContextError extends BaseError {}
 
-export class ComponentInitializationError extends ApplcationContextError {}
+export class ComponentInitializationError extends ApplicationContextError {}
 
-export class ComponentWiringError extends ApplcationContextError {}
+export class ComponentWiringError extends ApplicationContextError {}
 
-export class PostConstructionError extends ApplcationContextError {}
+export class PostConstructionError extends ApplicationContextError {}
 
-export class PreDestructionError extends ApplcationContextError {}
+export class PreDestructionError extends ApplicationContextError {}
 
-export class PostProcessError extends ApplcationContextError {}
+export class PostProcessError extends ApplicationContextError {}
