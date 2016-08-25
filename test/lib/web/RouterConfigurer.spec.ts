@@ -5,6 +5,7 @@ import { Interceptor } from "../../../src/lib/decorators/InterceptorDecorator";
 import { RouterConfigurer } from "../../../src/lib/web/RouterConfigurer";
 import { OrderUtil } from "../../../src/lib/decorators/OrderDecorator";
 import { RouterConfigItem, RequestMethod } from "../../../src/lib/decorators/RequestMappingDecorator";
+import { RequestContextInitializer } from "../../../src/lib/web/context/RequestContextInitializer";
 
 describe('RouterConfigurer', function () {
 
@@ -90,6 +91,7 @@ describe('RouterConfigurer', function () {
         // given
         let stubOnUse = stub((<any> routerConfigurer).router, 'use');
         let stubOnRegisterRouteHandlers = stub(routerConfigurer, 'registerRouteHandlers');
+        let stubOnRCIMiddleware = stub(RequestContextInitializer, 'getMiddleware').returns('rci-middleware');
         let stubOnPreHandler = stub((<any> routerConfigurer).preHandler, 'bind')
             .returns('bound preHandler');
         let stubOnPostHandler = stub((<any> routerConfigurer).postHandler, 'bind')
@@ -105,12 +107,15 @@ describe('RouterConfigurer', function () {
         (<any> routerConfigurer).configureMiddlewares();
 
         // then
-        expect(stubOnUse.calledThrice).to.be.true;
-        expect(stubOnUse.args).to.eql([['wraped preHandler'], ['wraped postHandler'], ['wraped resolver']]);
+        expect(stubOnUse.called).to.be.true;
+        expect(stubOnUse.callCount).to.be.eql(4);
+        expect(stubOnUse.args).to.eql([['rci-middleware'], ['wraped preHandler'],
+            ['wraped postHandler'], ['wraped resolver']]);
         expect(stubOnRegisterRouteHandlers.calledOnce).to.be.true;
 
         stubOnUse.restore();
         stubOnRegisterRouteHandlers.restore();
+        stubOnRCIMiddleware.restore();
         stubOnPreHandler.restore();
         stubOnPostHandler.restore();
         stubOnResolver.restore();
