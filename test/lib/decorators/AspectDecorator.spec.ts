@@ -32,7 +32,7 @@ describe('AspectDecorator', function () {
 
         @Aspect()
         class A {
-            @Before({classRegex: 'B', methodRegex: 'methodOne'})
+            @Before({classRegex: 'B', methodRegex: 'methodOne' })
             doSomething() { return; }
         }
 
@@ -42,8 +42,8 @@ describe('AspectDecorator', function () {
 
         //  then
         expect(beforeDataA.length).to.be.eq(1);
-        expect(beforeDataA[0].pointcutConfig.classRegex).to.be.eq('B');
-        expect(beforeDataA[0].pointcutConfig.methodRegex).to.be.eq('methodOne');
+        expect(beforeDataA[0].pointcutConfig.classRegex).to.be.eql('B');
+        expect(beforeDataA[0].pointcutConfig.methodRegex).to.be.eql('methodOne');
         expect(beforeDataA[0].targetMethod).to.be.eq('doSomething');
         expect(isAspectB).to.be.false;
     });
@@ -56,7 +56,7 @@ describe('AspectDecorator', function () {
 
         @Aspect()
         class A {
-            @After({classRegex: 'B', methodRegex: 'methodOne'})
+            @After({classRegex: /^B$/, methodRegex: 'methodOne' })
             doSomething() { return; }
         }
 
@@ -66,8 +66,8 @@ describe('AspectDecorator', function () {
 
         //  then
         expect(beforeDataA.length).to.be.eq(1);
-        expect(beforeDataA[0].pointcutConfig.classRegex).to.be.eq('B');
-        expect(beforeDataA[0].pointcutConfig.methodRegex).to.be.eq('methodOne');
+        expect(beforeDataA[0].pointcutConfig.classRegex).to.be.eql(/^B$/);
+        expect(beforeDataA[0].pointcutConfig.methodRegex).to.be.eql('methodOne');
         expect(beforeDataA[0].targetMethod).to.be.eq('doSomething');
         expect(isAspectB).to.be.false;
     });
@@ -80,7 +80,7 @@ describe('AspectDecorator', function () {
 
         @Aspect()
         class A {
-            @AfterReturning({classRegex: 'B', methodRegex: 'methodOne'})
+            @AfterReturning({classRegex: /^B$/, methodRegex: /^methodOne$/ })
             doSomething() { return; }
         }
 
@@ -90,8 +90,8 @@ describe('AspectDecorator', function () {
 
         //  then
         expect(beforeDataA.length).to.be.eq(1);
-        expect(beforeDataA[0].pointcutConfig.classRegex).to.be.eq('B');
-        expect(beforeDataA[0].pointcutConfig.methodRegex).to.be.eq('methodOne');
+        expect(beforeDataA[0].pointcutConfig.classRegex).to.be.eql(/^B$/);
+        expect(beforeDataA[0].pointcutConfig.methodRegex).to.be.eql(/^methodOne$/);
         expect(beforeDataA[0].targetMethod).to.be.eq('doSomething');
         expect(isAspectB).to.be.false;
     });
@@ -104,7 +104,7 @@ describe('AspectDecorator', function () {
 
         @Aspect()
         class A {
-            @AfterThrowing({classRegex: 'B', methodRegex: 'methodOne'})
+            @AfterThrowing({classRegex: /^B$/, methodRegex: /^methodOne$/ })
             doSomething() { return; }
         }
 
@@ -114,8 +114,8 @@ describe('AspectDecorator', function () {
 
         //  then
         expect(beforeDataA.length).to.be.eq(1);
-        expect(beforeDataA[0].pointcutConfig.classRegex).to.be.eq('B');
-        expect(beforeDataA[0].pointcutConfig.methodRegex).to.be.eq('methodOne');
+        expect(beforeDataA[0].pointcutConfig.classRegex).to.be.eql(/^B$/);
+        expect(beforeDataA[0].pointcutConfig.methodRegex).to.be.eql(/^methodOne$/);
         expect(beforeDataA[0].targetMethod).to.be.eq('doSomething');
         expect(isAspectB).to.be.false;
     });
@@ -128,7 +128,7 @@ describe('AspectDecorator', function () {
 
         @Aspect()
         class A {
-            @Around({classRegex: 'B', methodRegex: 'methodOne'})
+            @Around({classRegex: /^B$/, methodRegex: /^methodOne$/ })
             doSomething() { return; }
         }
 
@@ -138,8 +138,8 @@ describe('AspectDecorator', function () {
 
         //  then
         expect(beforeDataA.length).to.be.eq(1);
-        expect(beforeDataA[0].pointcutConfig.classRegex).to.be.eq('B');
-        expect(beforeDataA[0].pointcutConfig.methodRegex).to.be.eq('methodOne');
+        expect(beforeDataA[0].pointcutConfig.classRegex).to.be.eql(/^B$/);
+        expect(beforeDataA[0].pointcutConfig.methodRegex).to.be.eql(/^methodOne$/);
         expect(beforeDataA[0].targetMethod).to.be.eq('doSomething');
         expect(isAspectB).to.be.false;
     });
@@ -227,10 +227,10 @@ describe('AspectUtil', function () {
         }
         @Aspect()
         class AspectA {
-            @Before({ classRegex: 'ClassA', methodRegex: 'methodOne'})
+            @Before({classRegex: /^ClassA$/, methodRegex: /^methodOne$/ })
             doSomethingBefore() {} // tslint:disable-line
 
-            @After({ classRegex: 'ClassA', methodRegex: 'methodOne'})
+            @After({classRegex: 'ClassA', methodRegex: 'methodOne' })
             doSomethingAfter() {} // tslint:disable-line
         }
 
@@ -243,7 +243,7 @@ describe('AspectUtil', function () {
 
     it('should return the pointcuts for the given advice type', function () {
         // given
-        let localPointcutConfig = { classRegex: 'ClassA', methodRegex: 'methodOne'};
+        let localPointcutConfig = { classRegex: /^ClassA$/, methodRegex: /^methodOne$/ };
         class ClassA {
             methodOne() {} // tslint:disable-line
         }

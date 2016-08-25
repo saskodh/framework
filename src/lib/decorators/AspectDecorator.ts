@@ -14,8 +14,8 @@ export class AdviceType {
 }
 
 export interface PointcutConfig {
-    classRegex?: string;
-    methodRegex?: string;
+    classRegex?: RegExp | string;
+    methodRegex?: RegExp | string;
 }
 
 export class ProceedingJoinPoint {

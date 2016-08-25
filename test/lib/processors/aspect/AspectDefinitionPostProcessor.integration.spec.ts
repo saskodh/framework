@@ -47,23 +47,23 @@ describe('AspectDefinitionPostProcessor Integration Test', function () {
         @Inject()
         public componentAInstance: ComponentA;
 
-        @Before({ classRegex: 'ClassA', methodRegex: 'methodOne'})
+        @Before({ classRegex: /^ClassA$/, methodRegex: /^methodOne$/ })
         doSomethingBefore() {
             this.componentAInstance.spyMethod();
         }
 
-        @Before({ classRegex: 'ClassA', methodRegex: 'methodOne'})
+        @Before({ classRegex: /^ClassA$/, methodRegex: /^methodOne$/ })
         doSomethingElseBefore() {
             this.componentAInstance.spyMethod();
         }
 
-        @After({ classRegex: 'ClassA', methodRegex: 'methodOne'})
-        @After({ classRegex: 'ClassA', methodRegex: 'methodOne'})
+        @After({ classRegex: /^ClassA$/, methodRegex: /^methodOne$/ })
+        @After({ classRegex: /^ClassA$/, methodRegex: /^methodOne$/ })
         doSomethingAfter() {
             this.componentAInstance.spyMethod();
         }
 
-        @Before({ classRegex: 'ClassA', methodRegex: 'methodOne'})
+        @Before({ classRegex: /^ClassA$/, methodRegex: /^methodOne$/ })
         doEverythingElseBefore() {
             this.componentAInstance.spyMethod();
         }
@@ -75,17 +75,17 @@ describe('AspectDefinitionPostProcessor Integration Test', function () {
         @Inject()
         public componentAInstance: ComponentA;
 
-        @Before({ classRegex: 'ClassA', methodRegex: 'methodOne'})
+        @Before({ classRegex: /^ClassA$/, methodRegex: /^methodOne$/ })
         doBefore() {
             this.componentAInstance.spyMethod();
         }
 
-        @AfterReturning({ classRegex: 'ClassA', methodRegex: 'methodOne'})
+        @AfterReturning({ classRegex: /^ClassA$/, methodRegex: /^methodOne$/ })
         doAfterReturning() {
             this.componentAInstance.spyMethod();
         }
 
-        @Around({ classRegex: 'ClassA', methodRegex: 'methodOne'})
+        @Around({ classRegex: /^ClassA$/, methodRegex: /^methodOne$/ })
         doAround(proceedingJoinPoint: ProceedingJoinPoint) {
             this.componentAInstance.spyMethod();
             proceedingJoinPoint.proceed();
@@ -98,12 +98,12 @@ describe('AspectDefinitionPostProcessor Integration Test', function () {
         @Inject()
         public componentAInstance: ComponentA;
 
-        @Before({ classRegex: 'ClassA', methodRegex: 'methodTwo'})
+        @Before({ classRegex: 'ClassA', methodRegex: 'methodTwo' })
         doBefore() {
             this.componentAInstance.spyMethod();
         }
 
-        @AfterThrowing({ classRegex: 'ClassA', methodRegex: 'methodTwo'})
+        @AfterThrowing({ classRegex: 'ClassA', methodRegex: 'methodTwo' })
         doAfterThrowing() {
             this.componentAInstance.spyMethod();
         }

@@ -31,10 +31,10 @@ export class AspectDefinitionPostProcessor implements IComponentDefinitionPostPr
                 let pointcuts = AspectUtil.getPointcuts(AspectConstructor.prototype, adviceType);
                 for (let pointcut of pointcuts) {
                     let componentName = ComponentUtil.getComponentData(componentConstructor).componentName;
-                    if (componentName.match(pointcut.pointcutConfig.classRegex) !== null) {
+                    if (componentName.match(<any> pointcut.pointcutConfig.classRegex)) {
                         let classMethods = ReflectUtils.getAllMethodsNames(componentConstructor);
                         for (let method of classMethods) {
-                            if (method.match(pointcut.pointcutConfig.methodRegex) !== null) {
+                            if (method.match(<any> pointcut.pointcutConfig.methodRegex)) {
                                 let joinPoint = AspectProxy.prototype[method];
                                 let advice = AspectConstructor.prototype[pointcut.targetMethod];
                                 let createProxyMethod = this.adviceProxyMethods.get(adviceType);
