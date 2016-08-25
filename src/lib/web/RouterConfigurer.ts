@@ -2,6 +2,8 @@ import * as _ from "lodash";
 import { Router } from "express-serve-static-core";
 import { OrderUtil } from "../decorators/OrderDecorator";
 import { RouterConfigItem } from "../decorators/RequestMappingDecorator";
+import { RequestContextInitializer } from "./context/RequestContextInitializer";
+import { RouteHandlerError, InterceptorError } from "../errors/WebErrors";
 import { LoggerFactory } from "../helpers/logging/LoggerFactory";
 
 let logger = LoggerFactory.getInstance();
@@ -48,11 +50,15 @@ export class RouterConfigurer {
     }
 
     private configureMiddlewares() {
+        // NOTE: The request context middleware should always be registered first
+        this.router.use(RequestContextInitializer.getMiddleware());
+
         this.router.use(this.wrap(this.preHandler.bind(this)));
         // NOTE: we will have our middleware handler when we drop the dependency to express
         // That would require the dispatching by path to be implemented on our side
         this.registerRouteHandlers();
         this.router.use(this.wrap(this.postHandler.bind(this)));
+        this.router.use(this.errorResolver);
         this.router.use(this.wrap(this.resolver.bind(this)));
     }
 
@@ -63,7 +69,14 @@ export class RouterConfigurer {
             logger.debug(`Registering route. Path: '${path}', method: ${httpMethod}.`);
 
             this.router[httpMethod](path, this.wrap(async(request, response, next) => {
-                let result = await handler[route.methodHandler](request, response);
+                let result;
+                try {
+                    result = await handler[route.methodHandler](request, response);
+                } catch (err) {
+                    next(new RouteHandlerError(`${handler.constructor.name}.${route.
+                        methodHandler} failed on ${httpMethod.toUpperCase()} ${path}`, err));
+                    return;
+                }
                 // TODO #3 saskodh: Check whether is more convenient to store in the request zone or pass on next
                 response.$$frameworkData = {
                     view: route.view,
@@ -79,7 +92,13 @@ export class RouterConfigurer {
             for (let i = this.interceptors.length - 1; i >= 0; i -= 1) {
                 let interceptor = this.interceptors[i];
                 if (_.isFunction(interceptor.afterCompletion)) {
-                    await interceptor.afterCompletion(request, response);
+                    try {
+                        await interceptor.afterCompletion(request, response);
+                    } catch (err) {
+                        // TODO: this doesnt throw because it is async and on an event listener (response on finish)
+                        throw new InterceptorError(`${interceptor.constructor.
+                            name}.afterCompletion failed on ${request.method} ${request.url}`, err);
+                    }
                 }
             }
         });
@@ -88,7 +107,13 @@ export class RouterConfigurer {
             let interceptor = this.interceptors[i];
             if (_.isFunction(interceptor.preHandle)) {
                 // NOTE: when the the preHandle function returns nothing the middleware chain is not broken
-                if (await interceptor.preHandle(request, response) === false) {
+                try {
+                    if (await interceptor.preHandle(request, response) === false) {
+                        return;
+                    }
+                } catch (err) {
+                    next(new InterceptorError(`${interceptor.constructor.name}.preHandle failed on ${request.
+                        method} ${request.url}`, err));
                     return;
                 }
             }
@@ -101,10 +126,21 @@ export class RouterConfigurer {
         for (let i = this.interceptors.length - 1; i >= 0; i -= 1) {
             let interceptor = this.interceptors[i];
             if (_.isFunction(interceptor.postHandle)) {
-                await interceptor.postHandle(request, response);
+                try {
+                    await interceptor.postHandle(request, response);
+                } catch (err) {
+                    next(new InterceptorError(`${interceptor.constructor.name}.postHandle failed on ${request.
+                        method} ${request.url}`, err));
+                    return;
+                }
             }
         }
         next();
+    }
+    private errorResolver(error: Error, request, response, next) {
+        console.error(error.stack);
+        response.status(500);
+        response.send("Code 500: Internal Server error");
     }
 
     private async resolver(request, response) {

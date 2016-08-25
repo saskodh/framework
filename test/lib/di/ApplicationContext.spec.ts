@@ -18,6 +18,13 @@ import { OrderUtil } from "../../../src/lib/decorators/OrderDecorator";
 import { LifeCycleHooksUtil } from "../../../src/lib/decorators/LifeCycleHooksDecorators";
 import { ActiveProfiles } from "../../../src/lib/decorators/ProfileDecorators";
 import { Environment } from "../../../src/lib/di/Environment";
+import { AspectDefinitionPostProcessor } from "../../../src/lib/processors/aspect/AspectDefinitionPostProcessor";
+import { BadArgumentError } from "../../../src/lib/errors/BadArgumentErrors";
+import {
+    PostProcessError, ComponentWiringError,
+    ComponentInitializationError, PostConstructionError, PreDestructionError
+} from "../../../src/lib/errors/ApplicationContextErrors";
+import { DecoratorUsageError } from "../../../src/lib/errors/DecoratorUsageErrors";
 
 describe('ApplicationContext', function () {
 
@@ -33,23 +40,34 @@ describe('ApplicationContext', function () {
         localAppContext = <any> appContext;
     });
 
+    afterEach(() => {
+        let configData = ConfigurationUtil.getConfigurationData(AppConfig);
+        configData.componentDefinitionPostProcessorFactory.components = [];
+    });
+
     it('should initialize properly', function () {
         // given
+        @ActiveProfiles('dev')
+        @Configuration()
+        class AppConfig2 {}
+
+        let localAppData = ConfigurationUtil.getConfigurationData(AppConfig2);
+
         let stubOnGetConfigurationData = stub(ConfigurationUtil, 'getConfigurationData')
-            .returns(localAppContext.configurationData);
-        let stubOnLoadAllComponents = stub(localAppContext.configurationData, 'loadAllComponents');
+            .returns(localAppData);
+        let stubOnLoadAllComponents = stub(localAppData, 'loadAllComponents');
         let stubOnSetActiveProfiles = stub(Environment.prototype, 'setActiveProfiles');
         let stubOnSetApplicationProperties = stub(Environment.prototype, 'setApplicationProperties');
         let stubOnRegister = stub(Injector.prototype, 'register');
 
         // when
-        localAppContext = <any> new ApplicationContext(AppConfig);
+        localAppContext = <any> new ApplicationContext(AppConfig2);
 
         // then
         expect(localAppContext.state).to.be.eq(ApplicationContextState.NOT_INITIALIZED);
         expect(localAppContext.injector).to.be.instanceOf(Injector);
         expect(localAppContext.dispatcher).to.be.instanceOf(Dispatcher);
-        expect(stubOnGetConfigurationData.calledWith(AppConfig)).to.be.true;
+        expect(stubOnGetConfigurationData.calledWith(AppConfig2)).to.be.true;
         expect(stubOnLoadAllComponents.called).to.be.true;
         expect(localAppContext.configurationData).to.be.instanceOf(ConfigurationData);
         expect(localAppContext.environment).to.be.instanceOf(Environment);
@@ -81,12 +99,17 @@ describe('ApplicationContext', function () {
         let stubOnVerifyContextReady = stub(localAppContext, 'verifyContextReady');
         let stubOnGetComponent = stub(localAppContext.injector, 'getComponent').returns('component');
         let stubOnGetClassToken = stub(ComponentUtil, 'getClassToken').returns('class token');
+        let stubOnIsComponent = stub(ComponentUtil, 'isComponent').returns(false);
+        stubOnIsComponent.withArgs('class').returns(true);
 
         // when
         let component = appContext.getComponent('class');
+        expect(appContext.getComponent.bind(appContext, 'wrong class')).to.throw(BadArgumentError);
 
         // then
-        expect(stubOnVerifyContextReady.calledOnce).to.be.true;
+        expect(stubOnVerifyContextReady.calledTwice).to.be.true;
+        expect(stubOnIsComponent.calledWith('class')).to.be.true;
+        expect(stubOnIsComponent.calledWith('wrong class')).to.be.true;
         expect(stubOnGetClassToken.calledWith('class')).to.be.true;
         expect(stubOnGetComponent.calledWith('class token')).to.be.true;
         expect(component).to.be.eq('component');
@@ -94,6 +117,7 @@ describe('ApplicationContext', function () {
         stubOnVerifyContextReady.restore();
         stubOnGetComponent.restore();
         stubOnGetClassToken.restore();
+        stubOnIsComponent.restore();
     });
 
     it('should return Component with token', async function () {
@@ -199,6 +223,41 @@ describe('ApplicationContext', function () {
         stubOnExecutePostConstruction.restore();
         stubOnPostProcessAfterInit.restore();
         stubOnDispatcherPostConstruct.restore();
+    });
+
+    it('should wire the aspectDefinitionPostProcessor', async function () {
+        // given
+        let stub1 = stub();
+        let stub2 = stub();
+        let aspectDefinitionPostProcessor = {
+            setInjector: stub1,
+            setAspectComponentDefinitions: stub2
+        };
+        let activeAspects = ['aspect1', 'aspects'];
+        let stubOnGetClassToken = stub(ComponentUtil, 'getClassToken');
+        stubOnGetClassToken.withArgs(AspectDefinitionPostProcessor).returns('aspect_token');
+        let stubOnInjectorGetComponent = stub(localAppContext.injector, 'getComponent');
+        stubOnInjectorGetComponent.withArgs('aspect_token').returns(aspectDefinitionPostProcessor);
+        let stubOnGetActiveAspects = stub(appContext, 'getActiveAspects').returns(activeAspects);
+
+        // when
+        localAppContext.wireAspectDefinitionPostProcessor();
+
+        // then
+        expect(stubOnGetClassToken.callCount).to.be.eq(1);
+        expect(stubOnGetClassToken.calledWith(AspectDefinitionPostProcessor)).to.be.true;
+        expect(stubOnInjectorGetComponent.callCount).to.be.eq(1);
+        expect(stubOnInjectorGetComponent.calledWith('aspect_token')).to.be.true;
+        expect(stub1.callCount).to.be.eq(1);
+        expect(stub1.calledWith(localAppContext.injector)).to.be.true;
+        expect(stub2.callCount).to.be.eq(1);
+        expect(stub2.calledWith(activeAspects)).to.be.true;
+        expect(stubOnGetActiveAspects.callCount).to.be.eq(1);
+
+        // cleanup
+        stubOnGetClassToken.restore();
+        stubOnInjectorGetComponent.restore();
+        stubOnGetActiveAspects.restore();
     });
 
     it('should return environment', async function () {
@@ -330,63 +389,112 @@ describe('ApplicationContext', function () {
         stubOnInjectorRegister.restore();
     });
 
-    it('should wire components', async function () {
-        // given
-        let componentData = {
-            classToken : 'class token'
-        };
-        let dependencyData1 = {
-            token: 'token 1',
-            isArray: false
-        };
-        let dependencyData2 = {
-            token: 'token 2',
-            isArray: true
-        };
-        let dependencies = new Map();
-        dependencies.set('dependency data 1', dependencyData1);
-        dependencies.set('dependency data 2', dependencyData2);
-        let properties = new Map();
-        properties.set('prop 1', 'value 1');
-        let injectionData = {
-            dependencies: dependencies,
-            properties: properties
-        };
-        let stubOnGetActiveComponents = stub(appContext, 'getActiveComponents').returns(['comp1']);
-        let stubOnGetComponentData = stub(ComponentUtil, 'getComponentData').returns(componentData);
-        let stubOnGetInjectionData = stub(ComponentUtil, 'getInjectionData').returns(injectionData);
-        let stubOnGetComponent = stub(localAppContext.injector, 'getComponent').returns('instance 1');
-        stubOnGetComponent.withArgs('class token').returns('instance 1');
-        stubOnGetComponent.withArgs('token 1').returns('injected instance 1');
-        let stubOnGetComponents = stub(localAppContext.injector, 'getComponents');
-        stubOnGetComponents.withArgs('token 2').returns(['injected instance 2', 'injected instance 3']);
-        let stubOnReflectSet = stub(Reflect, 'set');
-        let stubOnEnvironmentGetProperty = stub(Environment.prototype, 'getProperty').returns('value 1');
-        let stubOnProcessAfterInit = stub(Dispatcher.prototype, 'processAfterInit');
+    describe('wiring components', function () {
 
-        // when
-        await localAppContext.wireComponents();
+        let givenComponentData = { classToken : 'class token' };
 
-        // then
-        expect(stubOnGetActiveComponents.calledOnce).to.be.true;
-        expect(stubOnGetComponentData.calledWith('comp1')).to.be.true;
-        expect(stubOnGetInjectionData.calledWith('comp1')).to.be.true;
-        expect(stubOnGetComponent.calledWith('class token')).to.be.true;
-        expect(stubOnGetComponent.calledWith('token 1')).to.be.true;
-        expect(stubOnReflectSet.calledWith('instance 1', 'dependency data 1', 'injected instance 1')).to.be.true;
-        expect(stubOnReflectSet
-            .calledWith('instance 1', 'dependency data 2', ['injected instance 2', 'injected instance 3'])).to.be.true;
-        expect(stubOnReflectSet.calledWith('instance 1', 'prop 1', 'value 1')).to.be.true;
-        expect(stubOnProcessAfterInit.calledWith('comp1', 'instance 1')).to.be.true;
-        expect(stubOnEnvironmentGetProperty.calledWith('value 1')).to.be.true;
-        // cleanup
-        stubOnGetActiveComponents.restore();
-        stubOnGetComponentData.restore();
-        stubOnGetInjectionData.restore();
-        stubOnGetComponent.restore();
-        stubOnReflectSet.restore();
-        stubOnEnvironmentGetProperty.restore();
-        stubOnProcessAfterInit.restore();
+        let dependencyData1 = { token: 'token 1', isArray: false };
+        let dependencyData2 = { token: 'token 2', isArray: true };
+        let dynamicDepData1 = { token: 'dtoken 1', isArray: false };
+        let dynamicDepData2 = { token: 'dtoken 2', isArray: true };
+
+        let mockInjectionData = {
+            dependencies: new Map([['d1', dependencyData1], ['d2', dependencyData2]]),
+            dynamicDependencies: new Map([['dd1', dynamicDepData1], ['dd2', dynamicDepData2]]),
+            properties: new Map([['p1', 'p.name']])
+        };
+
+        beforeEach(function () {
+            this.givenInjectionData = { dependencies: new Map(), dynamicDependencies: new Map(), properties: new Map()};
+
+            this.stubOnGetActiveComponents = stub(appContext, 'getActiveComponents').returns(['comp1']);
+            this.stubOnGetComponentData = stub(ComponentUtil, 'getComponentData').returns(givenComponentData);
+            this.stubOnGetInjectionData = stub(ComponentUtil, 'getInjectionData').returns(this.givenInjectionData);
+            this.stubOnGetComponent = stub(localAppContext.injector, 'getComponent').returns('instance 1');
+            this.stubOnReflectSet = stub(Reflect, 'set');
+        });
+
+        afterEach(function () {
+            this.stubOnGetActiveComponents.restore();
+            this.stubOnGetComponentData.restore();
+            this.stubOnGetInjectionData.restore();
+            this.stubOnGetComponent.restore();
+            this.stubOnReflectSet.restore();
+        });
+
+        it('should wire dependencies', async function () {
+            // given
+            this.givenInjectionData.dependencies = mockInjectionData.dependencies;
+
+            this.stubOnGetComponent.withArgs('class token').returns('instance 1');
+            this.stubOnGetComponent.withArgs('token 1').returns('injected instance 1');
+            let stubOnGetComponents = stub(localAppContext.injector, 'getComponents');
+            stubOnGetComponents.withArgs('token 2').returns(['injected instance 2', 'injected instance 3']);
+
+            // when
+            await localAppContext.wireComponents();
+
+            // then
+            expect(this.stubOnGetActiveComponents.calledOnce).to.be.eq(true);
+            expect(this.stubOnGetComponentData.calledWith('comp1')).to.be.eq(true);
+            expect(this.stubOnGetInjectionData.calledWith('comp1')).to.be.eq(true);
+            expect(this.stubOnGetComponent.calledWith('class token')).to.be.eq(true);
+            expect(this.stubOnGetComponent.calledWith('token 1')).to.be.eq(true);
+            expect(stubOnGetComponents.calledWith('token 2')).to.be.eq(true);
+            expect(this.stubOnReflectSet.calledWith('instance 1', 'd1', 'injected instance 1')).to.be.eq(true);
+            expect(this.stubOnReflectSet.calledWith('instance 1', 'd2', ['injected instance 2', 'injected instance 3']))
+                .to.be.eq(true);
+
+            // clean-up
+            stubOnGetComponents.restore();
+        });
+
+        it('should wire dynamic dependencies', async function () {
+            // given
+            this.givenInjectionData.dynamicDependencies = mockInjectionData.dynamicDependencies;
+            let stubOnObjectDefineProperty = stub(Object, 'defineProperty');
+
+            // when
+            await localAppContext.wireComponents();
+
+            // then
+            expect(stubOnObjectDefineProperty.calledWith('instance 1', 'dd1', match.any)).to.be.eq(true);
+            expect(stubOnObjectDefineProperty.calledWith('instance 1', 'dd2', match.any)).to.be.eq(true);
+            // clean-up
+            stubOnObjectDefineProperty.restore();
+        });
+
+        it('should wire properties', async function () {
+            // given
+            this.givenInjectionData.properties = mockInjectionData.properties;
+
+            let stubOnEnvironmentGetProperty = stub(Environment.prototype, 'getProperty').returns('value 1');
+
+            // when
+            await localAppContext.wireComponents();
+
+            // then
+            expect(this.stubOnReflectSet.calledWith('instance 1', 'p1', 'value 1')).to.be.eq(true);
+            expect(stubOnEnvironmentGetProperty.calledWith('p.name')).to.be.eq(true);
+
+            // clean-up
+            stubOnEnvironmentGetProperty.restore();
+        });
+
+        it('should process after init', async function () {
+            // given
+            let stubOnProcessAfterInit = stub(Dispatcher.prototype, 'processAfterInit');
+
+            // when
+            await localAppContext.wireComponents();
+
+            // then
+            expect(stubOnProcessAfterInit.calledWith('comp1', 'instance 1')).to.be.eq(true);
+
+            // clean-up
+            stubOnProcessAfterInit.restore();
+        });
+
     });
 
     it('should execute post construction', async function () {
@@ -412,34 +520,6 @@ describe('ApplicationContext', function () {
         expect(testSpy.calledOnce).to.be.true;
         expect(stubOnGetConfig.calledTwice).to.be.true;
         expect(stubOnGetConfig.args).to.be.eql([['componentOne'], ['componentTwo']]);
-
-        // cleanup
-        stubOnGetActiveComponents.restore();
-        stubOnGetComponentData.restore();
-        stubOnGetConfig.restore();
-        stubOnGetComponent.restore();
-    });
-
-    it('should throw on execute post construction when postConstructMethod is not a method', async function () {
-        // given
-        let stubOnGetActiveComponents = stub (appContext, 'getActiveComponents')
-            .returns(['component']);
-        let stubOnGetComponentData = stub(ComponentUtil, 'getComponentData');
-        stubOnGetComponentData.withArgs('component').returns({classToken: 'token'});
-        let stubOnGetConfig = stub(LifeCycleHooksUtil, 'getConfig');
-        stubOnGetConfig.withArgs('component').returns({postConstructMethod: 'someObject'});
-        let stubOnGetComponent = stub(Injector.prototype, 'getComponent');
-        stubOnGetComponent.withArgs('token').returns({someObject: 'value'});
-        let hasThrown = false;
-
-
-        // when / then
-        try {
-            await localAppContext.executePostConstruction();
-        } catch (error) {
-            hasThrown = true;
-        }
-        expect(hasThrown).to.be.true;
 
         // cleanup
         stubOnGetActiveComponents.restore();
@@ -479,71 +559,81 @@ describe('ApplicationContext', function () {
         stubOnGetComponent.restore();
     });
 
-    it('should throw on execute post construction when postConstructMethod is not a method', async function () {
-        // given
-        let stubOnGetActiveComponents = stub (appContext, 'getActiveComponents')
-            .returns(['component']);
-        let stubOnGetComponentData = stub(ComponentUtil, 'getComponentData');
-        stubOnGetComponentData.withArgs('component').returns({classToken: 'token'});
-        let stubOnGetConfig = stub(LifeCycleHooksUtil, 'getConfig');
-        stubOnGetConfig.withArgs('component').returns({preDestroyMethod: 'someObject'});
-        let stubOnGetComponent = stub(Injector.prototype, 'getComponent');
-        stubOnGetComponent.withArgs('token').returns({someObject: 'value'});
-        let hasThrown = false;
-
-
-        // when / then
-        try {
-            await localAppContext.executePreDestruction();
-        } catch (error) {
-            hasThrown = true;
-        }
-        expect(hasThrown).to.be.true;
-
-        // cleanup
-        stubOnGetActiveComponents.restore();
-        stubOnGetComponentData.restore();
-        stubOnGetConfig.restore();
-        stubOnGetComponent.restore();
-    });
-
     it('should get active components', async function () {
         // given
         let data1 = {
             profiles: ['dev']
         };
         let data2 = {
-            profiles: ['other', '!dev']
+            profiles: ['other']
         };
         let data3 = {
             profiles: []
         };
-        let data4 = {
-            profiles: ['other', '!mongo']
-        };
-        localAppContext.configurationData.componentFactory.components = ['comp1', 'comp2', 'comp3', 'comp4'];
-        let stubOnAcceptsProfiles =
-            stub(localAppContext.environment, 'acceptsProfiles', (profile) => profile === 'dev');
+        localAppContext.configurationData.componentFactory.components = ['comp1', 'comp2', 'comp3'];
+        let stubOnAcceptsProfiles = stub(localAppContext.environment, 'acceptsProfiles').returns(false);
+        stubOnAcceptsProfiles.withArgs('dev').returns(true);
         let stubOnGetComponentData = stub(ComponentUtil, 'getComponentData');
         stubOnGetComponentData.withArgs('comp1').returns(data1);
         stubOnGetComponentData.withArgs('comp2').returns(data2);
         stubOnGetComponentData.withArgs('comp3').returns(data3);
-        stubOnGetComponentData.withArgs('comp4').returns(data4);
 
         // when
         let activeComponents = localAppContext.getActiveComponents();
 
         // then
-        expect(activeComponents).to.be.eql(['comp1', 'comp3', 'comp4']);
-        expect(stubOnGetComponentData.callCount).to.be.eq(4);
+        expect(activeComponents).to.be.eql(['comp1', 'comp3']);
+        expect(stubOnGetComponentData.callCount).to.be.eq(3);
         expect(stubOnGetComponentData.calledWith('comp1')).to.be.true;
         expect(stubOnGetComponentData.calledWith('comp2')).to.be.true;
         expect(stubOnGetComponentData.calledWith('comp3')).to.be.true;
-        expect(stubOnGetComponentData.calledWith('comp4')).to.be.true;
+        expect(stubOnAcceptsProfiles.callCount).to.be.eq(2);
+        expect(stubOnAcceptsProfiles.calledWith('dev')).to.be.true;
+        expect(stubOnAcceptsProfiles.calledWith('other')).to.be.true;
 
         // cleanup
         stubOnAcceptsProfiles.restore();
         stubOnGetComponentData.restore();
+    });
+
+    it('should get active aspects', async function () {
+        // given
+        let data1 = {
+            profiles: ['dev']
+        };
+        let data2 = {
+            profiles: ['other']
+        };
+        let data3 = {
+            profiles: []
+        };
+        localAppContext.configurationData.componentFactory.components = ['comp1', 'comp2', 'comp3'];
+        let stubOnIsAspect = stub(ComponentUtil, 'isAspect');
+        stubOnIsAspect.withArgs('comp1').returns(false);
+        stubOnIsAspect.withArgs('comp2').returns(true);
+        stubOnIsAspect.withArgs('comp3').returns(true);
+        let stubOnAcceptsProfiles = stub(localAppContext.environment, 'acceptsProfiles').returns(false);
+        stubOnAcceptsProfiles.withArgs('dev').returns(true);
+        let stubOnGetComponentData = stub(ComponentUtil, 'getComponentData');
+        stubOnGetComponentData.withArgs('comp1').returns(data1);
+        stubOnGetComponentData.withArgs('comp2').returns(data2);
+        stubOnGetComponentData.withArgs('comp3').returns(data3);
+
+        // when
+        let activeComponents = localAppContext.getActiveAspects();
+
+        // then
+        expect(activeComponents).to.be.eql(['comp3']);
+        expect(stubOnGetComponentData.callCount).to.be.eq(2);
+        expect(stubOnGetComponentData.calledWith('comp2')).to.be.true;
+        expect(stubOnGetComponentData.calledWith('comp3')).to.be.true;
+        expect(stubOnAcceptsProfiles.callCount).to.be.eq(1);
+        expect(stubOnAcceptsProfiles.calledWith('other')).to.be.true;
+
+        // cleanup
+        stubOnAcceptsProfiles.restore();
+        stubOnGetComponentData.restore();
+        stubOnIsAspect.restore();
     });
 
     it('should verify if context is ready', async function () {
@@ -591,6 +681,8 @@ describe('DefinitionPostProcessors', function() {
             aliasTokens: ['alias2'],
             classToken: 'class token 2'
         };
+        let spyOnComponentDefinitionPostProcessorFactory =
+            spy(localAppContext.configurationData.componentDefinitionPostProcessorFactory.components, 'push');
         let stubOnGetActiveDefinitionPostProcessors = stub(appContext, 'getActiveDefinitionPostProcessors')
             .returns([DefinitionPostProcessor1, DefinitionPostProcessor2]);
         let stubOnGetComponentData = stub(ComponentUtil, 'getComponentData');
@@ -601,6 +693,7 @@ describe('DefinitionPostProcessors', function() {
         let stubOnInjectorRegister = stub(localAppContext.injector, 'register');
         let stubOnIsComponentDefinitionPostProcessor =
             stub(ComponentDefinitionPostProcessorUtil, 'isIComponentDefinitionPostProcessor').returns(true);
+        let stubOnWireAspectDefinitionPostProcessor = stub(appContext, 'wireAspectDefinitionPostProcessor');
         let instance1 = new DefinitionPostProcessor1();
         let instance2 = new DefinitionPostProcessor2();
 
@@ -608,6 +701,7 @@ describe('DefinitionPostProcessors', function() {
         localAppContext.initializeDefinitionPostProcessors();
 
         // then
+        expect(spyOnComponentDefinitionPostProcessorFactory.calledWith(AspectDefinitionPostProcessor)).to.be.true;
         expect(stubOnGetActiveDefinitionPostProcessors.calledOnce).to.be.true;
         expect(stubOnGetComponentData.calledWith(DefinitionPostProcessor1)).to.be.true;
         expect(stubOnGetComponentData.calledWith(DefinitionPostProcessor2)).to.be.true;
@@ -617,12 +711,14 @@ describe('DefinitionPostProcessors', function() {
         expect(stubOnInjectorRegister.calledWith('alias2', instance2)).to.be.true;
         expect(stubOnIsComponentDefinitionPostProcessor.calledTwice).to.be.true;
         // cleanup
+        spyOnComponentDefinitionPostProcessorFactory.restore();
         stubOnGetActiveDefinitionPostProcessors.restore();
         stubOnGetComponentData.restore();
         stubOnNewComponent1.restore();
         stubOnNewComponent2.restore();
         stubOnInjectorRegister.restore();
         stubOnIsComponentDefinitionPostProcessor.restore();
+        stubOnWireAspectDefinitionPostProcessor.restore();
     });
 
     it('should apply the postProcess definition method from all the definition post processors', async function () {
@@ -664,73 +760,6 @@ describe('DefinitionPostProcessors', function() {
         stubOnGetOrderedDefinitionPostProcessors.restore();
     });
 
-    it('should throw error if definition post processor return something other than function', async function () {
-        // given
-        let stub1 = stub().returns(1);
-        let definitionPostProcessor1 = {
-            postProcessDefinition : stub1
-        };
-        localAppContext.configurationData.componentFactory.components = ['comp1'];
-        let stubOnGetOrderedDefinitionPostProcessors = stub(appContext, 'getOrderedDefinitionPostProcessors')
-            .returns([definitionPostProcessor1]);
-
-
-        // when
-        let hasThrown = false;
-        try {
-            await localAppContext.postProcessDefinition();
-        } catch (err) {
-            hasThrown = true;
-        }
-
-        // then
-        expect(hasThrown).to.be.true;
-        expect(stubOnGetOrderedDefinitionPostProcessors.calledOnce).to.be.true;
-        expect(stub1.calledOnce).to.be.true;
-        expect(stub1.calledWith('comp1')).to.be.true;
-        // cleanup
-        stubOnGetOrderedDefinitionPostProcessors.restore();
-    });
-
-    it('should throw error if target does not implement the IComponentDefinitionPostProcessor', async function () {
-        // given
-        class DefinitionPostProcessor1 {}
-        let data1 = {
-            aliasTokens: ['alias1'],
-            classToken: 'class token 1'
-        };
-        let stubOnGetActiveDefinitionPostProcessors = stub(appContext, 'getActiveDefinitionPostProcessors')
-            .returns([DefinitionPostProcessor1]);
-        let stubOnGetComponentData = stub(ComponentUtil, 'getComponentData');
-        stubOnGetComponentData.withArgs(DefinitionPostProcessor1).returns(data1);
-        let stubOnNewComponent1 = stub(DefinitionPostProcessor1.prototype, 'constructor');
-        let stubOnInjectorRegister = stub(localAppContext.injector, 'register');
-        let stubOnIsComponentDefinitionPostProcessor =
-            stub(ComponentDefinitionPostProcessorUtil, 'isIComponentDefinitionPostProcessor').returns(false);
-        let instance1 = new DefinitionPostProcessor1();
-
-        // when
-        let hasThrown = false;
-        try {
-            localAppContext.initializeDefinitionPostProcessors();
-        } catch (err) {
-            hasThrown = true;
-        }
-
-        // then
-        expect(hasThrown).to.be.true;
-        expect(stubOnGetActiveDefinitionPostProcessors.calledOnce).to.be.true;
-        expect(stubOnGetComponentData.calledWith(DefinitionPostProcessor1)).to.be.true;
-        expect(stubOnIsComponentDefinitionPostProcessor.calledWith(instance1)).to.be.true;
-        expect(stubOnIsComponentDefinitionPostProcessor.calledOnce).to.be.true;
-        // cleanup
-        stubOnGetActiveDefinitionPostProcessors.restore();
-        stubOnGetComponentData.restore();
-        stubOnNewComponent1.restore();
-        stubOnInjectorRegister.restore();
-        stubOnIsComponentDefinitionPostProcessor.restore();
-    });
-
     it('should get active definition post processors', async function () {
         // given
         let data1 = {
@@ -739,33 +768,34 @@ describe('DefinitionPostProcessors', function() {
         let data2 = {
             profiles: ['other']
         };
-
         let data3 = {
             profiles: []
         };
         localAppContext.configurationData.componentDefinitionPostProcessorFactory
             .components = ['comp1', 'comp2', 'comp3'];
-        let stubOnGetActiveProfile = stub(localAppContext.environment, 'getActiveProfiles').returns(['dev']);
+        let stubOnAcceptsProfiles = stub(localAppContext.environment, 'acceptsProfiles').returns(false);
+        stubOnAcceptsProfiles.withArgs('dev').returns(true);
         let stubOnGetComponentData = stub(ComponentUtil, 'getComponentData');
         stubOnGetComponentData.withArgs('comp1').returns(data1);
         stubOnGetComponentData.withArgs('comp2').returns(data2);
         stubOnGetComponentData.withArgs('comp3').returns(data3);
-        let stubOnOrderList = stub(OrderUtil, 'orderList').returns(['comp1', 'comp3']);
 
         // when
-        let activeDefinitionPostProcessors = localAppContext.getActiveDefinitionPostProcessors();
+        let activeComponents = localAppContext.getActiveDefinitionPostProcessors();
 
         // then
-        expect(activeDefinitionPostProcessors).to.be.eql(['comp1', 'comp3']);
-        expect(stubOnOrderList.calledWith(['comp1', 'comp3'])).to.be.true;
+        expect(activeComponents).to.be.eql(['comp1', 'comp3']);
         expect(stubOnGetComponentData.callCount).to.be.eq(3);
         expect(stubOnGetComponentData.calledWith('comp1')).to.be.true;
         expect(stubOnGetComponentData.calledWith('comp2')).to.be.true;
         expect(stubOnGetComponentData.calledWith('comp3')).to.be.true;
+        expect(stubOnAcceptsProfiles.callCount).to.be.eq(2);
+        expect(stubOnAcceptsProfiles.calledWith('dev')).to.be.true;
+        expect(stubOnAcceptsProfiles.calledWith('other')).to.be.true;
+
         // cleanup
-        stubOnGetActiveProfile.restore();
+        stubOnAcceptsProfiles.restore();
         stubOnGetComponentData.restore();
-        stubOnOrderList.restore();
     });
 
     it('should get ordered definition post processors', async function () {
@@ -863,45 +893,6 @@ describe('PostProcessors', function() {
         stubOnIsComponentPostProcessor.restore();
     });
 
-    it('should throw error if target does not implement the IComponentDefinitionPostProcessor', async function () {
-        // given
-        class PostProcessor1 {}
-        let data1 = {
-            aliasTokens: ['alias1'],
-            classToken: 'class token 1'
-        };
-        let stubOnGetActivePostProcessors = stub(appContext, 'getActivePostProcessors')
-            .returns([PostProcessor1]);
-        let stubOnGetComponentData = stub(ComponentUtil, 'getComponentData');
-        stubOnGetComponentData.withArgs(PostProcessor1).returns(data1);
-        let stubOnNewComponent1 = stub(PostProcessor1.prototype, 'constructor');
-        let stubOnInjectorRegister = stub(localAppContext.injector, 'register');
-        let stubOnIsComponentPostProcessor =
-            stub(ComponentPostProcessorUtil, 'isIComponentPostProcessor').returns(false);
-        let instance1 = new PostProcessor1();
-
-        // when
-        let hasThrown = false;
-        try {
-            localAppContext.initializePostProcessors();
-        } catch (err) {
-            hasThrown = true;
-        }
-
-        // then
-        expect(hasThrown).to.be.true;
-        expect(stubOnGetActivePostProcessors.calledOnce).to.be.true;
-        expect(stubOnGetComponentData.calledWith(PostProcessor1)).to.be.true;
-        expect(stubOnIsComponentPostProcessor.calledWith(instance1)).to.be.true;
-        expect(stubOnIsComponentPostProcessor.calledOnce).to.be.true;
-        // cleanup
-        stubOnGetActivePostProcessors.restore();
-        stubOnGetComponentData.restore();
-        stubOnNewComponent1.restore();
-        stubOnInjectorRegister.restore();
-        stubOnIsComponentPostProcessor.restore();
-    });
-
     it('should post process before init', async function () {
         // given
         let spy1 = spy();
@@ -930,7 +921,7 @@ describe('PostProcessors', function() {
 
 
         // when
-        localAppContext.postProcessBeforeInit();
+        await localAppContext.postProcessBeforeInit();
 
         // then
         expect(stubOnGetOrderedPostProcessors.calledOnce).to.be.true;
@@ -978,7 +969,7 @@ describe('PostProcessors', function() {
 
 
         // when
-        localAppContext.postProcessAfterInit();
+        await localAppContext.postProcessAfterInit();
 
         // then
         expect(stubOnGetOrderedPostProcessors.calledOnce).to.be.true;
@@ -1006,32 +997,33 @@ describe('PostProcessors', function() {
         let data2 = {
             profiles: ['other']
         };
-
         let data3 = {
             profiles: []
         };
         localAppContext.configurationData.componentPostProcessorFactory.components = ['comp1', 'comp2', 'comp3'];
-        let stubOnGetActiveProfile = stub(localAppContext.environment, 'getActiveProfiles').returns(['dev']);
+        let stubOnAcceptsProfiles = stub(localAppContext.environment, 'acceptsProfiles').returns(false);
+        stubOnAcceptsProfiles.withArgs('dev').returns(true);
         let stubOnGetComponentData = stub(ComponentUtil, 'getComponentData');
         stubOnGetComponentData.withArgs('comp1').returns(data1);
         stubOnGetComponentData.withArgs('comp2').returns(data2);
         stubOnGetComponentData.withArgs('comp3').returns(data3);
-        let stubOnOrderList = stub(OrderUtil, 'orderList').returns(['comp1', 'comp3']);
 
         // when
-        let activePostProcessors = localAppContext.getActivePostProcessors();
+        let activeComponents = localAppContext.getActivePostProcessors();
 
         // then
-        expect(activePostProcessors).to.be.eql(['comp1', 'comp3']);
-        expect(stubOnOrderList.calledWith(['comp1', 'comp3'])).to.be.true;
+        expect(activeComponents).to.be.eql(['comp1', 'comp3']);
         expect(stubOnGetComponentData.callCount).to.be.eq(3);
         expect(stubOnGetComponentData.calledWith('comp1')).to.be.true;
         expect(stubOnGetComponentData.calledWith('comp2')).to.be.true;
         expect(stubOnGetComponentData.calledWith('comp3')).to.be.true;
+        expect(stubOnAcceptsProfiles.callCount).to.be.eq(2);
+        expect(stubOnAcceptsProfiles.calledWith('dev')).to.be.true;
+        expect(stubOnAcceptsProfiles.calledWith('other')).to.be.true;
+
         // cleanup
-        stubOnGetActiveProfile.restore();
+        stubOnAcceptsProfiles.restore();
         stubOnGetComponentData.restore();
-        stubOnOrderList.restore();
     });
 
     it('should get ordered post processors', async function () {
@@ -1064,6 +1056,368 @@ describe('PostProcessors', function() {
         expect(postProcessors).to.be.eql(['post processor 1', 'post processor 2']);
         // cleanup
         stubOnGetActivePostProcessors.restore();
+        stubOnGetComponentData.restore();
+        stubOnInjectorGetComponent.restore();
+    });
+});
+
+describe('ApplicationContext throws on user misuse', function () {
+
+    let appContext: ApplicationContext;
+    let localAppContext;
+
+    @ActiveProfiles('dev')
+    @Configuration()
+    class AppConfig {}
+
+    let throwingStub = stub().throws(new Error("someError"));
+
+    beforeEach(() => {
+        appContext = new ApplicationContext(AppConfig);
+        localAppContext = <any> appContext;
+    });
+
+    it('should throw on initialize components', async function () {
+        // given
+        class Comp1 {
+            constructor() {
+                throw new Error("someError");
+            }
+        }
+        let data1 = {
+            aliasTokens: ['alias1'],
+            classToken: 'class token 1'
+        };
+        let stubOnGetActiveComponents = stub(appContext, 'getActiveComponents').returns([Comp1]);
+        let stubOnGetComponentData = stub(ComponentUtil, 'getComponentData');
+        stubOnGetComponentData.withArgs(Comp1).returns(data1);
+        let stubOnInjectorRegister = stub(localAppContext.injector, 'register');
+
+        // when / then
+        expect(localAppContext.initializeComponents.bind(localAppContext)).to.throw(ComponentInitializationError);
+        // cleanup
+        stubOnGetActiveComponents.restore();
+        stubOnGetComponentData.restore();
+        stubOnInjectorRegister.restore();
+    });
+
+    it('should throw on wire components', async function () {
+        // given
+        let componentData = {
+            classToken : 'class token'
+        };
+        let dependencyData1 = {
+            token: 'token 1',
+            isArray: false
+        };
+        let dependencies = new Map();
+        dependencies.set('dependency data 1', dependencyData1);
+        let injectionData = {
+            dependencies: dependencies,
+            properties: new Map()
+        };
+        let stubOnGetActiveComponents = stub(appContext, 'getActiveComponents').returns(['comp1']);
+        let stubOnGetComponentData = stub(ComponentUtil, 'getComponentData').returns(componentData);
+        let stubOnGetInjectionData = stub(ComponentUtil, 'getInjectionData').returns(injectionData);
+        let stubOnGetComponent = stub(localAppContext.injector, 'getComponent').returns('instance 1');
+        stubOnGetComponent.withArgs('class token').returns('instance 1');
+        stubOnGetComponent.withArgs('token 1').throws(new Error("someError"));
+        let stubOnReflectSet = stub(Reflect, 'set');
+        let stubOnProcessAfterInit = stub(Dispatcher.prototype, 'processAfterInit');
+
+        // when / then
+        expect(await localAppContext.wireComponents.bind(localAppContext)).to.throw(ComponentWiringError);
+        // cleanup
+        stubOnGetActiveComponents.restore();
+        stubOnGetComponentData.restore();
+        stubOnGetInjectionData.restore();
+        stubOnGetComponent.restore();
+        stubOnReflectSet.restore();
+        stubOnProcessAfterInit.restore();
+    });
+
+    it('should throw on post construction', async function () {
+        // given
+        let stubOnGetActiveComponents = stub (appContext, 'getActiveComponents').returns(['componentOne']);
+        let stubOnGetComponentData = stub(ComponentUtil, 'getComponentData').returns({classToken: 'firstToken'});
+        let stubOnGetConfig = stub(LifeCycleHooksUtil, 'getConfig').returns({postConstructMethod: 'throwingStub'});
+        let stubOnGetComponent = stub(Injector.prototype, 'getComponent').returns({throwingStub});
+        let hasThrown = false;
+
+        // when / then
+        try {
+            await localAppContext.executePostConstruction();
+        } catch (error) {
+            expect(error).to.be.instanceOf(PostConstructionError);
+            hasThrown = true;
+        }
+        expect(hasThrown).to.be.true;
+
+        // cleanup
+        stubOnGetActiveComponents.restore();
+        stubOnGetComponentData.restore();
+        stubOnGetConfig.restore();
+        stubOnGetComponent.restore();
+    });
+
+    it('should throw on execute post construction when postConstructMethod is not a method', async function () {
+        // given
+        let stubOnGetActiveComponents = stub (appContext, 'getActiveComponents')
+            .returns(['component']);
+        let stubOnGetComponentData = stub(ComponentUtil, 'getComponentData');
+        stubOnGetComponentData.withArgs('component').returns({classToken: 'token'});
+        let stubOnGetConfig = stub(LifeCycleHooksUtil, 'getConfig');
+        stubOnGetConfig.withArgs('component').returns({postConstructMethod: 'someObject'});
+        let stubOnGetComponent = stub(Injector.prototype, 'getComponent');
+        stubOnGetComponent.withArgs('token').returns({someObject: 'value'});
+        let hasThrown = false;
+
+
+        // when / then
+        try {
+            await localAppContext.executePostConstruction();
+        } catch (error) {
+            expect(error).to.be.instanceOf(DecoratorUsageError);
+            hasThrown = true;
+        }
+        expect(hasThrown).to.be.true;
+
+        // cleanup
+        stubOnGetActiveComponents.restore();
+        stubOnGetComponentData.restore();
+        stubOnGetConfig.restore();
+        stubOnGetComponent.restore();
+    });
+
+    it('should throw on pre destruction', async function () {
+        // given
+        let stubOnGetActiveComponents = stub (appContext, 'getActiveComponents').returns(['componentOne']);
+        let stubOnGetComponentData = stub(ComponentUtil, 'getComponentData').returns({classToken: 'firstToken'});
+        let stubOnGetConfig = stub(LifeCycleHooksUtil, 'getConfig').returns({preDestroyMethod: 'throwingStub'});
+        let stubOnGetComponent = stub(Injector.prototype, 'getComponent').returns({throwingStub});
+        let hasThrown = false;
+
+        // when / then
+        try {
+            await localAppContext.executePreDestruction();
+        } catch (error) {
+            expect(error).to.be.instanceOf(PreDestructionError);
+            hasThrown = true;
+        }
+        expect(hasThrown).to.be.true;
+
+        // cleanup
+        stubOnGetActiveComponents.restore();
+        stubOnGetComponentData.restore();
+        stubOnGetConfig.restore();
+        stubOnGetComponent.restore();
+    });
+
+    it('should throw on execute pre destruction when preDestroyMethod is not a method', async function () {
+        // given
+        let stubOnGetActiveComponents = stub (appContext, 'getActiveComponents')
+            .returns(['component']);
+        let stubOnGetComponentData = stub(ComponentUtil, 'getComponentData');
+        stubOnGetComponentData.withArgs('component').returns({classToken: 'token'});
+        let stubOnGetConfig = stub(LifeCycleHooksUtil, 'getConfig');
+        stubOnGetConfig.withArgs('component').returns({preDestroyMethod: 'someObject'});
+        let stubOnGetComponent = stub(Injector.prototype, 'getComponent');
+        stubOnGetComponent.withArgs('token').returns({someObject: 'value'});
+        let hasThrown = false;
+
+
+        // when / then
+        try {
+            await localAppContext.executePreDestruction();
+        } catch (error) {
+            expect(error).to.be.instanceOf(DecoratorUsageError);
+            hasThrown = true;
+        }
+        expect(hasThrown).to.be.true;
+
+        // cleanup
+        stubOnGetActiveComponents.restore();
+        stubOnGetComponentData.restore();
+        stubOnGetConfig.restore();
+        stubOnGetComponent.restore();
+    });
+
+    it('should throw on postProcess definition method', async function () {
+        // given
+        let definitionPostProcessor1 = {
+            postProcessDefinition : throwingStub
+        };
+        localAppContext.configurationData.componentFactory.components = ['comp1'];
+        let stubOnGetOrderedDefinitionPostProcessors = stub(appContext, 'getOrderedDefinitionPostProcessors')
+            .returns([definitionPostProcessor1]);
+        let hasThrown = false;
+
+        // when / then
+        try {
+            await localAppContext.postProcessDefinition();
+        } catch (error) {
+            expect(error).to.be.instanceOf(PostProcessError);
+            hasThrown = true;
+        }
+        expect(hasThrown).to.be.true;
+        // cleanup
+        stubOnGetOrderedDefinitionPostProcessors.restore();
+    });
+
+    it('should throw error if definition post processor return something other than function', async function () {
+        // given
+        let stub1 = stub().returns(1);
+        class DefinitionPostProcessor1 {
+            postProcessDefinition = stub1;
+        }
+        let definitionPostProcessor1 = new DefinitionPostProcessor1();
+        localAppContext.configurationData.componentFactory.components = ['comp1'];
+        let stubOnGetOrderedDefinitionPostProcessors = stub(appContext, 'getOrderedDefinitionPostProcessors')
+            .returns([definitionPostProcessor1]);
+
+
+        // when
+        let hasThrown = false;
+        try {
+            await localAppContext.postProcessDefinition();
+        } catch (err) {
+            expect(err).to.be.instanceOf(PostProcessError);
+            hasThrown = true;
+        }
+
+        // then
+        expect(hasThrown).to.be.true;
+        // cleanup
+        stubOnGetOrderedDefinitionPostProcessors.restore();
+    });
+
+    it('should throw error if target does not implement the IComponentDefinitionPostProcessor', async function () {
+        // given
+        class DefinitionPostProcessor1 {}
+        let data1 = {
+            aliasTokens: ['alias1'],
+            classToken: 'class token 1'
+        };
+        let stubOnGetActiveDefinitionPostProcessors = stub(appContext, 'getActiveDefinitionPostProcessors')
+            .returns([DefinitionPostProcessor1]);
+        let stubOnGetComponentData = stub(ComponentUtil, 'getComponentData');
+        stubOnGetComponentData.withArgs(DefinitionPostProcessor1).returns(data1);
+        let stubOnNewComponent1 = stub(DefinitionPostProcessor1.prototype, 'constructor');
+        let stubOnInjectorRegister = stub(localAppContext.injector, 'register');
+        let stubOnIsComponentDefinitionPostProcessor =
+            stub(ComponentDefinitionPostProcessorUtil, 'isIComponentDefinitionPostProcessor').returns(false);
+
+        // when
+        let hasThrown = false;
+        try {
+            localAppContext.initializeDefinitionPostProcessors();
+        } catch (error) {
+            expect(error).to.be.instanceOf(DecoratorUsageError);
+            hasThrown = true;
+        }
+
+        // then
+        expect(hasThrown).to.be.true;
+        // cleanup
+        stubOnGetActiveDefinitionPostProcessors.restore();
+        stubOnGetComponentData.restore();
+        stubOnNewComponent1.restore();
+        stubOnInjectorRegister.restore();
+        stubOnIsComponentDefinitionPostProcessor.restore();
+    });
+
+    it('should throw error if target does not implement the IComponentDefinitionPostProcessor', async function () {
+        // given
+        class PostProcessor1 {}
+        let data1 = {
+            aliasTokens: ['alias1'],
+            classToken: 'class token 1'
+        };
+        let stubOnGetActivePostProcessors = stub(appContext, 'getActivePostProcessors')
+            .returns([PostProcessor1]);
+        let stubOnGetComponentData = stub(ComponentUtil, 'getComponentData');
+        stubOnGetComponentData.withArgs(PostProcessor1).returns(data1);
+        let stubOnNewComponent1 = stub(PostProcessor1.prototype, 'constructor');
+        let stubOnInjectorRegister = stub(localAppContext.injector, 'register');
+        let stubOnIsComponentPostProcessor =
+            stub(ComponentPostProcessorUtil, 'isIComponentPostProcessor').returns(false);
+
+        // when
+        let hasThrown = false;
+        try {
+            localAppContext.initializePostProcessors();
+        } catch (error) {
+            expect(error).to.be.instanceOf(DecoratorUsageError);
+            hasThrown = true;
+        }
+
+        // then
+        expect(hasThrown).to.be.true;
+        // cleanup
+        stubOnGetActivePostProcessors.restore();
+        stubOnGetComponentData.restore();
+        stubOnNewComponent1.restore();
+        stubOnInjectorRegister.restore();
+        stubOnIsComponentPostProcessor.restore();
+    });
+
+    it('should throw on post process before init', async function () {
+        // given
+        let postProcessor1 = {
+            postProcessBeforeInit: throwingStub
+        };
+        let data1 = {
+            classToken: 'class token 1'
+        };
+        let stubOnGetOrderedPostProcessors = stub(appContext, 'getOrderedPostProcessors')
+            .returns([postProcessor1]);
+        let stubOnGetActiveComponents = stub(appContext, 'getActiveComponents').returns(['comp1']);
+        let stubOnGetComponentData = stub(ComponentUtil, 'getComponentData').returns(data1);
+        let stubOnInjectorGetComponent = stub(localAppContext.injector, 'getComponent').returns('instance1');
+
+        // when / then
+        let hasThrown = false;
+        try {
+            await localAppContext.postProcessBeforeInit();
+        } catch (error) {
+            expect(error).to.be.instanceOf(PostProcessError);
+            hasThrown = true;
+        }
+        expect(hasThrown).to.be.true;
+        // cleanup
+        stubOnGetOrderedPostProcessors.restore();
+        stubOnGetActiveComponents.restore();
+        stubOnGetComponentData.restore();
+        stubOnInjectorGetComponent.restore();
+    });
+
+    it('should throw on post process after init', async function () {
+        // given
+        let postProcessor1 = {
+            postProcessAfterInit: throwingStub
+        };
+        let data1 = {
+            classToken: 'class token 1'
+        };
+        let stubOnGetOrderedPostProcessors = stub(appContext, 'getOrderedPostProcessors')
+            .returns([postProcessor1]);
+        let stubOnGetActiveComponents = stub(appContext, 'getActiveComponents').returns(['comp1']);
+        let stubOnGetComponentData = stub(ComponentUtil, 'getComponentData').returns(data1);
+        let stubOnInjectorGetComponent = stub(localAppContext.injector, 'getComponent').returns('instance1');
+
+
+        // when / then
+        let hasThrown = false;
+        try {
+            await localAppContext.postProcessAfterInit();
+        } catch (error) {
+            expect(error).to.be.instanceOf(PostProcessError);
+            hasThrown = true;
+        }
+        expect(hasThrown).to.be.true;
+        // cleanup
+        stubOnGetOrderedPostProcessors.restore();
+        stubOnGetActiveComponents.restore();
         stubOnGetComponentData.restore();
         stubOnInjectorGetComponent.restore();
     });

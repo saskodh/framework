@@ -10,6 +10,7 @@ import { ComponentScanUtil, ComponentScan } from "../../../src/lib/decorators/Co
 import { RequireUtils } from "../../../src/lib/helpers/RequireUtils";
 import { ComponentUtil } from "../../../src/lib/decorators/ComponentDecorator";
 import { Environment } from "../../../src/lib/di/Environment";
+import { DecoratorUsageError } from "../../../src/lib/errors/DecoratorUsageErrors";
 
 describe('ComponentScanDecorator', function () {
 
@@ -30,10 +31,20 @@ describe('ComponentScanDecorator', function () {
 
     it('should throw when not on @Configuration', function () {
         // given
-        class A {}
+        function SomeDecorator(...args) {} // tslint:disable-line
+
+        class MyClass {
+            myProperty: string;
+            @SomeDecorator
+            myFunction(str: string) {} // tslint:disable-line
+        }
 
         // when / then
-        expect(ComponentScan('somePath').bind(null, A)).to.throw(Error);
+        expect(ComponentScan('somePath').bind(undefined, MyClass)).to.throw(DecoratorUsageError);
+        expect(ComponentScan('somePath').bind(undefined, MyClass.prototype, 'myFunction', MyClass.prototype.myFunction))
+            .to.throw(DecoratorUsageError);
+        expect(ComponentScan('somePath').bind(undefined, MyClass.prototype, 'myProperty'))
+            .to.throw(DecoratorUsageError);
     });
 });
 

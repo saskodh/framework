@@ -3,6 +3,7 @@ import { ProcessHandler } from "../helpers/ProcessHandler";
 import { Component } from "../decorators/ComponentDecorator";
 import { PropertySourceUtil } from "../decorators/PropertySourceDecorator";
 import { ProfiledPath } from "../decorators/ConfigurationDecorator";
+import { BadArgumentError } from "../errors/BadArgumentErrors";
 
 @Component()
 export class Environment {
@@ -52,12 +53,16 @@ export class Environment {
 
     acceptsProfiles(...profiles: Array<string>): boolean {
         if (profiles.length === 0) {
-            throw Error('function called with no profiles');
+            throw new BadArgumentError('function called with no profiles');
         }
-        if (this.getActiveProfiles().length === 0) {
-            return (_.intersection(this.getDefaultProfiles(), profiles).length > 0);
+        let notUsedProfiles = profiles.filter((profile) => (profile[0] === '!'))
+            .map((profile: string) => profile.substr(1));
+        let activatedProfiles = this.getActiveProfiles();
+        if (activatedProfiles.length === 0) {
+            activatedProfiles = this.getDefaultProfiles();
         }
-        return (_.intersection(this.getActiveProfiles(), profiles).length > 0);
+        return (_.intersection(activatedProfiles, profiles).length > 0) ||
+            _.some(notUsedProfiles, (profile) => activatedProfiles.indexOf(profile) < 0);
     }
 
     getActiveProfiles(): Array<string> {

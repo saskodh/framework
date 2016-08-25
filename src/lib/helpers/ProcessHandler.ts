@@ -1,5 +1,6 @@
 import * as _ from "lodash";
 import { GeneralUtils } from "./GeneralUtils";
+import { BadArgumentError } from "../errors/BadArgumentErrors";
 
 export class ProcessHandler {
 
@@ -62,7 +63,7 @@ export class ProcessHandler {
 
     registerOnExitListener(callback: Function) {
         if (!_.isFunction(callback)) {
-            throw new Error('Passed callback must be a function!');
+            throw new BadArgumentError('Passed callback must be a function!');
         }
 
         this.onExitListeners.push(callback);

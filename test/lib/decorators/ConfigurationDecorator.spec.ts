@@ -8,6 +8,7 @@ import { ComponentScanUtil } from "../../../src/lib/decorators/ComponentScanDeco
 import { Environment } from "../../../src/lib/di/Environment";
 import { Profile } from "../../../src/lib/decorators/ProfileDecorators";
 import { ComponentUtil } from "../../../src/lib/decorators/ComponentDecorator";
+import { DecoratorUsageError } from "../../../src/lib/errors/DecoratorUsageErrors";
 
 describe('ConfigurationData', function () {
 
@@ -41,18 +42,6 @@ describe('ConfigurationData', function () {
         stubOnIsComponentDefinitionPostProcessor.restore();
         stubOnIsComponentPostProcessor.restore();
     });
-
-    it('should throw error when @Configuration is used more than once on the same class', function () {
-        // given
-        let createConfiguration = () => {
-            @Configuration()
-            @Configuration()
-            class A {}
-        };
-
-        // when / then
-        expect(createConfiguration).to.throw(Error);
-    });
 });
 
 describe('ConfigurationDecorator', function () {
@@ -78,7 +67,23 @@ describe('ConfigurationDecorator', function () {
         };
 
         // when / then
-        expect(createConfiguration).to.throw(Error);
+        expect(createConfiguration).to.throw(DecoratorUsageError);
+    });
+
+    it('should throw when not on a class', function () {
+        // given
+        function SomeDecorator(...args) {} // tslint:disable-line
+
+        class MyClass {
+            myProperty: string;
+            @SomeDecorator
+            myFunction(str: string) {} // tslint:disable-line
+        }
+
+        // when / then
+        expect(Configuration().bind(undefined, MyClass.prototype, 'myFunction', MyClass.prototype.myFunction))
+            .to.throw(DecoratorUsageError);
+        expect(Configuration().bind(undefined, MyClass.prototype, 'myProperty')).to.throw(DecoratorUsageError);
     });
 });
 

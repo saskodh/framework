@@ -5,6 +5,7 @@ import { ConfigurationUtil, ProfiledPath } from "./ConfigurationDecorator";
 import { ComponentUtil } from "./ComponentDecorator";
 import { RequireUtils } from "../helpers/RequireUtils";
 import { Environment } from "../di/Environment";
+import { DecoratorType, DecoratorUtil } from "../helpers/DecoratorUtils";
 import { LoggerFactory } from "../helpers/logging/LoggerFactory";
 
 let logger = LoggerFactory.getInstance();
@@ -16,9 +17,8 @@ let logger = LoggerFactory.getInstance();
  */
 export function ComponentScan(path) {
     return function (target) {
-        if (!ConfigurationUtil.isConfigurationClass(target)) {
-            throw new Error('@ComponentScan is allowed on @Configuration classes only!');
-        }
+        DecoratorUtil.throwOnWrongType(ComponentScan, DecoratorType.CLASS, [...arguments]);
+        ConfigurationUtil.throwWhenNotOnConfigurationClass(ComponentScan, [...arguments]);
         ConfigurationUtil.addComponentScanPath(target, path);
     };
 }

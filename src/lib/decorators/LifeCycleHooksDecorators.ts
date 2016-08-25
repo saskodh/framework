@@ -1,3 +1,6 @@
+import { DecoratorUsageError } from "../errors/DecoratorUsageErrors";
+import { DecoratorUtil, DecoratorType } from "../helpers/DecoratorUtils";
+
 const LIFE_CYCLE_HOOKS_TOKEN = Symbol('life_cycle_hooks_token');
 
 export class LifeCycleHooksConfig {
@@ -10,10 +13,13 @@ export class LifeCycleHooksConfig {
  */
 export function PostConstruct() {
     return function (target, methodName, descriptor: PropertyDescriptor) {
+        DecoratorUtil.throwOnWrongType(PostConstruct, DecoratorType.METHOD, [...arguments]);
         let conf = LifeCycleHooksUtil.initIfDoesntExist(target);
         if (conf.postConstructMethod) {
             let errorParams = [conf.postConstructMethod, methodName].join(', ');
-            throw new Error(`@PostConstruct used on multiple methods within a component (${errorParams})`);
+            let subjectName = DecoratorUtil.getSubjectName([...arguments]);
+            throw new DecoratorUsageError(`@${PostConstruct.name} used on multiple methods (${errorParams}) ` +
+                `within a @Component (${subjectName})`);
         }
         conf.postConstructMethod = methodName;
     };
@@ -24,10 +30,13 @@ export function PostConstruct() {
  */
 export function PreDestroy() {
     return function (target, methodName, descriptor: PropertyDescriptor) {
+        DecoratorUtil.throwOnWrongType(PreDestroy, DecoratorType.METHOD, [...arguments]);
         let conf = LifeCycleHooksUtil.initIfDoesntExist(target);
         if (conf.preDestroyMethod) {
             let errorParams = [conf.preDestroyMethod, methodName].join(', ');
-            throw new Error(`@PreDestroy used on multiple methods within a component (${errorParams})`);
+            let subjectName = DecoratorUtil.getSubjectName([...arguments]);
+            throw new DecoratorUsageError(`@${PreDestroy.name} used on multiple methods (${errorParams}) ` +
+                `within a @Component (${subjectName})`);
         }
         conf.preDestroyMethod = methodName;
     };

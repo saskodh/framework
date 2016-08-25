@@ -2,6 +2,8 @@ import { ComponentFactory } from "../di/ComponentFactory";
 import { ComponentScanUtil } from "./ComponentScanDecorator";
 import { Component, ComponentUtil } from "./ComponentDecorator";
 import { Environment } from "../di/Environment";
+import { DecoratorUsageError, DecoratorUsageTypeError } from "../errors/DecoratorUsageErrors";
+import { DecoratorUtil, DecoratorType } from "../helpers/DecoratorUtils";
 
 const CONFIGURATION_HOLDER_TOKEN = Symbol('configuration_holder_token');
 
@@ -52,8 +54,10 @@ export class ConfigurationData {
 
 export function Configuration() {
     return function (target) {
+        DecoratorUtil.throwOnWrongType(Configuration, DecoratorType.CLASS, [...arguments]);
         if (target[CONFIGURATION_HOLDER_TOKEN]) {
-            throw new Error('Duplicate @Configuration decorator');
+            let subjectName = DecoratorUtil.getSubjectName([...arguments]);
+            throw new DecoratorUsageError(`Duplicate @Configuration decorator' (${subjectName})`);
         }
         Component()(target);
         target[CONFIGURATION_HOLDER_TOKEN] = new ConfigurationData();
@@ -66,7 +70,8 @@ export class ConfigurationUtil {
 
     static getConfigurationData(target): ConfigurationData {
         if (!this.isConfigurationClass(target)) {
-            throw new Error('Given target is not a @Configuration class');
+            let subjectName = DecoratorUtil.getSubjectName([...arguments]);
+            throw new Error(`${subjectName} is not a @Configuration class`);
         }
         return target[CONFIGURATION_HOLDER_TOKEN];
     }
@@ -83,5 +88,13 @@ export class ConfigurationUtil {
     static addPropertySourcePath(target, path: string) {
         this.getConfigurationData(target).propertySourcePaths.push(new ProfiledPath(
             ComponentUtil.getComponentData(target).profiles, path));
+    }
+
+    static throwWhenNotOnConfigurationClass (decorator: Function, decoratorArgs: Array<any>, rootCause?: Error) {
+        if (!this.isConfigurationClass(decoratorArgs[0])) {
+            let subjectName = DecoratorUtil.getSubjectName(decoratorArgs);
+                throw new DecoratorUsageTypeError(decorator, `@${Configuration.name} classes`,
+                    subjectName, rootCause);
+        }
     }
 }
