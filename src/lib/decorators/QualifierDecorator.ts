@@ -1,10 +1,10 @@
 import { ComponentUtil } from "./ComponentDecorator";
+import { DecoratorType, DecoratorUtil } from "../helpers/DecoratorUtils";
 
 export function Qualifier(token: Symbol) {
     return function (target) {
-        if (!ComponentUtil.isComponent(target)) {
-            throw new Error('@Qualifier can be used only on @Component classes');
-        }
+        DecoratorUtil.throwOnWrongType(Qualifier, DecoratorType.CLASS, [...arguments]);
+        ComponentUtil.throwWhenNotOnComponentClass(Qualifier, [...arguments]);
         ComponentUtil.getAliasTokens(target).push(token);
     };
 }

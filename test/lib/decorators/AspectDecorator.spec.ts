@@ -5,6 +5,7 @@ import {
 } from "../../../src/lib/decorators/AspectDecorator";
 import { stub } from "sinon";
 import { ComponentUtil } from "../../../src/lib/decorators/ComponentDecorator";
+import { DecoratorUsageError } from "../../../src/lib/errors/DecoratorUsageErrors";
 
 describe('AspectDecorator', function () {
 
@@ -203,6 +204,65 @@ describe('AspectDecorator', function () {
 
         // cleanup
         stubOnReflectApply.restore();
+    });
+});
+
+describe('aspect decorators should throw when on wrong type', function () {
+
+    function SomeDecorator(...args) {} // tslint:disable-line
+
+    @SomeDecorator
+    class MyClass {
+        myProperty: string;
+        @SomeDecorator
+        myFunction(@SomeDecorator str: string) {} // tslint:disable-line
+    }
+
+    it('should throw when not on a class', function () {
+        // given / when / then
+        expect(Aspect().bind(undefined, MyClass.prototype, 'myFunction', MyClass.prototype.myFunction))
+            .to.throw(DecoratorUsageError);
+        expect(Aspect().bind(undefined, MyClass.prototype, 'myProperty')).to.throw(DecoratorUsageError);
+    });
+
+    it('should throw when not on method', function () {
+        // given / when / then
+        expect(Before({classRegex: 'B', methodRegex: 'methodOne'})
+            .bind(undefined, MyClass)).to.throw(DecoratorUsageError);
+        expect(Before({classRegex: 'B', methodRegex: 'methodOne'})
+            .bind(undefined, MyClass.prototype, 'myProperty')).to.throw(DecoratorUsageError);
+    });
+
+    it('should throw when not on method', function () {
+        // given / when / then
+        expect(After({classRegex: 'B', methodRegex: 'methodOne'})
+            .bind(undefined, MyClass)).to.throw(DecoratorUsageError);
+        expect(After({classRegex: 'B', methodRegex: 'methodOne'})
+            .bind(undefined, MyClass.prototype, 'myProperty')).to.throw(DecoratorUsageError);
+    });
+
+    it('should throw when not on method', function () {
+        // given / when / then
+        expect(AfterReturning({classRegex: 'B', methodRegex: 'methodOne'})
+            .bind(undefined, MyClass)).to.throw(DecoratorUsageError);
+        expect(AfterReturning({classRegex: 'B', methodRegex: 'methodOne'})
+            .bind(undefined, MyClass.prototype, 'myProperty')).to.throw(DecoratorUsageError);
+    });
+
+    it('should throw when not on method', function () {
+        // given / when / then
+        expect(AfterThrowing({classRegex: 'B', methodRegex: 'methodOne'})
+            .bind(undefined, MyClass)).to.throw(DecoratorUsageError);
+        expect(AfterThrowing({classRegex: 'B', methodRegex: 'methodOne'})
+            .bind(undefined, MyClass.prototype, 'myProperty')).to.throw(DecoratorUsageError);
+    });
+
+    it('should throw when not on method', function () {
+        // given / when / then
+        expect(Around({classRegex: 'B', methodRegex: 'methodOne'})
+            .bind(undefined, MyClass)).to.throw(DecoratorUsageError);
+        expect(Around({classRegex: 'B', methodRegex: 'methodOne'})
+            .bind(undefined, MyClass.prototype, 'myProperty')).to.throw(DecoratorUsageError);
     });
 });
 

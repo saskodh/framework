@@ -2,7 +2,7 @@ import * as _ from "lodash";
 
 const ORDER_DECORATOR_TOKEN = Symbol('order_decorator_token');
 
-export function Order(orderValue) {
+export function Order(orderValue: number) {
     return function(target) {
         target[ORDER_DECORATOR_TOKEN] = orderValue;
     };

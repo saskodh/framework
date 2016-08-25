@@ -5,6 +5,15 @@ import {
 import {
     PostConstruct, LifeCycleHooksUtil, PreDestroy
 } from "../../../src/lib/decorators/LifeCycleHooksDecorators";
+import { DecoratorUsageError } from "../../../src/lib/errors/DecoratorUsageErrors";
+
+function SomeDecorator(...args) {} // tslint:disable-line
+
+class MyClass {
+    myProperty: string;
+    @SomeDecorator
+    myFunction(str: string) {} // tslint:disable-line
+}
 
 describe('PostConstructDecorator', function () {
 
@@ -13,7 +22,7 @@ describe('PostConstructDecorator', function () {
         @Component()
         class A {
             @PostConstruct()
-            init () {}
+            init () {} // tslint:disable-line
         }
 
         // when
@@ -24,21 +33,27 @@ describe('PostConstructDecorator', function () {
         expect(config.preDestroyMethod).to.be.undefined;
     });
 
+    it('should throw when not on method', function () {
+        // given / when / then
+        expect(PostConstruct().bind(undefined, MyClass)).to.throw(DecoratorUsageError);
+        expect(PostConstruct().bind(undefined, MyClass.prototype, 'myProperty')).to.throw(DecoratorUsageError);
+    });
+
     it('should throw error if @PostConstruct is used on more than one method', function () {
         // given
         let createComponent = () => {
             @Component()
             class A {
                 @PostConstruct()
-                init() {}
+                init() {} // tslint:disable-line
 
                 @PostConstruct()
-                initTwo() {}
+                initTwo() {} // tslint:disable-line
             }
         };
 
         // when / then
-        expect(createComponent).to.throw(Error);
+        expect(createComponent).to.throw(DecoratorUsageError);
     });
 });
 
@@ -49,7 +64,7 @@ describe('PreDestroyDecorator', function () {
         @Component()
         class A {
             @PreDestroy()
-            destroy () {}
+            destroy () {} // tslint:disable-line
         }
 
         // when
@@ -60,20 +75,26 @@ describe('PreDestroyDecorator', function () {
         expect(config.postConstructMethod).to.be.undefined;
     });
 
+    it('should throw when not on method', function () {
+        // given / when / then
+        expect(PreDestroy().bind(undefined, MyClass)).to.throw(DecoratorUsageError);
+        expect(PreDestroy().bind(undefined, MyClass.prototype, 'myProperty')).to.throw(DecoratorUsageError);
+    });
+
     it('should throw error if @PreDestroy is used on more than one method', function () {
         // given
         let createComponent = () => {
             @Component()
             class A {
                 @PreDestroy()
-                destroy() {}
+                destroy() {} // tslint:disable-line
 
                 @PreDestroy()
-                destroy2() {}
+                destroy2() {} // tslint:disable-line
             }
         };
 
         // when / then
-        expect(createComponent).to.throw(Error);
+        expect(createComponent).to.throw(DecoratorUsageError);
     });
 });

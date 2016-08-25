@@ -1,3 +1,5 @@
+import { BadArgumentError } from "../../errors/BadArgumentErrors";
+
 export class Preconditions {
 
     /**
@@ -9,7 +11,7 @@ export class Preconditions {
     static assertDefined(argument) {
         // replace with _.isUndefined(argument)
         if (argument === undefined) {
-            throw new Error('Given argument is not defined');
+            throw new BadArgumentError('Given argument is not defined');
         }
     }
 }

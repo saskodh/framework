@@ -1,4 +1,5 @@
 import { Component } from "../decorators/ComponentDecorator";
+import { DecoratorType, DecoratorUtil } from "../helpers/DecoratorUtils";
 
 export interface IComponentPostProcessor {
     postProcessBeforeInit (componentConstructor);
@@ -10,6 +11,7 @@ export const COMPONENT_POST_PROCESSOR_DECORATOR_TOKEN =
 
 export function ComponentPostProcessor() {
     return function (target) {
+        DecoratorUtil.throwOnWrongType(ComponentPostProcessor, DecoratorType.CLASS, [...arguments]);
         Component()(target);
         target[COMPONENT_POST_PROCESSOR_DECORATOR_TOKEN] = true;
     };

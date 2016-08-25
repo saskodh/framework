@@ -13,6 +13,12 @@ import {
 import { OrderUtil } from "../decorators/OrderDecorator";
 import { Environment } from "./Environment";
 import {AspectDefinitionPostProcessor} from "../processors/aspect/AspectDefinitionPostProcessor";
+import { DecoratorUsageError } from "../errors/DecoratorUsageErrors";
+import { BadArgumentError } from "../errors/BadArgumentErrors";
+import {
+    ComponentInitializationError, ComponentWiringError,
+    PostConstructionError, PreDestructionError, ApplicationContextError, PostProcessError
+} from "../errors/ApplicationContextErrors";
 
 export class ApplicationContextState {
     static NOT_INITIALIZED = 'NOT_INITIALIZED';
@@ -41,6 +47,9 @@ export class ApplicationContext {
 
     getComponent <T>(componentClass): T {
         this.verifyContextReady();
+        if (!ComponentUtil.isComponent(componentClass)) {
+            throw new BadArgumentError("Argument is not a component class");
+        }
         return <T> this.injector.getComponent(ComponentUtil.getClassToken(componentClass));
     }
 
@@ -70,13 +79,12 @@ export class ApplicationContext {
         if (this.state !== ApplicationContextState.NOT_INITIALIZED) {
             console.warn("Application context was already initialized or it is initializing at the moment.");
         }
+        this.state = ApplicationContextState.INITIALIZING;
 
         await this.initializeDefinitionPostProcessors();
         await this.initializePostProcessors();
 
         await this.postProcessDefinition();
-
-        this.state = ApplicationContextState.INITIALIZING;
         await this.initializeComponents();
         await this.wireComponents();
 
@@ -124,7 +132,12 @@ export class ApplicationContext {
         for (let CompConstructor of this.getActiveComponents()) {
             let componentData = ComponentUtil.getComponentData(CompConstructor);
 
-            let instance = new CompConstructor();
+            let instance;
+            try {
+                instance = new CompConstructor();
+            } catch (err) {
+                throw new ComponentInitializationError(`Cannot instantiate component ${CompConstructor.name}.`, err);
+            }
             this.injector.register(componentData.classToken, instance);
             for (let token of componentData.aliasTokens) {
                 this.injector.register(token, instance);
@@ -139,8 +152,14 @@ export class ApplicationContext {
             let instance = this.injector.getComponent(componentData.classToken);
 
             injectionData.dependencies.forEach((dependencyData, fieldName) => {
-                let dependency = dependencyData.isArray ? this.injector.getComponents(dependencyData.token) :
-                    this.injector.getComponent(dependencyData.token);
+                let dependency;
+                try {
+                    dependency = dependencyData.isArray ? this.injector.getComponents(dependencyData.token) :
+                        this.injector.getComponent(dependencyData.token);
+                } catch (err) {
+                    throw new ComponentWiringError(
+                        `Cannot inject dependency into ${CompConstructor.name}.${fieldName}.`, err);
+                }
                 Reflect.set(instance, fieldName, dependency);
             });
             injectionData.dynamicDependencies.forEach((dependencyData, fieldName) => {
@@ -165,8 +184,8 @@ export class ApplicationContext {
 
             let instance = new CompConstructor();
             if (!ComponentDefinitionPostProcessorUtil.isIComponentDefinitionPostProcessor(instance)) {
-                throw new Error('Components annotated with @ComponentDefinitionPostProcessor must implement the ' +
-                    'IComponentDefinitionPostProcessor interface');
+                throw new DecoratorUsageError(`${CompConstructor.name} must implement the ` +
+                'IComponentDefinitionPostProcessor interface when annotated with @ComponentDefinitionPostProcessor');
             }
 
             this.injector.register(componentData.classToken, instance);
@@ -183,8 +202,8 @@ export class ApplicationContext {
 
             let instance = new CompConstructor();
             if (!ComponentPostProcessorUtil.isIComponentPostProcessor(instance)) {
-                throw new Error('Components annotated with @ComponentPostProcessor must implement the ' +
-                    'IComponentPostProcessor interface');
+                throw new DecoratorUsageError(`${CompConstructor.name} must implement the IComponentPostProcessor ` +
+                    'interface when annotated with @ComponentPostProcessor');
             }
 
             this.injector.register(componentData.classToken, instance);
@@ -198,15 +217,24 @@ export class ApplicationContext {
         this.configurationData.componentFactory.components = _.map(
             this.configurationData.componentFactory.components, (componentDefinition) => {
                 for (let componentDefinitionPostProcessor of this.getOrderedDefinitionPostProcessors()) {
-                    let result = componentDefinitionPostProcessor.postProcessDefinition(componentDefinition);
+                    let result;
+                    try {
+                        result = componentDefinitionPostProcessor.postProcessDefinition(componentDefinition);
+                    } catch (err) {
+                        throw new PostProcessError(`postProcessDefinition() from ${componentDefinitionPostProcessor.
+                                constructor.name} failed on ${componentDefinition.constructor.name}`, err);
+                    }
                     if (_.isFunction(result)) {
                         componentDefinition = result;
                     } else if (!_.isUndefined(result)) {
-                        throw new Error('Component Definition Post Processor must return a constructor function');
+                        throw new PostProcessError(componentDefinitionPostProcessor.constructor.name +
+                            ' (Component Definition Post Processor) must return a constructor function for component ' +
+                            componentDefinition.constructor.name);
                     }
                 }
                 return componentDefinition;
-            });
+            }
+        );
     }
 
     private async postProcessBeforeInit() {
@@ -215,7 +243,12 @@ export class ApplicationContext {
             for (let componentConstructor of this.getActiveComponents()) {
                 let componentData = ComponentUtil.getComponentData(componentConstructor);
                 let instance = this.injector.getComponent(componentData.classToken);
-                componentPostProcessor.postProcessBeforeInit(instance);
+                try {
+                    componentPostProcessor.postProcessBeforeInit(instance);
+                } catch (err) {
+                    throw new PostProcessError(`postProcessBeforeInit() from ${componentPostProcessor.constructor.name}`
+                     + ` failed on ${componentConstructor.constructor.name}`, err);
+                }
             }
         }
     }
@@ -226,43 +259,50 @@ export class ApplicationContext {
             for (let componentConstructor of this.getActiveComponents()) {
                 let componentData = ComponentUtil.getComponentData(componentConstructor);
                 let instance = this.injector.getComponent(componentData.classToken);
-                componentPostProcessor.postProcessAfterInit(instance);
+                try {
+                    componentPostProcessor.postProcessAfterInit(instance);
+                } catch (err) {
+                    throw new PostProcessError(`postProcessAfterInit() from ${componentPostProcessor.
+                        constructor.name} failed on ${componentConstructor.name}`, err);
+                }
             }
         }
     }
 
     private async executePostConstruction() {
-        let postConstructInvocations = [];
         for (let CompConstructor of this.getActiveComponents()) {
             let componentData = ComponentUtil.getComponentData(CompConstructor);
             let postConstructMethod = LifeCycleHooksUtil.getConfig(CompConstructor).postConstructMethod;
             if (postConstructMethod) {
                 let instance = this.injector.getComponent(componentData.classToken);
                 if (!_.isFunction(instance[postConstructMethod])) {
-                    throw new Error(`@PostConstruct is not on a method (${postConstructMethod})`);
+                    throw new DecoratorUsageError(`@PostConstruct is not on a method (${postConstructMethod})`);
                 }
-                let invocationResult = instance[postConstructMethod]();
-                postConstructInvocations.push(invocationResult);
+                try {
+                    await instance[postConstructMethod]();
+                } catch (err) {
+                    throw new PostConstructionError(`Could not post-construct component ${CompConstructor.name}.`, err);
+                }
             }
         }
-        await Promise.all(postConstructInvocations);
     }
 
     private async executePreDestruction() {
-        let preDestroyInvocations = [];
         for (let CompConstructor of this.getActiveComponents()) {
             let componentData = ComponentUtil.getComponentData(CompConstructor);
             let preDestroyMethod = LifeCycleHooksUtil.getConfig(CompConstructor).preDestroyMethod;
             if (preDestroyMethod) {
                 let instance = this.injector.getComponent(componentData.classToken);
                 if (!_.isFunction(instance[preDestroyMethod])) {
-                    throw new Error(`@PreDestroy is not on a method (${preDestroyMethod})`);
+                    throw new DecoratorUsageError(`@PreDestroy is not on a method (${preDestroyMethod})`);
                 }
-                let invocationResult = instance[preDestroyMethod]();
-                preDestroyInvocations.push(invocationResult);
+                try {
+                    await instance[preDestroyMethod]();
+                } catch (err) {
+                    throw new PreDestructionError(`Could not pre-destroy component ${CompConstructor.name}.`, err);
+                }
             }
         }
-        await Promise.all(preDestroyInvocations);
     }
 
     private getActiveComponents() {
@@ -347,7 +387,8 @@ export class ApplicationContext {
 
     private verifyContextReady() {
         if (this.state !== ApplicationContextState.READY) {
-            throw new Error('Application context is not yet initialized. Start method needs to be called first.');
+            throw new ApplicationContextError
+                ('Application context is not yet initialized. Start method needs to be called first.');
         }
     }
 }

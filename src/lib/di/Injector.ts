@@ -1,4 +1,5 @@
 import * as _ from "lodash";
+import { InjectionError } from "../errors/InjectionError";
 
 export class Injector {
     private components: Map<Symbol, Array<Object>>;
@@ -14,14 +15,13 @@ export class Injector {
         this.components.get(token).push(component);
     }
 
-    // TODO: user should know for which type the error is thrown
     getComponent(token: Symbol): Object {
         let components = this.components.get(token);
         if (_.isUndefined(components)) {
-            throw new Error('No such component');
+            throw new InjectionError('No such component registered');
         }
         if (components.length > 1) {
-            throw new Error(`Ambiguous injection. ${components.length} components found in the injector.`);
+            throw new InjectionError(`Ambiguous injection. ${components.length} components found in the injector.`);
         }
         return components[0];
     }
