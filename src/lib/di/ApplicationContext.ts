@@ -21,7 +21,6 @@ import {
 } from "../errors/ApplicationContextErrors";
 import {DynamicDependencyResolver} from "./DynamicDependencyResolver";
 import { CacheDefinitionPostProcessor } from "../processors/cache/CacheDefinitionPostProcessor";
-import {DynamicDependencyResolver} from "./DynamicDependencyResolver";
 
 export class ApplicationContextState {
     static NOT_INITIALIZED = 'NOT_INITIALIZED';
