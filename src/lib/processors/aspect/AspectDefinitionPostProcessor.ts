@@ -1,5 +1,5 @@
-import {AspectUtil, ProceedingJoinPoint, AdviceType} from "../../decorators/AspectDecorator";
-import {ProxyUtils} from "../../helpers/ProxyUtils";
+import { AspectUtil, ProceedingJoinPoint, AdviceType } from "../../decorators/AspectDecorator";
+import { ProxyUtils } from "../../helpers/ProxyUtils";
 import {
     ComponentDefinitionPostProcessor,
     IComponentDefinitionPostProcessor
@@ -8,6 +8,9 @@ import { Injector } from "../../di/Injector";
 import { ReflectUtils } from "../../helpers/ReflectUtils";
 import { Order } from "../../decorators/OrderDecorator";
 import { ComponentUtil } from "../../decorators/ComponentDecorator";
+import {
+    BeforeAdviceError, AfterReturningAdviceError, AfterAdviceError, AspectErrorInfo
+} from "../../errors/AspectErrors";
 
 @Order(1)
 @ComponentDefinitionPostProcessor()
@@ -31,16 +34,18 @@ export class AspectDefinitionPostProcessor implements IComponentDefinitionPostPr
                 let pointcuts = AspectUtil.getPointcuts(AspectConstructor.prototype, adviceType);
                 for (let pointcut of pointcuts) {
                     let componentName = ComponentUtil.getComponentData(componentConstructor).componentName;
-                    if (componentName.match(<any> pointcut.pointcutConfig.classRegex)) {
-                        let classMethods = ReflectUtils.getAllMethodsNames(componentConstructor);
-                        for (let method of classMethods) {
-                            if (method.match(<any> pointcut.pointcutConfig.methodRegex)) {
-                                let joinPoint = AspectProxy.prototype[method];
+                    if (componentName.match(<any> pointcut.pointcutConfig.classRegex) !== null) {
+                        let componentMethodsNames = ReflectUtils.getAllMethodsNames(componentConstructor);
+                        for (let methodName of componentMethodsNames) {
+                            if (methodName.match(<any> pointcut.pointcutConfig.methodRegex) !== null) {
+                                let joinPoint = AspectProxy.prototype[methodName];
                                 let advice = AspectConstructor.prototype[pointcut.targetMethod];
-                                let createProxyMethod = this.adviceProxyMethods.get(adviceType);
-                                let proxiedMethod = createProxyMethod.apply(this, [joinPoint, advice, aspectToken]);
-
-                                Reflect.set(AspectProxy.prototype, method, proxiedMethod);
+                                let aspectName = ComponentUtil.getComponentData(AspectConstructor).componentName;
+                                let aspectErrorInfo = new AspectErrorInfo(aspectName,
+                                    pointcut.targetMethod, componentName, methodName);
+                                let proxiedMethod = this.adviceProxyMethods.get(adviceType)
+                                    .apply(this, [joinPoint, advice, aspectToken, aspectErrorInfo]);
+                                Reflect.set(AspectProxy.prototype, methodName, proxiedMethod);
                             }
                         }
                     }
@@ -67,36 +72,56 @@ export class AspectDefinitionPostProcessor implements IComponentDefinitionPostPr
         this.adviceProxyMethods.set(AdviceType.AROUND, this.createAroundProxyMethod);
     }
 
-    private createBeforeProxyMethod(joinPoint, advice, aspectToken) {
+    private createBeforeProxyMethod(joinPoint, advice, aspectToken, aspectErrorInfo) {
         return ProxyUtils.createMethodProxy(joinPoint, async(joinPointRef, joinPointInstance, joinPointArgs) => {
             let aspectInstance = this.injector.getComponent(aspectToken);
-            await Promise.race([Reflect.apply(advice, aspectInstance, [])]);
+            try {
+                await Promise.race([Reflect.apply(advice, aspectInstance, [])]);
+            } catch (err) {
+                throw new BeforeAdviceError(aspectErrorInfo, err);
+            }
             return await Promise.race([Reflect.apply(joinPointRef, joinPointInstance, joinPointArgs)]);
         });
     }
 
-    private createAfterProxyMethod(joinPoint, advice, aspectToken) {
+    private createAfterProxyMethod(joinPoint, advice, aspectToken, aspectErrorInfo) {
         return ProxyUtils.createMethodProxy(joinPoint, async(joinPointRef, joinPointInstance, joinPointArgs) => {
             // NOTE: the advice is executed even if the joinPoint throws
             let joinPointResult;
+            let joinPointError;
+
             try {
                 joinPointResult = await Promise.race([Reflect.apply(joinPointRef, joinPointInstance, joinPointArgs)]);
             } catch (err) {
-                joinPointResult = err;
-                throw err;
+                joinPointError = err;
+                throw joinPointError;
             } finally {
                 let aspectInstance = this.injector.getComponent(aspectToken);
-                await Promise.race([Reflect.apply(advice, aspectInstance, [joinPointResult])]);
+                try {
+                    await Promise.race([Reflect.apply(advice, aspectInstance, [joinPointError || joinPointResult])]);
+                } catch (err) {
+                    let afterAdviceError = new AfterAdviceError(aspectErrorInfo, err);
+                    if (joinPointError) {
+                        console.error('Error while executing after advice.', afterAdviceError);
+                    } else {
+                        throw afterAdviceError;
+                    }
+                }
             }
+
             return joinPointResult;
         });
     }
 
-    private createAfterReturningProxyMethod(joinPoint, advice, aspectToken) {
+    private createAfterReturningProxyMethod(joinPoint, advice, aspectToken, aspectErrorInfo) {
         return ProxyUtils.createMethodProxy(joinPoint, async(joinPointRef, joinPointInstance, joinPointArgs) => {
             let joinPointResult = await Promise.race([Reflect.apply(joinPointRef, joinPointInstance, joinPointArgs)]);
             let aspectInstance = this.injector.getComponent(aspectToken);
-            await Promise.race([Reflect.apply(advice, aspectInstance, [joinPointResult])]);
+            try {
+                await Promise.race([Reflect.apply(advice, aspectInstance, [joinPointResult])]);
+            } catch (err) {
+                throw new AfterReturningAdviceError(aspectErrorInfo, err);
+            }
             return joinPointResult;
         });
     }
@@ -104,7 +129,7 @@ export class AspectDefinitionPostProcessor implements IComponentDefinitionPostPr
     private createAfterThrowingProxyMethod(joinPoint, advice, aspectToken) {
         return ProxyUtils.createMethodProxy(joinPoint, async(joinPointRef, joinPointInstance, joinPointArgs) => {
             try {
-                await Promise.race([Reflect.apply(joinPointRef, joinPointInstance, joinPointArgs)]);
+                return await Promise.race([Reflect.apply(joinPointRef, joinPointInstance, joinPointArgs)]);
             } catch (err) {
                 let aspectInstance = this.injector.getComponent(aspectToken);
                 await Promise.race([Reflect.apply(advice, aspectInstance, [err])]);

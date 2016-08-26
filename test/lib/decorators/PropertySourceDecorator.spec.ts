@@ -3,6 +3,7 @@ import { spy, stub } from "sinon";
 import { Configuration, ConfigurationUtil } from "../../../src/lib/decorators/ConfigurationDecorator";
 import { PropertySource, PropertySourceUtil } from "../../../src/lib/decorators/PropertySourceDecorator";
 import { RequireUtils } from "../../../src/lib/helpers/RequireUtils";
+import { DecoratorUsageError } from "../../../src/lib/errors/DecoratorUsageErrors";
 
 describe('PropertySourceDecorator', function () {
 
@@ -29,10 +30,20 @@ describe('PropertySourceDecorator', function () {
 
     it('should throw when not on @Configuration', function () {
         // given
-        class A {}
+        function SomeDecorator(...args) {} // tslint:disable-line
+
+        class MyClass {
+            myProperty: string;
+            @SomeDecorator
+            myFunction(str: string) {} // tslint:disable-line
+        }
 
         // when / then
-        expect(PropertySource('somePath').bind(this, A)).to.throw(Error);
+        expect(PropertySource('somePath').bind(undefined, MyClass)).to.throw(DecoratorUsageError);
+        expect(PropertySource('somePath').bind(undefined, MyClass.prototype,
+            'myFunction', MyClass.prototype.myFunction)).to.throw(DecoratorUsageError);
+        expect(PropertySource('somePath').bind(undefined, MyClass.prototype,
+            'myProperty')).to.throw(DecoratorUsageError);
     });
 });
 

@@ -1,5 +1,6 @@
 import {expect} from "chai";
 import {Injector} from "../../../src/lib/di/Injector";
+import { InjectionError } from "../../../src/lib/errors/InjectionError";
 
 describe('Injector', function () {
 
@@ -24,7 +25,7 @@ describe('Injector', function () {
 
     it('should throw error when getting an unexisting component', function () {
         // given / when / then
-        expect(injector.getComponent.bind(injector, token)).to.throw(Error);
+        expect(injector.getComponent.bind(injector, token)).to.throw(InjectionError);
     });
 
     it('should throw error when getting component with token associated with more than one component', function () {
@@ -33,7 +34,7 @@ describe('Injector', function () {
         injector.register(token, new Object('name2'));
 
         // then
-        expect(injector.getComponent.bind(injector, token)).to.throw(Error);
+        expect(injector.getComponent.bind(injector, token)).to.throw(InjectionError);
     });
 
     it('should return registered components under the given token', function () {
