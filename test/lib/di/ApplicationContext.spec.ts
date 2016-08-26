@@ -10,7 +10,7 @@ import { spy, stub, match, assert } from "sinon";
 import { ProcessHandler } from "../../../src/lib/helpers/ProcessHandler";
 import {
     ComponentDefinitionPostProcessorUtil
-} from "../../../src/lib/processors/CacheDefinitionPostProcessor";
+} from "../../../src/lib/processors/ComponentDefinitionPostProcessor";
 import {
     ComponentPostProcessorUtil
 } from "../../../src/lib/processors/ComponentPostProcessor";

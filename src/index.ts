@@ -21,11 +21,11 @@ export {Order} from "./lib/decorators/OrderDecorator";
 export { RequestContext, REQUEST_TOKEN, RESPONSE_TOKEN } from "./lib/web/context/RequestContext";
 export { RequestContextHolder } from "./lib/web/context/RequestContextHolder";
 
-export {Cacheable, CacheEvict} from "./lib/decorators/CacheableDecorator";
+export {Cacheable, CacheEvict, CachePut} from "./lib/decorators/CacheableDecorator";
 export {EnableCaching} from "./lib/decorators/EnableCachingDecorator";
 
 export {ApplicationContext} from "./lib/di/ApplicationContext";
-export {ComponentDefinitionPostProcessor} from "./lib/processors/CacheDefinitionPostProcessor";
+export {ComponentDefinitionPostProcessor} from "./lib/processors/ComponentDefinitionPostProcessor";
 export {ComponentPostProcessor} from "./lib/processors/ComponentPostProcessor";
 export {Aspect, Before, After, AfterReturning, AfterThrowing, Around} from "./lib/decorators/AspectDecorator";
 export {Environment} from "./lib/di/Environment";

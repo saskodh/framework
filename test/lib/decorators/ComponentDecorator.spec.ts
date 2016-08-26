@@ -7,7 +7,7 @@ import { InjectionData } from "../../../src/lib/decorators/InjectionDecorators";
 import { Controller } from "../../../src/lib/decorators/ControllerDecorator";
 import { Interceptor } from "../../../src/lib/decorators/InterceptorDecorator";
 import { ComponentPostProcessor } from "../../../src/lib/processors/ComponentPostProcessor";
-import { ComponentDefinitionPostProcessor } from "../../../src/lib/processors/CacheDefinitionPostProcessor";
+import { ComponentDefinitionPostProcessor } from "../../../src/lib/processors/ComponentDefinitionPostProcessor";
 import { Profile } from "../../../src/lib/decorators/ProfileDecorators";
 import { Aspect } from "../../../src/lib/decorators/AspectDecorator";
 

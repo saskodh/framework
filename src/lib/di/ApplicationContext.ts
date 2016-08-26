@@ -9,7 +9,7 @@ import { ProcessHandler } from "../helpers/ProcessHandler";
 import { IComponentPostProcessor, ComponentPostProcessorUtil } from "../processors/ComponentPostProcessor";
 import {
     IComponentDefinitionPostProcessor, ComponentDefinitionPostProcessorUtil
-} from "../processors/CacheDefinitionPostProcessor";
+} from "../processors/ComponentDefinitionPostProcessor";
 import { OrderUtil } from "../decorators/OrderDecorator";
 import { Environment } from "./Environment";
 import {AspectDefinitionPostProcessor} from "../processors/aspect/AspectDefinitionPostProcessor";
