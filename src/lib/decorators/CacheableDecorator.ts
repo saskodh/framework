@@ -1,4 +1,5 @@
 import * as _ from "lodash";
+import { DecoratorType, DecoratorUtil } from "../helpers/DecoratorUtils";
 
 export const CACHE_CONFIG = Symbol('cache_config');
 
@@ -41,17 +42,33 @@ export class CacheConfig {
     }
 }
 
+/**
+ *
+ * @Cacheable is used to demarcate methods that are cacheable - that is, methods for whom the result is stored into
+ * the cache so on subsequent invocations (with the same arguments), the value in the cache is returned without having
+ * to actually execute the method.
+ * @param cacheConfiguration. An object that must contains the cacheName: string, an optional parameter key: string
+ */
 export function Cacheable(cacheConfiguration: ICacheConfigCacheable) {
     cacheConfiguration.cacheName = _.isUndefined(cacheConfiguration.cacheName) ? '' : cacheConfiguration.cacheName;
     cacheConfiguration.key = _.isUndefined(cacheConfiguration.key) ? undefined : cacheConfiguration.key;
 
     return function (target, method) {
+        DecoratorUtil.throwOnWrongType(Cacheable, DecoratorType.METHOD, [...arguments]);
+
         let cacheConfig = CacheUtil.initCacheConfigIfDoesntExist(target);
         cacheConfig.methods.get(CacheDecoratorType.CACHEABLE)
             .push({ cacheName: cacheConfiguration.cacheName, method: method, key: cacheConfiguration.key });
     };
 }
 
+/**
+ *
+ * @CacheEvict demarcates methods that perform cache eviction, that is methods that act as triggers for removing
+ * data from the cache.
+ * @param cacheConfiguration. An object that must contains the cacheName: string, an optional parameter for specifying
+ * weather the whole cache should be flushed or just a specific entry, an optional parameter key: string
+ */
 export function CacheEvict(cacheConfiguration: ICacheConfigCacheEvict) {
     cacheConfiguration.cacheName = _.isUndefined(cacheConfiguration.cacheName) ? '' : cacheConfiguration.cacheName;
     cacheConfiguration.allEntries =
@@ -59,6 +76,8 @@ export function CacheEvict(cacheConfiguration: ICacheConfigCacheEvict) {
     cacheConfiguration.key = _.isUndefined(cacheConfiguration.key) ? undefined : cacheConfiguration.key;
 
     return function (target, method) {
+        DecoratorUtil.throwOnWrongType(CacheEvict, DecoratorType.METHOD, [...arguments]);
+
         let cacheConfig = CacheUtil.initCacheConfigIfDoesntExist(target);
         cacheConfig.methods.get(CacheDecoratorType.CACHE_EVICT)
             .push({ cacheName: cacheConfiguration.cacheName, method: method, allEntries: cacheConfiguration.allEntries,
@@ -66,11 +85,19 @@ export function CacheEvict(cacheConfiguration: ICacheConfigCacheEvict) {
     };
 }
 
+/**
+ *
+ * @CachePut is used to demarcate methods that are cacheable - the method will always be executed and its result
+ * placed into the cache.
+ * @param cacheConfiguration. An object that must contains the cacheName: string, an optional parameter key: string
+ */
 export function CachePut(cacheConfiguration: ICacheConfigCacheable) {
     cacheConfiguration.cacheName = _.isUndefined(cacheConfiguration.cacheName) ? '' : cacheConfiguration.cacheName;
     cacheConfiguration.key = _.isUndefined(cacheConfiguration.key) ? undefined : cacheConfiguration.key;
 
     return function (target, method) {
+        DecoratorUtil.throwOnWrongType(CachePut, DecoratorType.METHOD, [...arguments]);
+
         let cacheConfig = CacheUtil.initCacheConfigIfDoesntExist(target);
         cacheConfig.methods.get(CacheDecoratorType.CACHE_PUT)
             .push({ cacheName: cacheConfiguration.cacheName, method: method, key: cacheConfiguration.key });

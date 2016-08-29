@@ -1,3 +1,4 @@
+import * as hash from "object-hash";
 import {expect} from 'chai';
 import { stub, spy, match } from 'sinon';
 import {ProxyUtils} from '../../../../src/lib/helpers/ProxyUtils';
@@ -375,5 +376,121 @@ describe('CacheDefinitionPostProcessor', function () {
         stubOnReflectApply.restore();
         stubOnCreateHashKey.restore();
         stubOnCreateHash.restore();
+    });
+
+    it('should create the key for the cache hash', async function () {
+        // given
+        class A {
+            methodOne(first, second, third) { return 'methodOneResult'; }
+        }
+        class B {
+            private prop1: string;
+            private prop2: C;
+
+            constructor() {
+                this.prop1 = 'property1';
+                this.prop2 = new C();
+            }
+        }
+        class C {
+            private name: string;
+
+            constructor() {
+                this.name = 'nameC';
+            }
+        }
+        let instanceOfA = new A();
+
+        // when
+        let keys = myCacheDefinitionPostProcessor
+            .createHashKey('#first.prop1#third.prop2.name#first.unknown#second.prop',
+                instanceOfA.methodOne, [new B(), 'someArg', new B()]);
+
+        //  then
+        expect(keys).to.include.members(['property1', 'nameC']);
+    });
+
+    it('should return all args if no keys are found', async function () {
+        // given
+        class A {
+            methodOne(first, second, third) { return 'methodOneResult'; }
+        }
+        class B {
+            private prop1: string;
+            private prop2: C;
+
+            constructor() {
+                this.prop1 = 'property1';
+                this.prop2 = new C();
+            }
+        }
+        class C {
+            private name: string;
+
+            constructor() {
+                this.name = 'nameC';
+            }
+        }
+        let instanceOfA = new A();
+        let arg1 = new B();
+        let arg2 = 'someArg';
+        let arg3 = new B();
+
+        // when
+        let keys = myCacheDefinitionPostProcessor
+            .createHashKey('#first.prop1.noProp#third.prop3.name#first.unknown#fourth.prop',
+                instanceOfA.methodOne, [arg1, arg2, arg3]);
+
+        //  then
+        expect(keys).to.include.members([arg1, arg2, arg3]);
+    });
+
+    it('should return all args as key when the key is undefined', async function () {
+        // given
+        class A {
+            methodOne(first, second, third) { return 'methodOneResult'; }
+        }
+        class B {
+            private prop1: string;
+            private prop2: C;
+
+            constructor() {
+                this.prop1 = 'property1';
+                this.prop2 = new C();
+            }
+        }
+        class C {
+            private name: string;
+
+            constructor() {
+                this.name = 'nameC';
+            }
+        }
+        let instanceOfA = new A();
+        let arg1 = new B();
+        let arg2 = 'someArg';
+        let arg3 = new B();
+
+        // when
+        let keys = myCacheDefinitionPostProcessor
+            .createHashKey(undefined,
+                instanceOfA.methodOne, [arg1, arg2, arg3]);
+
+        //  then
+        expect(keys).to.include.members([arg1, arg2, arg3]);
+    });
+
+
+
+    it('should return the hash for the given arguments', async function () {
+        // given
+        let args = ['arg1', 'arg2', 5, new Object()];
+        let staticHash = hash(args);
+
+        // when
+        let createdHash = myCacheDefinitionPostProcessor.createHash(args);
+
+        //  then
+        expect(createdHash).to.be.eq(staticHash);
     });
 });

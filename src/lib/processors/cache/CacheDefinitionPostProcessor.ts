@@ -1,4 +1,5 @@
 import * as hash from "object-hash";
+import * as _ from "lodash";
 import { ComponentDefinitionPostProcessor } from "../ComponentDefinitionPostProcessor";
 import { ProxyUtils } from "../../helpers/ProxyUtils";
 import { CacheUtil, CacheDecoratorType, CacheConfigItem } from "../../decorators/CacheableDecorator";
@@ -119,7 +120,7 @@ export class CacheDefinitionPostProcessor {
                 i++;
 
                 if (methodArgumentName === keyFragments[0]) {
-                    let key = this.isKeyFound(actualArgument, keyFragments.slice(1));
+                    let key = _.get(actualArgument, keyFragments.slice(1));
                     if (key !== undefined) {
                         keys.push(key);
                     }
@@ -130,20 +131,6 @@ export class CacheDefinitionPostProcessor {
             return args;
         }
         return keys;
-    }
-
-    private isKeyFound(argument, keyFragments: Array<any>) {
-        if (keyFragments.length === 0) {
-            return argument;
-        }
-        for (let key in argument) {
-            if (key === keyFragments[0]) {
-                if (keyFragments.length === 1) {
-                    return argument[key];
-                }
-                return this.isKeyFound(argument[key], keyFragments.slice(1));
-            }
-        }
     }
 
     private getFunctionArgumentnames(func) {
