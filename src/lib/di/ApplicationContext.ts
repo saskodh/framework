@@ -107,9 +107,12 @@ export class ApplicationContext {
     }
 
     private wireCacheDefinitionPostProcessor() {
-        let cacheDefinitionPostProcessor = <CacheDefinitionPostProcessor>
-            this.injector.getComponent(ComponentUtil.getClassToken(CacheDefinitionPostProcessor));
-        cacheDefinitionPostProcessor.setInjector(this.injector);
+        if (this.configurationData.componentDefinitionPostProcessorFactory
+                .components.indexOf(CacheDefinitionPostProcessor) !== -1) {
+            let cacheDefinitionPostProcessor = <CacheDefinitionPostProcessor>
+                this.injector.getComponent(ComponentUtil.getClassToken(CacheDefinitionPostProcessor));
+            cacheDefinitionPostProcessor.setInjector(this.injector);
+        }
     }
 
     /**
