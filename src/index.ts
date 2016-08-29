@@ -39,4 +39,5 @@ export {DecoratorUsageError, DecoratorUsageTypeError} from "./lib/errors/Decorat
 export {InjectionError} from "./lib/errors/InjectionError"
 export {InvalidUsageError} from "./lib/errors/InvalidUsageError"
 export {WebError, RouteHandlerError, InterceptorError} from "./lib/errors/WebErrors"
-export {AspectError, AfterAdviceError, AfterReturningAdviceError, BeforeAdviceError} from "./lib/errors/AspectErrors"
+export {AspectError, AfterAdviceError, AfterReturningAdviceError, BeforeAdviceError,
+    AfterThrowingAdviceError} from "./lib/errors/AspectErrors"

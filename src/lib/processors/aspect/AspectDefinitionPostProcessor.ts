@@ -9,8 +9,11 @@ import { ReflectUtils } from "../../helpers/ReflectUtils";
 import { Order } from "../../decorators/OrderDecorator";
 import { ComponentUtil } from "../../decorators/ComponentDecorator";
 import {
-    BeforeAdviceError, AfterReturningAdviceError, AfterAdviceError, AspectErrorInfo
+    BeforeAdviceError, AfterReturningAdviceError, AfterAdviceError, AspectErrorInfo, AfterThrowingAdviceError
 } from "../../errors/AspectErrors";
+import { LoggerFactory } from "../../helpers/logging/LoggerFactory";
+
+let logger = LoggerFactory.getInstance();
 
 @Order(1)
 @ComponentDefinitionPostProcessor()
@@ -38,9 +41,11 @@ export class AspectDefinitionPostProcessor implements IComponentDefinitionPostPr
                         let componentMethodsNames = ReflectUtils.getAllMethodsNames(componentConstructor);
                         for (let methodName of componentMethodsNames) {
                             if (methodName.match(<any> pointcut.pointcutConfig.methodRegex) !== null) {
+                                let aspectName = ComponentUtil.getComponentData(AspectConstructor).componentName;
+                                logger.debug(`Setting advice ${pointcut
+                                    .targetMethod}() from Aspect ${aspectName} on ${componentName}.${methodName}()`);
                                 let joinPoint = AspectProxy.prototype[methodName];
                                 let advice = AspectConstructor.prototype[pointcut.targetMethod];
-                                let aspectName = ComponentUtil.getComponentData(AspectConstructor).componentName;
                                 let aspectErrorInfo = new AspectErrorInfo(aspectName,
                                     pointcut.targetMethod, componentName, methodName);
                                 let proxiedMethod = this.adviceProxyMethods.get(adviceType)
@@ -102,7 +107,8 @@ export class AspectDefinitionPostProcessor implements IComponentDefinitionPostPr
                 } catch (err) {
                     let afterAdviceError = new AfterAdviceError(aspectErrorInfo, err);
                     if (joinPointError) {
-                        console.error('Error while executing after advice.', afterAdviceError);
+                        logger.error('Error while executing after advice. (Joinpoint also threw)\n%s',
+                            afterAdviceError.stack);
                     } else {
                         throw afterAdviceError;
                     }
@@ -126,13 +132,18 @@ export class AspectDefinitionPostProcessor implements IComponentDefinitionPostPr
         });
     }
 
-    private createAfterThrowingProxyMethod(joinPoint, advice, aspectToken) {
+    private createAfterThrowingProxyMethod(joinPoint, advice, aspectToken, aspectErrorInfo) {
         return ProxyUtils.createMethodProxy(joinPoint, async(joinPointRef, joinPointInstance, joinPointArgs) => {
             try {
                 return await Promise.race([Reflect.apply(joinPointRef, joinPointInstance, joinPointArgs)]);
             } catch (err) {
                 let aspectInstance = this.injector.getComponent(aspectToken);
-                await Promise.race([Reflect.apply(advice, aspectInstance, [err])]);
+                try {
+                    await Promise.race([Reflect.apply(advice, aspectInstance, [err])]);
+                } catch (error) {
+                    logger.error('Error while executing after-throwing advice.\n%s',
+                        new AfterThrowingAdviceError(aspectErrorInfo, error).stack);
+                }
                 throw err;
             }
         });

@@ -7,6 +7,7 @@ import { OrderUtil } from "../../../src/lib/decorators/OrderDecorator";
 import { RouterConfigItem, RequestMethod } from "../../../src/lib/decorators/RequestMappingDecorator";
 import { RequestContextInitializer } from "../../../src/lib/web/context/RequestContextInitializer";
 import { InterceptorError, RouteHandlerError } from "../../../src/lib/errors/WebErrors";
+import { Controller } from "../../../src/lib/decorators/ControllerDecorator";
 
 describe('RouterConfigurer', function () {
 
@@ -125,6 +126,7 @@ describe('RouterConfigurer', function () {
 
     it('should register methods on routes', async function () {
         // given
+        @Controller()
         class A {
 
             get(request, response): Promise<any> {
@@ -300,7 +302,6 @@ describe('RouterConfigurer', function () {
         let spyOnStatus = spy();
         let spyOnSend = spy();
         let spyOnNext = spy();
-        let stubOnConsoleError = stub(console, 'error');
         let response = {
             status: spyOnStatus,
             send: spyOnSend
@@ -310,7 +311,6 @@ describe('RouterConfigurer', function () {
         (<any> routerConfigurer).errorResolver(error, "request", response, spyOnNext);
 
         // then
-        expect(stubOnConsoleError.calledWith(error.stack)).to.be.true;
         expect(spyOnStatus.calledWith(500)).to.be.true;
         expect(spyOnSend.calledWith("Code 500: Internal Server error")).to.be.true;
         expect(spyOnNext.called).to.be.false;
@@ -346,6 +346,7 @@ describe('RouterConfigurer throws on user misuse', function () {
 
     it('should throw on handling route', async function () {
         // given
+        @Controller()
         class A {
 
             get(request, response): Promise<any> {

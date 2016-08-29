@@ -2,6 +2,9 @@ import { Router } from "express";
 import { ComponentUtil } from "../decorators/ComponentDecorator";
 import { RouterConfigurer } from "./RouterConfigurer";
 import { RequestMappingUtil } from "../decorators/RequestMappingDecorator";
+import { LoggerFactory } from "../helpers/logging/LoggerFactory";
+
+let logger = LoggerFactory.getInstance();
 
 export class Dispatcher {
 
@@ -32,6 +35,7 @@ export class Dispatcher {
     }
 
     private registerController(clazz, instance) {
+        logger.debug(`Registering controller ${ComponentUtil.getComponentData(clazz).componentName}.`);
         let controllerMappingPath = RequestMappingUtil.getControllerRequestMappingPath(clazz);
         for (let route of RequestMappingUtil.getValidRoutes(clazz)) {
             route.requestConfig.path = controllerMappingPath + route.requestConfig.path;

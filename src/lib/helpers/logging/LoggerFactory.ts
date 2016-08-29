@@ -8,6 +8,7 @@ export interface LoggerMethod {
 
 export interface Logger {
     debug: LoggerMethod;
+    verbose: LoggerMethod;
     info: LoggerMethod;
     warn: LoggerMethod;
     error: LoggerMethod;
@@ -23,7 +24,7 @@ export class LoggerFactory {
         if (!this.logger) {
             this.logger = this.createFrameworkLogger();
         }
-        return this.logger;
+        return <any> this.logger;
     }
 
     private static createFrameworkLogger(): LoggerInstance {
@@ -34,7 +35,7 @@ export class LoggerFactory {
         return {
             transports: [
                 new transports.Console({
-                    handleExceptions: true,
+                    handleExceptions: false,
                     level: process.env.LOG_LEVEL || 'debug',
                     timestamp: function () { return new Date().toISOString(); },
                     formatter: function (options) {
