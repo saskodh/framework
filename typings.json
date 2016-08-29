@@ -4,7 +4,8 @@
   "globalDependencies": {
     "lodash": "registry:dt/lodash#3.10.0+20160330154726",
     "node": "registry:dt/node#6.0.0+20160514165920",
-    "zone.js": "registry:dt/zone.js#0.0.0+20160316155526"
+    "zone.js": "registry:dt/zone.js#0.0.0+20160316155526",
+    "object-hash": "registry:dt/object-hash#0.5.0+20160317120654"
   },
   "globalDevDependencies": {
     "body-parser": "registry:dt/body-parser#0.0.0+20160317120654",
