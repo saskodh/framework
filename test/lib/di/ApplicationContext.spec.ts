@@ -18,6 +18,7 @@ import { LifeCycleHooksUtil } from "../../../src/lib/decorators/LifeCycleHooksDe
 import { ActiveProfiles } from "../../../src/lib/decorators/ProfileDecorators";
 import { Environment } from "../../../src/lib/di/Environment";
 import { AspectDefinitionPostProcessor } from "../../../src/lib/processors/aspect/AspectDefinitionPostProcessor";
+import { CacheDefinitionPostProcessor } from "../../../src/lib/processors/cache/CacheDefinitionPostProcessor";
 import { BadArgumentError } from "../../../src/lib/errors/BadArgumentErrors";
 import {
     PostProcessError, ComponentWiringError,
@@ -37,6 +38,9 @@ describe('ApplicationContext', function () {
     beforeEach(() => {
         appContext = new ApplicationContext(AppConfig);
         localAppContext = <any> appContext;
+
+        let configData = ConfigurationUtil.getConfigurationData(AppConfig);
+        configData.componentDefinitionPostProcessorFactory.components.push(CacheDefinitionPostProcessor);
     });
 
     afterEach(() => {
@@ -693,6 +697,7 @@ describe('DefinitionPostProcessors', function() {
         let stubOnIsComponentDefinitionPostProcessor =
             stub(ComponentDefinitionPostProcessorUtil, 'isIComponentDefinitionPostProcessor').returns(true);
         let stubOnWireAspectDefinitionPostProcessor = stub(appContext, 'wireAspectDefinitionPostProcessor');
+        let stubOnWireCacheDefinitionPostProcessor = stub(appContext, 'wireCacheDefinitionPostProcessor');
         let instance1 = new DefinitionPostProcessor1();
         let instance2 = new DefinitionPostProcessor2();
 
@@ -718,6 +723,7 @@ describe('DefinitionPostProcessors', function() {
         stubOnInjectorRegister.restore();
         stubOnIsComponentDefinitionPostProcessor.restore();
         stubOnWireAspectDefinitionPostProcessor.restore();
+        stubOnWireCacheDefinitionPostProcessor.restore();
     });
 
     it('should apply the postProcess definition method from all the definition post processors', async function () {

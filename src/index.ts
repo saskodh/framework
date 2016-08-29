@@ -23,6 +23,9 @@ export {Aspect, Before, After, AfterReturning, AfterThrowing, Around} from "./li
 export { RequestContext, REQUEST_TOKEN, RESPONSE_TOKEN } from "./lib/web/context/RequestContext";
 export { RequestContextHolder } from "./lib/web/context/RequestContextHolder";
 
+export {Cacheable, CacheEvict, CachePut} from "./lib/decorators/CacheableDecorator";
+export {EnableCaching} from "./lib/decorators/EnableCachingDecorator";
+
 export {ApplicationContext} from "./lib/di/ApplicationContext";
 export {ComponentDefinitionPostProcessor, IComponentDefinitionPostProcessor}
     from "./lib/processors/ComponentDefinitionPostProcessor";

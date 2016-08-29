@@ -19,6 +19,8 @@ import {
     ComponentInitializationError, ComponentWiringError,
     PostConstructionError, PreDestructionError, ApplicationContextError, PostProcessError
 } from "../errors/ApplicationContextErrors";
+import {DynamicDependencyResolver} from "./DynamicDependencyResolver";
+import { CacheDefinitionPostProcessor } from "../processors/cache/CacheDefinitionPostProcessor";
 import { LoggerFactory } from "../helpers/logging/LoggerFactory";
 
 let logger = LoggerFactory.getInstance();
@@ -28,7 +30,6 @@ export class ApplicationContextState {
     static INITIALIZING = 'INITIALIZING';
     static READY = 'READY';
 }
-import {DynamicDependencyResolver} from "./DynamicDependencyResolver";
 
 export class ApplicationContext {
 
@@ -108,6 +109,12 @@ export class ApplicationContext {
             this.injector.getComponent(ComponentUtil.getClassToken(AspectDefinitionPostProcessor));
         aspectDefinitionPostProcessor.setInjector(this.injector);
         aspectDefinitionPostProcessor.setAspectComponentDefinitions(this.getActiveAspects());
+    }
+
+    private wireCacheDefinitionPostProcessor() {
+        let cacheDefinitionPostProcessor = <CacheDefinitionPostProcessor>
+            this.injector.getComponent(ComponentUtil.getClassToken(CacheDefinitionPostProcessor));
+        cacheDefinitionPostProcessor.setInjector(this.injector);
     }
 
     /**
@@ -209,6 +216,7 @@ export class ApplicationContext {
             }
         }
         this.wireAspectDefinitionPostProcessor();
+        this.wireCacheDefinitionPostProcessor();
     }
 
     private initializePostProcessors() {
