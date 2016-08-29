@@ -5,6 +5,10 @@ import { ProxyUtils } from "../../helpers/ProxyUtils";
 import { CacheUtil, CacheDecoratorType, CacheConfigItem } from "../../decorators/CacheableDecorator";
 import { Injector } from "../../di/Injector";
 import { ICacheProvider, I_CACHE_PROVIDER_TOKEN } from "./ICacheProvider";
+import { LoggerFactory } from "../../helpers/logging/LoggerFactory";
+import { ComponentUtil } from "../../decorators/ComponentDecorator";
+
+let logger = LoggerFactory.getInstance();
 
 @ComponentDefinitionPostProcessor()
 export class CacheDefinitionPostProcessor {
@@ -36,6 +40,8 @@ export class CacheDefinitionPostProcessor {
             let cacheConfigArray = CacheUtil.getCacheTypeConfig(CacheProxy.prototype, cacheDecoratorType);
             for (let cacheConfig of cacheConfigArray) {
                 let originalMethod = CacheProxy.prototype[cacheConfig.method];
+                logger.debug(`Setting ${cacheDecoratorType} proxy on ${ComponentUtil
+                    .getComponentData(componentConstructor).componentName}.${originalMethod.name}()`);
                 let proxiedMethod = this.cacheProxyMethods.get(cacheDecoratorType)
                     .apply(this, [originalMethod, cacheConfig]);
                 Reflect.set(CacheProxy.prototype, cacheConfig.method, proxiedMethod);
@@ -124,6 +130,7 @@ export class CacheDefinitionPostProcessor {
                     if (key !== undefined) {
                         keys.push(key);
                     }
+                    logger.warn(`Unable to find value for key ${differentKey}.`);
                 }
             }
         }

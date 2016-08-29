@@ -12,6 +12,7 @@ import {
     AspectErrorInfo, BeforeAdviceError, AspectError,
     AfterReturningAdviceError, AfterAdviceError
 } from '../../../../src/lib/errors/AspectErrors';
+import { LoggerFactory } from "../../../../src/lib/helpers/logging/LoggerFactory";
 require('reflect-metadata');
 
 describe('AspectDefinitionPostProcessor', function () {
@@ -597,5 +598,53 @@ describe('AspectDefinitionPostProcessor should throw on advice throw', function 
         stubOnGetComponent.restore();
         stubOnReflectApply.restore();
         stubOnPromiseRace.restore();
+    });
+
+    it('should log when afterThrowing advice throws', async function () {
+        // given
+        class A {
+            methodOne() { return 'methodOneResult'; }
+        }
+        class B {
+            methodTwo() { return 'methodTwoResult'; }
+        }
+        let instanceOfA = new A();
+        let instanceOfB = new B();
+        let methodOne = instanceOfA.methodOne;
+        let methodTwo = instanceOfB.methodTwo;
+        let clazz =  'clazz';
+        let injector =  {
+            getComponent: () => { return; }
+        };
+        MyAspectDefinitionPostProcessor.injector = injector;
+        let spyOnCreateMethodProxy = spy(ProxyUtils, 'createMethodProxy');
+        let stubOnGetComponent = stub(MyAspectDefinitionPostProcessor.injector, 'getComponent').returns(instanceOfB);
+        let stubOnReflectApply = stub(Reflect, 'apply');
+        let stubOnPromiseRace = stub(Promise, 'race').throws(new Error('someError'));
+        let spyOnLoggerError = spy(LoggerFactory.getInstance(), 'error');
+        let promiseResult;
+        let hasThrown = false;
+
+        // when
+        let afterReturningProxy = MyAspectDefinitionPostProcessor
+            .createAfterThrowingProxyMethod(methodOne, methodTwo, clazz, aspectErrorInfo);
+        Reflect.set(A.prototype, 'methodOne', afterReturningProxy);
+
+        try {
+            promiseResult = await instanceOfA.methodOne();
+        } catch (error) {
+            expect(error).to.not.be.instanceOf(AspectError);
+            hasThrown = true;
+        }
+
+        // then
+        expect(hasThrown).to.be.true;
+        expect(spyOnLoggerError.calledOnce).to.be.true;
+        // cleanup
+        spyOnCreateMethodProxy.restore();
+        stubOnGetComponent.restore();
+        stubOnReflectApply.restore();
+        stubOnPromiseRace.restore();
+        spyOnLoggerError.restore();
     });
 });
