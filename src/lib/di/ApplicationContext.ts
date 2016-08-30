@@ -21,6 +21,9 @@ import {
 } from "../errors/ApplicationContextErrors";
 import {DynamicDependencyResolver} from "./DynamicDependencyResolver";
 import { CacheDefinitionPostProcessor } from "../processors/cache/CacheDefinitionPostProcessor";
+import { LoggerFactory } from "../helpers/logging/LoggerFactory";
+
+let logger = LoggerFactory.getInstance();
 
 export class ApplicationContextState {
     static NOT_INITIALIZED = 'NOT_INITIALIZED';
@@ -39,6 +42,7 @@ export class ApplicationContext {
 
     constructor(configurationClass) {
         this.state = ApplicationContextState.NOT_INITIALIZED;
+        logger.info('Constructing the application context...');
         this.injector = new Injector();
         this.dispatcher = new Dispatcher();
         this.configurationData = ConfigurationUtil.getConfigurationData(configurationClass);
@@ -78,9 +82,10 @@ export class ApplicationContext {
      * */
     async start() {
         if (this.state !== ApplicationContextState.NOT_INITIALIZED) {
-            console.warn("Application context was already initialized or it is initializing at the moment.");
+            logger.warn("Application context was already initialized or it is initializing at the moment.");
         }
         this.state = ApplicationContextState.INITIALIZING;
+        logger.info('Stating the application context...');
 
         await this.initializeDefinitionPostProcessors();
         await this.initializePostProcessors();
@@ -119,6 +124,7 @@ export class ApplicationContext {
      * Manually destroys the application context. Running @PreDestroy method on all components.
      */
     async destroy() {
+        logger.info('Destroying the application context...');
         if (this.state === ApplicationContextState.READY) {
             await this.executePreDestruction();
         }
@@ -139,8 +145,10 @@ export class ApplicationContext {
     }
 
     private initializeComponents() {
+        logger.info(`Initializing ApplicationContext's components...`);
         for (let CompConstructor of this.getActiveComponents()) {
             let componentData = ComponentUtil.getComponentData(CompConstructor);
+            logger.debug(`Initializing ${componentData.componentName} component.`);
 
             let instance;
             try {
@@ -156,11 +164,13 @@ export class ApplicationContext {
     }
 
     private wireComponents() {
+        logger.info(`Wiring ApplicationContext's components...`);
         for (let CompConstructor of this.getActiveComponents()) {
             let componentData = ComponentUtil.getComponentData(CompConstructor);
             let injectionData = ComponentUtil.getInjectionData(CompConstructor);
             let instance = this.injector.getComponent(componentData.classToken);
 
+            logger.debug(`Wiring dependencies for '${componentData.componentName}' component.`);
             injectionData.dependencies.forEach((dependencyData, fieldName) => {
                 let dependency;
                 try {
@@ -176,6 +186,8 @@ export class ApplicationContext {
                let dynamicResolver = new DynamicDependencyResolver(this.injector, dependencyData);
                 Object.defineProperty(instance, fieldName, dynamicResolver.getPropertyDescriptor());
             });
+
+            logger.debug(`Wiring properties for '${componentData.componentName}' component.`);
             injectionData.properties.forEach((propertyKey, fieldName) => {
                 Reflect.set(instance, fieldName, this.environment.getProperty(propertyKey));
             });
@@ -185,12 +197,15 @@ export class ApplicationContext {
     }
 
     private initializeDefinitionPostProcessors() {
+        logger.verbose('Initializing component definition post processors...');
         // NOTE: add custom defined component definition post processors
         this.configurationData.componentDefinitionPostProcessorFactory.components.push(AspectDefinitionPostProcessor);
 
         // NOTE: initialize all component definition post processors
         for (let CompConstructor of this.getActiveDefinitionPostProcessors()) {
             let componentData = ComponentUtil.getComponentData(CompConstructor);
+            logger.debug(`Initializing and registering component definition post processor: '${componentData
+                .componentName}'`);
 
             let instance = new CompConstructor();
             if (!ComponentDefinitionPostProcessorUtil.isIComponentDefinitionPostProcessor(instance)) {
@@ -208,8 +223,10 @@ export class ApplicationContext {
     }
 
     private initializePostProcessors() {
+        logger.verbose('Initializing component post processors...');
         for (let CompConstructor of this.getActivePostProcessors()) {
             let componentData = ComponentUtil.getComponentData(CompConstructor);
+            logger.debug(`Initializing and registering component post processor: '${componentData.componentName}'`);
 
             let instance = new CompConstructor();
             if (!ComponentPostProcessorUtil.isIComponentPostProcessor(instance)) {
@@ -225,22 +242,25 @@ export class ApplicationContext {
     }
 
     private async postProcessDefinition() {
+        logger.info('Postprocessing component definitions...');
         this.configurationData.componentFactory.components = _.map(
             this.configurationData.componentFactory.components, (componentDefinition) => {
+                logger.debug(`Postprocessing component definition for: '${componentDefinition.name}'`);
                 for (let componentDefinitionPostProcessor of this.getOrderedDefinitionPostProcessors()) {
                     let result;
                     try {
                         result = componentDefinitionPostProcessor.postProcessDefinition(componentDefinition);
                     } catch (err) {
                         throw new PostProcessError(`postProcessDefinition() from ${componentDefinitionPostProcessor.
-                                constructor.name} failed on ${componentDefinition.constructor.name}`, err);
+                            constructor.name} failed on ${ComponentUtil
+                            .getComponentData(componentDefinition).componentName}`, err);
                     }
                     if (_.isFunction(result)) {
                         componentDefinition = result;
                     } else if (!_.isUndefined(result)) {
                         throw new PostProcessError(componentDefinitionPostProcessor.constructor.name +
                             ' (Component Definition Post Processor) must return a constructor function for component ' +
-                            componentDefinition.constructor.name);
+                            ComponentUtil.getComponentData(componentDefinition).componentName);
                     }
                 }
                 return componentDefinition;
@@ -249,10 +269,13 @@ export class ApplicationContext {
     }
 
     private async postProcessBeforeInit() {
+        logger.info('Postprocessing components before initialization...');
         for (let componentPostProcessor of this.getOrderedPostProcessors()) {
 
             for (let componentConstructor of this.getActiveComponents()) {
                 let componentData = ComponentUtil.getComponentData(componentConstructor);
+                logger.debug(`Post processing component '${componentData.componentName}' by 
+                    '${componentPostProcessor.name}' component post processor.`);
                 let instance = this.injector.getComponent(componentData.classToken);
                 try {
                     componentPostProcessor.postProcessBeforeInit(instance);
@@ -265,10 +288,13 @@ export class ApplicationContext {
     }
 
     private async postProcessAfterInit() {
+        logger.info('Postprocessing components after initialization...');
         for (let componentPostProcessor of this.getOrderedPostProcessors()) {
 
             for (let componentConstructor of this.getActiveComponents()) {
                 let componentData = ComponentUtil.getComponentData(componentConstructor);
+                logger.debug(`Post processing component '${componentData.componentName}' by 
+                    '${componentPostProcessor.name}' component post processor.`);
                 let instance = this.injector.getComponent(componentData.classToken);
                 try {
                     componentPostProcessor.postProcessAfterInit(instance);
@@ -281,6 +307,7 @@ export class ApplicationContext {
     }
 
     private async executePostConstruction() {
+        logger.info('Executing @PostConstruct methods for all components...');
         for (let CompConstructor of this.getActiveComponents()) {
             let componentData = ComponentUtil.getComponentData(CompConstructor);
             let postConstructMethod = LifeCycleHooksUtil.getConfig(CompConstructor).postConstructMethod;
@@ -289,6 +316,7 @@ export class ApplicationContext {
                 if (!_.isFunction(instance[postConstructMethod])) {
                     throw new DecoratorUsageError(`@PostConstruct is not on a method (${postConstructMethod})`);
                 }
+                logger.debug(`Executing @PostConstruct method for '${componentData.componentName}' component.`);
                 try {
                     await instance[postConstructMethod]();
                 } catch (err) {
@@ -299,6 +327,7 @@ export class ApplicationContext {
     }
 
     private async executePreDestruction() {
+        logger.info('Executing @PreDestroy methods for all components...');
         for (let CompConstructor of this.getActiveComponents()) {
             let componentData = ComponentUtil.getComponentData(CompConstructor);
             let preDestroyMethod = LifeCycleHooksUtil.getConfig(CompConstructor).preDestroyMethod;
@@ -307,6 +336,7 @@ export class ApplicationContext {
                 if (!_.isFunction(instance[preDestroyMethod])) {
                     throw new DecoratorUsageError(`@PreDestroy is not on a method (${preDestroyMethod})`);
                 }
+                logger.debug(`Executing @PreDestroy method for '${componentData.componentName}' component.`);
                 try {
                     await instance[preDestroyMethod]();
                 } catch (err) {
@@ -390,6 +420,7 @@ export class ApplicationContext {
     }
 
     private initializeEnvironment() {
+        logger.info(`Initializing the ApplicationContext's Environment...`);
         this.environment = new Environment();
         this.environment.setActiveProfiles(...this.configurationData.activeProfiles);
         this.environment.setApplicationProperties(this.configurationData.propertySourcePaths);

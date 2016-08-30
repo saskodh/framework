@@ -19,18 +19,18 @@ export {RequestMapping, RequestMappingConfig, RequestMethod} from "./lib/decorat
 export {Interceptor} from "./lib/decorators/InterceptorDecorator";
 export {Order} from "./lib/decorators/OrderDecorator";
 export {Aspect, Before, After, AfterReturning, AfterThrowing, Around} from "./lib/decorators/AspectDecorator";
+export {Cacheable, CacheEvict, CachePut} from "./lib/decorators/CacheableDecorator";
+export {EnableCaching} from "./lib/decorators/EnableCachingDecorator";
 
 export { RequestContext, REQUEST_TOKEN, RESPONSE_TOKEN } from "./lib/web/context/RequestContext";
 export { RequestContextHolder } from "./lib/web/context/RequestContextHolder";
-
-export {Cacheable, CacheEvict, CachePut} from "./lib/decorators/CacheableDecorator";
-export {EnableCaching} from "./lib/decorators/EnableCachingDecorator";
 
 export {ApplicationContext} from "./lib/di/ApplicationContext";
 export {ComponentDefinitionPostProcessor, IComponentDefinitionPostProcessor}
     from "./lib/processors/ComponentDefinitionPostProcessor";
 export {ComponentPostProcessor, IComponentPostProcessor} from "./lib/processors/ComponentPostProcessor";
 export {Environment} from "./lib/di/Environment";
+export { LoggerFactory } from "./lib/helpers/logging/LoggerFactory";
 
 // exported error definitions
 export {ApplicationContextError, ComponentInitializationError, ComponentWiringError,
@@ -41,4 +41,5 @@ export {DecoratorUsageError, DecoratorUsageTypeError} from "./lib/errors/Decorat
 export {InjectionError} from "./lib/errors/InjectionError"
 export {InvalidUsageError} from "./lib/errors/InvalidUsageError"
 export {WebError, RouteHandlerError, InterceptorError} from "./lib/errors/WebErrors"
-export {AspectError, AfterAdviceError, AfterReturningAdviceError, BeforeAdviceError} from "./lib/errors/AspectErrors"
+export {AspectError, AfterAdviceError, AfterReturningAdviceError, BeforeAdviceError,
+    AfterThrowingAdviceError} from "./lib/errors/AspectErrors"

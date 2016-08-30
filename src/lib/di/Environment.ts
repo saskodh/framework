@@ -4,6 +4,9 @@ import { Component } from "../decorators/ComponentDecorator";
 import { PropertySourceUtil } from "../decorators/PropertySourceDecorator";
 import { ProfiledPath } from "../decorators/ConfigurationDecorator";
 import { BadArgumentError } from "../errors/BadArgumentErrors";
+import { LoggerFactory } from "../helpers/logging/LoggerFactory";
+
+let logger = LoggerFactory.getInstance();
 
 @Component()
 export class Environment {
@@ -85,6 +88,7 @@ export class Environment {
     }
 
     setApplicationProperties(propertySourcePaths: Array<ProfiledPath>) {
+        logger.verbose('Importing application properties.');
         let isActiveProfilesPropertySet = (!_.isUndefined(this.getProperty(this.ACTIVE_PROFILES_PROPERTY_KEY)));
         let viablePaths = _.map(_.filter(propertySourcePaths, (profiledPath: ProfiledPath) =>
                 (profiledPath.profiles.length === 0 || this.acceptsProfiles(...profiledPath.profiles))),

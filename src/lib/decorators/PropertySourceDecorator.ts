@@ -4,6 +4,9 @@ import { GeneralUtils } from "../helpers/GeneralUtils";
 import {RequireUtils} from "../helpers/RequireUtils";
 import { DecoratorType, DecoratorUtil } from "../helpers/DecoratorUtils";
 import { BadArgumentError } from "../errors/BadArgumentErrors";
+import { LoggerFactory } from "../helpers/logging/LoggerFactory";
+
+let logger = LoggerFactory.getInstance();
 
 /**
  * A decorator for defining a JSON property source for the configuration properties.
@@ -23,7 +26,7 @@ export class PropertySourceUtil {
     static getPropertiesFromPaths(...propertySourcePaths: Array<string>): Map<string, string> {
         let resultPropertiesMap = new Map<string, string>();
         for (let path of propertySourcePaths) {
-            console.log(`Loading properties by @PropertySource from "${path}"`);
+            logger.debug(`Loading properties by @PropertySource from "${path}"`);
             let properties;
             try {
                 properties = RequireUtils.require(path);

@@ -4,7 +4,9 @@ import { Component, ComponentUtil } from "./ComponentDecorator";
 import { Environment } from "../di/Environment";
 import { DecoratorUsageError, DecoratorUsageTypeError } from "../errors/DecoratorUsageErrors";
 import { DecoratorUtil, DecoratorType } from "../helpers/DecoratorUtils";
+import { LoggerFactory } from "../helpers/logging/LoggerFactory";
 
+let logger = LoggerFactory.getInstance();
 const CONFIGURATION_HOLDER_TOKEN = Symbol('configuration_holder_token');
 
 export class ProfiledPath {
@@ -39,6 +41,7 @@ export class ConfigurationData {
     }
 
     loadAllComponents(environment: Environment) {
+        logger.info('Loading components by component scan...');
         ComponentScanUtil.getComponentsFromPaths(this.componentScanPaths, environment)
             .forEach((component) => {
                 if (ComponentUtil.isComponentDefinitionPostProcessor(component)) {

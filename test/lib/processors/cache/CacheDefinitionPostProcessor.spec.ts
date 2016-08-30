@@ -8,6 +8,7 @@ import {
     CacheUtil
 } from "../../../../src/lib/decorators/CacheableDecorator";
 import { I_CACHE_PROVIDER_TOKEN } from "../../../../src/lib/processors/cache/ICacheProvider";
+import { Component } from "../../../../src/lib/decorators/ComponentDecorator";
 
 describe('CacheDefinitionPostProcessor', function () {
     let cacheDefinitionPostProcessor;
@@ -19,6 +20,7 @@ describe('CacheDefinitionPostProcessor', function () {
 
     it('should create cache', async function () {
         // given
+        @Component()
         class ClassA {
             @Cacheable({ cacheName: 'cacheOne', key: 'first' })
             methodOne(first, second, third) { return 'cacheable'; }
@@ -65,6 +67,7 @@ describe('CacheDefinitionPostProcessor', function () {
 
     it('should create proxy method which will not return from the cache', async function () {
         // given
+        @Component()
         class A {
             methodOne(first) { return 'methodOneResult'; }
         }
@@ -121,6 +124,7 @@ describe('CacheDefinitionPostProcessor', function () {
 
     it('should create proxy method which will return from the cache', async function () {
         // given
+        @Component()
         class A {
             methodOne(first) { return 'methodOneResult'; }
         }
@@ -227,6 +231,7 @@ describe('CacheDefinitionPostProcessor', function () {
 
     it('should delete all entries from the cache', async function () {
         // given
+        @Component()
         class A {
             methodOne(first) { return 'methodOneResult'; }
         }
@@ -273,6 +278,7 @@ describe('CacheDefinitionPostProcessor', function () {
 
     it('should delete a single entry from the cache', async function () {
         // given
+        @Component()
         class A {
             methodOne(first) { return 'methodOneResult'; }
         }
@@ -328,6 +334,7 @@ describe('CacheDefinitionPostProcessor', function () {
 
     it('should create proxy method which will always set in the cache', async function () {
         // given
+        @Component()
         class A {
             methodOne(first) { return 'methodOneResult'; }
         }
@@ -380,6 +387,7 @@ describe('CacheDefinitionPostProcessor', function () {
 
     it('should create the key for the cache hash', async function () {
         // given
+        @Component()
         class A {
             methodOne(first, second, third) { return 'methodOneResult'; }
         }
@@ -412,6 +420,7 @@ describe('CacheDefinitionPostProcessor', function () {
 
     it('should return all args if no keys are found', async function () {
         // given
+        @Component()
         class A {
             methodOne(first, second, third) { return 'methodOneResult'; }
         }
@@ -447,6 +456,7 @@ describe('CacheDefinitionPostProcessor', function () {
 
     it('should return all args as key when the key is undefined', async function () {
         // given
+        @Component()
         class A {
             methodOne(first, second, third) { return 'methodOneResult'; }
         }

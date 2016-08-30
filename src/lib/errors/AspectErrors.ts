@@ -29,3 +29,5 @@ export class BeforeAdviceError extends AspectError {}
 export class AfterAdviceError extends AspectError {}
 
 export class AfterReturningAdviceError extends AspectError {}
+
+export class AfterThrowingAdviceError extends AspectError {}

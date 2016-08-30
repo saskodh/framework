@@ -3,7 +3,7 @@ import { ApplicationContext, ApplicationContextState } from "../../../src/lib/di
 import {
     Configuration, ConfigurationUtil, ConfigurationData,
 } from "../../../src/lib/decorators/ConfigurationDecorator";
-import { ComponentUtil } from "../../../src/lib/decorators/ComponentDecorator";
+import { ComponentUtil, Component } from "../../../src/lib/decorators/ComponentDecorator";
 import { Injector } from "../../../src/lib/di/Injector";
 import { Dispatcher } from "../../../src/lib/web/Dispatcher";
 import { spy, stub, match, assert } from "sinon";
@@ -14,7 +14,6 @@ import {
 import {
     ComponentPostProcessorUtil
 } from "../../../src/lib/processors/ComponentPostProcessor";
-import { OrderUtil } from "../../../src/lib/decorators/OrderDecorator";
 import { LifeCycleHooksUtil } from "../../../src/lib/decorators/LifeCycleHooksDecorators";
 import { ActiveProfiles } from "../../../src/lib/decorators/ProfileDecorators";
 import { Environment } from "../../../src/lib/di/Environment";
@@ -1253,7 +1252,9 @@ describe('ApplicationContext throws on user misuse', function () {
         let definitionPostProcessor1 = {
             postProcessDefinition : throwingStub
         };
-        localAppContext.configurationData.componentFactory.components = ['comp1'];
+        @Component()
+        class A {}
+        localAppContext.configurationData.componentFactory.components = [A];
         let stubOnGetOrderedDefinitionPostProcessors = stub(appContext, 'getOrderedDefinitionPostProcessors')
             .returns([definitionPostProcessor1]);
         let hasThrown = false;
@@ -1276,8 +1277,10 @@ describe('ApplicationContext throws on user misuse', function () {
         class DefinitionPostProcessor1 {
             postProcessDefinition = stub1;
         }
+        @Component()
+        class A {}
         let definitionPostProcessor1 = new DefinitionPostProcessor1();
-        localAppContext.configurationData.componentFactory.components = ['comp1'];
+        localAppContext.configurationData.componentFactory.components = [A];
         let stubOnGetOrderedDefinitionPostProcessors = stub(appContext, 'getOrderedDefinitionPostProcessors')
             .returns([definitionPostProcessor1]);
 

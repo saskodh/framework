@@ -4,6 +4,10 @@ import { OrderUtil } from "../decorators/OrderDecorator";
 import { RouterConfigItem } from "../decorators/RequestMappingDecorator";
 import { RequestContextInitializer } from "./context/RequestContextInitializer";
 import { RouteHandlerError, InterceptorError } from "../errors/WebErrors";
+import { LoggerFactory } from "../helpers/logging/LoggerFactory";
+import { ComponentUtil } from "../decorators/ComponentDecorator";
+
+let logger = LoggerFactory.getInstance();
 
 /**
  * RouteConfigurer responsible for configuring the Express 4.x router that will be exposed by the dispatcher.
@@ -25,6 +29,7 @@ export class RouterConfigurer {
      * @param instance instance of the interceptor
      * */
     registerInterceptor(instance) {
+        logger.debug(`Registering interceptor ${ComponentUtil.getComponentData(instance.constructor).componentName}.`);
         this.interceptors.push(instance);
     }
 
@@ -47,15 +52,23 @@ export class RouterConfigurer {
     }
 
     private configureMiddlewares() {
+        logger.info('Configuring the exposed express router...');
+
         // NOTE: The request context middleware should always be registered first
+        logger.debug('Registering request context initializer middleware...');
         this.router.use(RequestContextInitializer.getMiddleware());
 
+        logger.debug('Registering pre-handler middleware...');
         this.router.use(this.wrap(this.preHandler.bind(this)));
         // NOTE: we will have our middleware handler when we drop the dependency to express
         // That would require the dispatching by path to be implemented on our side
+        logger.debug('Registering route-handler (RequestMapping) middleware...');
         this.registerRouteHandlers();
+        logger.debug('Registering post-handler middleware...');
         this.router.use(this.wrap(this.postHandler.bind(this)));
+        logger.debug('Registering error-resolver middleware...');
         this.router.use(this.errorResolver);
+        logger.debug('Registering resolver middleware...');
         this.router.use(this.wrap(this.resolver.bind(this)));
     }
 
@@ -63,13 +76,15 @@ export class RouterConfigurer {
         for (let [route, handler] of this.routeHandlers.entries()) {
             let httpMethod = route.requestConfig.method;
             let path = route.requestConfig.path;
-            console.log(`Registering route. Path: '${path}', method: ${httpMethod}.`);
+            logger.debug(`Registering route. Path: '${path}', method: ${httpMethod}. Handler: ${ComponentUtil
+                .getComponentData(handler.constructor).componentName}.${route.methodHandler}()`);
 
             this.router[httpMethod](path, this.wrap(async(request, response, next) => {
                 let result;
                 try {
                     result = await handler[route.methodHandler](request, response);
                 } catch (err) {
+                    logger.debug("Error occurred in the route handler.");
                     next(new RouteHandlerError(`${handler.constructor.name}.${route.
                         methodHandler} failed on ${httpMethod.toUpperCase()} ${path}`, err));
                     return;
@@ -92,9 +107,8 @@ export class RouterConfigurer {
                     try {
                         await interceptor.afterCompletion(request, response);
                     } catch (err) {
-                        // TODO: this doesnt throw because it is async and on an event listener (response on finish)
-                        throw new InterceptorError(`${interceptor.constructor.
-                            name}.afterCompletion failed on ${request.method} ${request.url}`, err);
+                        logger.error(`After completition failed on ${request.method} ${request.url}. Interceptor: ` +
+                            `${ComponentUtil.getComponentData(interceptor.constructor).componentName}`, err);
                     }
                 }
             }
@@ -109,8 +123,9 @@ export class RouterConfigurer {
                         return;
                     }
                 } catch (err) {
-                    next(new InterceptorError(`${interceptor.constructor.name}.preHandle failed on ${request.
-                        method} ${request.url}`, err));
+                    logger.debug("Error occurred in the pre handler.");
+                    next(new InterceptorError(`${ComponentUtil.getComponentData(interceptor.constructor)
+                        .componentName}.preHandle failed on ${request.method} ${request.url}`, err));
                     return;
                 }
             }
@@ -126,8 +141,9 @@ export class RouterConfigurer {
                 try {
                     await interceptor.postHandle(request, response);
                 } catch (err) {
-                    next(new InterceptorError(`${interceptor.constructor.name}.postHandle failed on ${request.
-                        method} ${request.url}`, err));
+                    logger.debug("Error occurred in the post handler.");
+                    next(new InterceptorError(`${ComponentUtil.getComponentData(interceptor.constructor)
+                        .componentName}.postHandle failed on ${request.method} ${request.url}`, err));
                     return;
                 }
             }
@@ -135,7 +151,7 @@ export class RouterConfigurer {
         next();
     }
     private errorResolver(error: Error, request, response, next) {
-        console.error(error.stack);
+        logger.error('Unhandled error occurred. Returned status 500 with apropriate message.\n%s', error.stack);
         response.status(500);
         response.send("Code 500: Internal Server error");
     }
