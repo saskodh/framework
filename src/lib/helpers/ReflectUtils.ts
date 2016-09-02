@@ -1,4 +1,5 @@
 import * as _ from "lodash";
+import { DecoratorType } from "./DecoratorUtils";
 
 export class ReflectUtils {
 
@@ -10,6 +11,7 @@ export class ReflectUtils {
         return _.uniq(methodsNames);
     }
 
+    // todo: add memoization to improve the performance
     static getClassHierarchy(clazz): Array<any> {
         let prototypeChain = [];
 
@@ -19,6 +21,29 @@ export class ReflectUtils {
             currentType = Reflect.getPrototypeOf(currentType);
         }
 
+        // todo: append Object in the class hierarchy
+        // return [...prototypeChain, Object];
         return prototypeChain;
+    }
+
+    static getOwnSymbol(target: any, token: symbol, decoratorType: Array<DecoratorType>) {
+        let allSymbols: Array<any> = [];
+        if (decoratorType.indexOf(DecoratorType.CLASS) === -1) {
+            allSymbols = Object.getOwnPropertySymbols(target.prototype);
+            allSymbols = allSymbols.concat(Object.getOwnPropertySymbols(target));
+        } else {
+            allSymbols = Object.getOwnPropertySymbols(target);
+            allSymbols = allSymbols.concat(Object.getOwnPropertySymbols(target.prototype));
+        }
+        if (allSymbols.indexOf(token) !== -1) {
+            return target[token] || target.prototype[token];
+        }
+    }
+
+    static getOwnSymbolBeforeInit(target: any, token: symbol, decoratorType: Array<DecoratorType>) {
+        let allSymbols: Array<any> =  Object.getOwnPropertySymbols(target);
+        if (allSymbols.indexOf(token) !== -1) {
+            return target[token];
+        }
     }
 }

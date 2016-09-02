@@ -1,4 +1,3 @@
-import { AspectUtil, ProceedingJoinPoint, AdviceType } from "../../decorators/AspectDecorator";
 import { ProxyUtils } from "../../helpers/ProxyUtils";
 import {
     ComponentDefinitionPostProcessor,
@@ -12,6 +11,10 @@ import {
     BeforeAdviceError, AfterReturningAdviceError, AfterAdviceError, AspectErrorInfo, AfterThrowingAdviceError
 } from "../../errors/AspectErrors";
 import { LoggerFactory } from "../../helpers/logging/LoggerFactory";
+import { DecoratorHelper } from "../../decorators/common/DecoratorHelper";
+import { AdviceDecoratorMetadata } from "../../decorators/aspect/AdviceDecoratorMetadata";
+import { ProceedingJoinPoint } from "../../decorators/aspect/AroundDecorator";
+import { AdviceType } from "../../decorators/aspect/AdviceType";
 
 let logger = LoggerFactory.getInstance();
 
@@ -34,8 +37,9 @@ export class AspectDefinitionPostProcessor implements IComponentDefinitionPostPr
         for (let AspectConstructor of this.aspectComponentDefinitions) {
             let aspectToken = ComponentUtil.getClassToken(AspectConstructor);
             for (let adviceType of AdviceType.getAllAdviceTypes()) {
-                let pointcuts = AspectUtil.getPointcuts(AspectConstructor.prototype, adviceType);
-                for (let pointcut of pointcuts) {
+                let adviceDecoratorMetadata: AdviceDecoratorMetadata = DecoratorHelper
+                    .getMetadata(AspectConstructor, adviceType.adviceDecorator, new AdviceDecoratorMetadata());
+                for (let pointcut of adviceDecoratorMetadata.pointcuts) {
                     let componentName = ComponentUtil.getComponentData(componentConstructor).componentName;
                     if (componentName.match(<any> pointcut.pointcutConfig.classRegex) !== null) {
                         let componentMethodsNames = ReflectUtils.getAllMethodsNames(componentConstructor);
@@ -48,7 +52,7 @@ export class AspectDefinitionPostProcessor implements IComponentDefinitionPostPr
                                 let advice = AspectConstructor.prototype[pointcut.targetMethod];
                                 let aspectErrorInfo = new AspectErrorInfo(aspectName,
                                     pointcut.targetMethod, componentName, methodName);
-                                let proxiedMethod = this.adviceProxyMethods.get(adviceType)
+                                let proxiedMethod = this.adviceProxyMethods.get(adviceType.adviceName)
                                     .apply(this, [joinPoint, advice, aspectToken, aspectErrorInfo]);
                                 Reflect.set(AspectProxy.prototype, methodName, proxiedMethod);
                             }
@@ -70,11 +74,11 @@ export class AspectDefinitionPostProcessor implements IComponentDefinitionPostPr
 
     private initialize() {
         this.adviceProxyMethods = new Map();
-        this.adviceProxyMethods.set(AdviceType.BEFORE, this.createBeforeProxyMethod);
-        this.adviceProxyMethods.set(AdviceType.AFTER, this.createAfterProxyMethod);
-        this.adviceProxyMethods.set(AdviceType.AFTER_RETURNING, this.createAfterReturningProxyMethod);
-        this.adviceProxyMethods.set(AdviceType.AFTER_THROWING, this.createAfterThrowingProxyMethod);
-        this.adviceProxyMethods.set(AdviceType.AROUND, this.createAroundProxyMethod);
+        this.adviceProxyMethods.set(AdviceType.BEFORE.adviceName, this.createBeforeProxyMethod);
+        this.adviceProxyMethods.set(AdviceType.AFTER.adviceName, this.createAfterProxyMethod);
+        this.adviceProxyMethods.set(AdviceType.AFTER_RETURNING.adviceName, this.createAfterReturningProxyMethod);
+        this.adviceProxyMethods.set(AdviceType.AFTER_THROWING.adviceName, this.createAfterThrowingProxyMethod);
+        this.adviceProxyMethods.set(AdviceType.AROUND.adviceName, this.createAroundProxyMethod);
     }
 
     private createBeforeProxyMethod(joinPoint, advice, aspectToken, aspectErrorInfo) {

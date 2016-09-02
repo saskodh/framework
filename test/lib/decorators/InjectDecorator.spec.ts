@@ -4,7 +4,7 @@ import {
     Component, ComponentUtil
 } from "../../../src/lib/decorators/ComponentDecorator";
 import {
-    Inject, InjectUtil, Value, Autowired, DynamicInject, InjectionData, ThreadLocal
+    Inject, InjectUtil, Value, Autowired, DynamicInject, InjectionDataDecoratorMetadata, ThreadLocal
 } from "../../../src/lib/decorators/InjectionDecorators";
 import { Qualifier } from "../../../src/lib/decorators/QualifierDecorator";
 import { InjectionError } from "../../../src/lib/errors/InjectionError";
@@ -199,7 +199,7 @@ describe('DynamicInjectDecorator', function () {
     it('should add metadata', function () {
         // given
         let givenToken = Symbol('given_token');
-        let givenInjectionData = new InjectionData();
+        let givenInjectionData = new InjectionDataDecoratorMetadata();
         let stubOnGetInjectionData = stub(InjectUtil, 'initIfDoesntExist').returns(givenInjectionData);
         let stubOnCreateDependencyData = stub(InjectUtil, 'createDependencyData').returns('dependency-data');
 
@@ -229,7 +229,7 @@ describe('ThreadLocalDecorator', function () {
 
     it('should add metadata', function () {
         // given
-        let givenInjectionData = new InjectionData();
+        let givenInjectionData = new InjectionDataDecoratorMetadata();
         let stubOnGetInjectionData = stub(InjectUtil, 'initIfDoesntExist').returns(givenInjectionData);
 
         // when

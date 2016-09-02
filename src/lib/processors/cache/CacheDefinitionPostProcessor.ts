@@ -2,14 +2,18 @@ import * as hash from "object-hash";
 import * as _ from "lodash";
 import { ComponentDefinitionPostProcessor } from "../ComponentDefinitionPostProcessor";
 import { ProxyUtils } from "../../helpers/ProxyUtils";
-import { CacheUtil, CacheDecoratorType, CacheConfigItem } from "../../decorators/CacheableDecorator";
 import { Injector } from "../../di/Injector";
 import { ICacheProvider, I_CACHE_PROVIDER_TOKEN } from "./ICacheProvider";
 import { LoggerFactory } from "../../helpers/logging/LoggerFactory";
 import { ComponentUtil } from "../../decorators/ComponentDecorator";
+import { DecoratorHelper } from "../../decorators/common/DecoratorHelper";
+import { CacheDecoratorMetadata, CacheConfigItem } from "../../decorators/cache/CacheClasses";
+import { CacheDecoratorType } from "../../decorators/cache/CacheDecoratorType";
+import { Order } from "../../decorators/OrderDecorator";
 
 let logger = LoggerFactory.getInstance();
 
+@Order(-1)
 @ComponentDefinitionPostProcessor()
 export class CacheDefinitionPostProcessor {
 
@@ -27,9 +31,9 @@ export class CacheDefinitionPostProcessor {
 
     private initialize() {
         this.cacheProxyMethods = new Map();
-        this.cacheProxyMethods.set(CacheDecoratorType.CACHEABLE, this.createCacheableProxyMethod);
-        this.cacheProxyMethods.set(CacheDecoratorType.CACHE_EVICT, this.createCacheEvictProxyMethod);
-        this.cacheProxyMethods.set(CacheDecoratorType.CACHE_PUT, this.createCachePutProxyMethod);
+        this.cacheProxyMethods.set(CacheDecoratorType.CACHEABLE.cacheTypeName, this.createCacheableProxyMethod);
+        this.cacheProxyMethods.set(CacheDecoratorType.CACHE_EVICT.cacheTypeName, this.createCacheEvictProxyMethod);
+        this.cacheProxyMethods.set(CacheDecoratorType.CACHE_PUT.cacheTypeName, this.createCachePutProxyMethod);
     }
 
     postProcessDefinition(componentConstructor: FunctionConstructor): any {
@@ -37,12 +41,13 @@ export class CacheDefinitionPostProcessor {
         class CacheProxy extends componentConstructor {}
 
         for (let cacheDecoratorType of CacheDecoratorType.getAllCacheDecoratorTypes()) {
-            let cacheConfigArray = CacheUtil.getCacheTypeConfig(CacheProxy.prototype, cacheDecoratorType);
-            for (let cacheConfig of cacheConfigArray) {
+            let cacheConfigArray = DecoratorHelper
+                .getMetadata(CacheProxy, cacheDecoratorType.cacheDecorator, new CacheDecoratorMetadata());
+            for (let cacheConfig of cacheConfigArray.methods) {
                 let originalMethod = CacheProxy.prototype[cacheConfig.method];
-                logger.debug(`Setting ${cacheDecoratorType} proxy on ${ComponentUtil
+                logger.debug(`Setting ${cacheDecoratorType.cacheTypeName} proxy on ${ComponentUtil
                     .getComponentData(componentConstructor).componentName}.${originalMethod.name}()`);
-                let proxiedMethod = this.cacheProxyMethods.get(cacheDecoratorType)
+                let proxiedMethod = this.cacheProxyMethods.get(cacheDecoratorType.cacheTypeName)
                     .apply(this, [originalMethod, cacheConfig]);
                 Reflect.set(CacheProxy.prototype, cacheConfig.method, proxiedMethod);
             }
@@ -116,7 +121,8 @@ export class CacheDefinitionPostProcessor {
         }
 
         let differentKeys = key.split('#').slice(1);
-        let methodArgumentNames = this.getFunctionArgumentnames(methodRef);
+        console.log("NOW");
+        let methodArgumentNames = this.getFunctionArgumentNames(methodRef);
         let keys = [];
         for (let differentKey of differentKeys) {
             let keyFragments = differentKey.split('.');
@@ -140,7 +146,7 @@ export class CacheDefinitionPostProcessor {
         return keys;
     }
 
-    private getFunctionArgumentnames(func) {
+    private getFunctionArgumentNames(func) {
     return (func + '')
         .replace(/[/][/].*$/mg, '') // strip single-line comments
         .replace(/\s+/g, '') // strip white space

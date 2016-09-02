@@ -1,17 +1,34 @@
 import * as _ from "lodash";
-
-const ORDER_DECORATOR_TOKEN = Symbol('order_decorator_token');
+import { DecoratorHelper } from "./common/DecoratorHelper";
+import { DecoratorType } from "../helpers/DecoratorUtils";
+import { StandaloneDecoratorMetadata } from "./common/DecoratorMetadata";
 
 export function Order(orderValue: number) {
     return function(target) {
-        target[ORDER_DECORATOR_TOKEN] = orderValue;
+        let orderDecoratorMetadata = DecoratorHelper.getOwnMetadata(target, Order, new OrderDecoratorMetadata());
+        orderDecoratorMetadata.orderValue = orderValue;
+        DecoratorHelper.setMetadata(target, Order, orderDecoratorMetadata);
     };
+}
+DecoratorHelper.createDecorator(Order, DecoratorType.CLASS);
+
+export class OrderDecoratorMetadata extends StandaloneDecoratorMetadata<OrderDecoratorMetadata> {
+    orderValue: number;
+
+    constructor() {
+        super();
+        this.orderValue = Number.MIN_VALUE;
+    }
 }
 
 export class OrderUtil {
 
     static getOrder (target) {
-        return target[ORDER_DECORATOR_TOKEN];
+        let orderDecoratorMetadata = DecoratorHelper.getOwnMetadata<OrderDecoratorMetadata>(target, Order);
+        if (!orderDecoratorMetadata) {
+            return  Number.MAX_VALUE;
+        }
+        return orderDecoratorMetadata.orderValue;
     }
 
     static orderList (list): Array<any> {

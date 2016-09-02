@@ -21,6 +21,8 @@ describe('ReflectUtils', function () {
         // when
         let methodNamesD = ReflectUtils.getAllMethodsNames(D);
         let methodNamesB = ReflectUtils.getAllMethodsNames(B);
+        console.log(methodNamesB);
+        console.log(methodNamesD);
 
         // then
         expect(methodNamesD.length).to.be.eq(4);

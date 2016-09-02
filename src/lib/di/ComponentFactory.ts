@@ -6,4 +6,7 @@ export class ComponentFactory {
         this.components = [];
     }
 
+    mergeComponentFactory(componentFactory: ComponentFactory) {
+        this.components = this.components.concat(componentFactory.components);
+    }
 }

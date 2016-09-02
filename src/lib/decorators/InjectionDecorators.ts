@@ -3,6 +3,9 @@ import { TypeUtils } from "../helpers/TypeUtils";
 import { InjectionError } from "../errors/InjectionError";
 import { DecoratorType, DecoratorUtil } from "../helpers/DecoratorUtils";
 import "reflect-metadata";
+import { DecoratorHelper } from "./common/DecoratorHelper";
+import { DecoratorMetadata } from "./common/DecoratorMetadata";
+import { Decorator } from "./common/DecoratorDefinition";
 
 const INJECT_DECORATOR_TOKEN = Symbol('injector_decorator_token');
 
@@ -15,15 +18,30 @@ export class DependencyData {
         this.isArray = isArray;
     }
 }
-export class InjectionData {
+export class InjectionDataDecoratorMetadata extends DecoratorMetadata<InjectionDataDecoratorMetadata> {
     dependencies: Map<string, DependencyData>;
     dynamicDependencies: Map<string, DependencyData>;
     properties: Map<string, string>;
 
     constructor() {
+        super();
         this.dependencies = new Map();
         this.dynamicDependencies = new Map();
         this.properties = new Map();
+    }
+
+    mergeMetadata(injectionData: InjectionDataDecoratorMetadata) {
+        injectionData.dependencies.forEach((value, key, map) => {
+            this.dependencies.set(key, value);
+        }, this);
+
+        injectionData.dynamicDependencies.forEach((value, key, map) => {
+            this.dynamicDependencies.set(key, value);
+        }, this);
+
+        injectionData.properties.forEach((value, key, map) => {
+            this.properties.set(key, value);
+        }, this);
     }
 }
 
@@ -32,9 +50,13 @@ export function Inject(dependencyToken?: Symbol) {
         DecoratorUtil.throwOnWrongType(Inject, DecoratorType.PROPERTY, [...arguments]);
         let type = Reflect.getMetadata('design:type', target, fieldName);
         let dependencyData = InjectUtil.createDependencyData(dependencyToken, type, [...arguments]);
-        InjectUtil.initIfDoesntExist(target).dependencies.set(fieldName, dependencyData);
+
+        let injectionDataDecoratorMetadata = DecoratorHelper.getOwnMetadata(target, Inject, new InjectionDataDecoratorMetadata(), true);
+        injectionDataDecoratorMetadata.dependencies.set(fieldName, dependencyData);
+        DecoratorHelper.setMetadata(target, Inject, injectionDataDecoratorMetadata);
     };
 }
+DecoratorHelper.createDecorator(Inject, DecoratorType.PROPERTY);
 
 export function Autowired() {
     return function (target: any, fieldName: string) {
@@ -46,25 +68,37 @@ export function Autowired() {
 export function Value(preopertyKey) {
     return function (target: any, fieldName: string) {
         DecoratorUtil.throwOnWrongType(Value, DecoratorType.PROPERTY, [...arguments]);
-        InjectUtil.initIfDoesntExist(target).properties.set(fieldName, preopertyKey);
+
+        let injectionData = DecoratorHelper.getOwnMetadata(target, Value, new InjectionDataDecoratorMetadata(), true);
+        injectionData.properties.set(fieldName, preopertyKey);
+        DecoratorHelper.setMetadata(target, Value, injectionData);
     };
 }
+DecoratorHelper.createDecorator(Value, DecoratorType.PROPERTY);
 
 export function DynamicInject(dependencyToken?: Symbol) {
     return function (target: any, fieldName: string) {
         let type = Reflect.getMetadata('design:type', target, fieldName);
         let dependencyData = InjectUtil.createDependencyData(dependencyToken, type, [...arguments]);
-        InjectUtil.initIfDoesntExist(target).dynamicDependencies.set(fieldName, dependencyData);
+
+        let injectionData = DecoratorHelper.getOwnMetadata(target, DynamicInject, new InjectionDataDecoratorMetadata(), true);
+        injectionData.dynamicDependencies.set(fieldName, dependencyData);
+        DecoratorHelper.setMetadata(target, DynamicInject, injectionData);
     };
 }
+DecoratorHelper.createDecorator(DynamicInject, DecoratorType.PROPERTY);
 
 export function ThreadLocal() {
     return function (target: any, fieldName: string) {
         let className = target.constructor.name;
         let token = Symbol(`thread-local:${className}#${fieldName}`);
-        InjectUtil.initIfDoesntExist(target).dynamicDependencies.set(fieldName, new DependencyData(token, false));
+
+        let injectionData = DecoratorHelper.getOwnMetadata(target, ThreadLocal, new InjectionDataDecoratorMetadata(), true);
+        injectionData.dynamicDependencies.set(fieldName, new DependencyData(token, false));
+        DecoratorHelper.setMetadata(target, ThreadLocal, injectionData);
     };
 }
+DecoratorHelper.createDecorator(ThreadLocal, DecoratorType.PROPERTY);
 
 export class InjectUtil {
 
@@ -84,18 +118,10 @@ export class InjectUtil {
     }
 
     static getDependencies(target): Map<string, DependencyData> {
-        return this.initIfDoesntExist(target).dependencies;
+        return DecoratorHelper.getMetadata(target, Inject, new InjectionDataDecoratorMetadata()).dependencies;
     }
 
     static getProperties(target): Map<string, string> {
-        return this.initIfDoesntExist(target).properties;
-    }
-
-    // todo find better name
-    static initIfDoesntExist(target): InjectionData {
-        if (!target[INJECT_DECORATOR_TOKEN]) {
-            target[INJECT_DECORATOR_TOKEN] = new InjectionData();
-        }
-        return target[INJECT_DECORATOR_TOKEN];
+        return DecoratorHelper.getMetadata(target, Inject, new InjectionDataDecoratorMetadata()).properties;
     }
 }

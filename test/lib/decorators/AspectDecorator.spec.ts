@@ -2,7 +2,7 @@ import {expect} from 'chai';
 import {
     Aspect, Before, After, AfterThrowing, AfterReturning,
     Around, AdviceType, ProceedingJoinPoint, AspectUtil, PointcutList
-} from "../../../src/lib/decorators/AspectDecorator";
+} from "../../../src/lib/decorators/aspect/AspectDecorator";
 import { stub } from "sinon";
 import { ComponentUtil } from "../../../src/lib/decorators/ComponentDecorator";
 import { DecoratorUsageError } from "../../../src/lib/errors/DecoratorUsageErrors";

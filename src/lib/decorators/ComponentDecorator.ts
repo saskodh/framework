@@ -1,45 +1,56 @@
-import { InjectUtil, InjectionData } from "./InjectionDecorators";
-import { CONTROLLER_DECORATOR_TOKEN } from "./ControllerDecorator";
-import { INTERCEPTOR_DECORATOR_TOKEN } from "./InterceptorDecorator";
-import { COMPONENT_DEFINITION_POST_PROCESSOR_DECORATOR_TOKEN } from "../processors/ComponentDefinitionPostProcessor";
-import { COMPONENT_POST_PROCESSOR_DECORATOR_TOKEN } from "../processors/ComponentPostProcessor";
-import {ASPECT_DECORATOR_TOKEN} from "./AspectDecorator";
+import { InjectionDataDecoratorMetadata } from "./InjectionDecorators";
+import { Interceptor } from "./InterceptorDecorator";
+import {
+    ComponentDefinitionPostProcessor
+} from "../processors/ComponentDefinitionPostProcessor";
+import { ComponentPostProcessor } from "../processors/ComponentPostProcessor";
+import { Aspect } from "./aspect/AspectDecorator";
 import { DecoratorUsageTypeError } from "../errors/DecoratorUsageErrors";
 import { DecoratorUtil, DecoratorType } from "../helpers/DecoratorUtils";
+import { DecoratorHelper } from "./common/DecoratorHelper";
+import { Controller } from "./ControllerDecorator";
+import { DecoratorMetadata } from "./common/DecoratorMetadata";
 
-export class ComponentData {
+export class ComponentDecoratorMetadata extends DecoratorMetadata<ComponentDecoratorMetadata> {
     componentName: string;
-    classToken: Symbol;
-    aliasTokens: Array<Symbol>;
-    injectionData: InjectionData;
+    classToken: symbol;
+    aliasTokens: Array<symbol>;
+    injectionData: InjectionDataDecoratorMetadata;
     profiles: Array<string>;
 
     constructor(componentName: string) {
+        super();
         this.componentName = componentName;
         this.classToken = Symbol('classToken');
         this.aliasTokens = [];
+        this.injectionData = new InjectionDataDecoratorMetadata();
         this.profiles = [];
-        this.injectionData = new InjectionData();
+    }
+
+    mergeMetadata(decoratorMetadata: ComponentDecoratorMetadata) {
+        this.aliasTokens = this.aliasTokens.concat(decoratorMetadata.aliasTokens);
+        this.aliasTokens.push(decoratorMetadata.classToken);
+        this.injectionData.mergeMetadata(decoratorMetadata.injectionData);
     }
 }
-
-const COMPONENT_DECORATOR_TOKEN = Symbol('component_decorator_token');
 
 export function Component() {
     return function (target) {
         DecoratorUtil.throwOnWrongType(Component, DecoratorType.CLASS, [...arguments]);
-        // TODO: Make Duplicate @Component error which distinguishes from extended classes #52
-        let componentData = new ComponentData(target.name);
-        componentData.injectionData = InjectUtil.initIfDoesntExist(target.prototype);
-        target[COMPONENT_DECORATOR_TOKEN] = componentData;
+
+        let componentDecoratorMetadata = new ComponentDecoratorMetadata(target.name);
+        DecoratorHelper.setMetadata(target, Component, componentDecoratorMetadata);
     };
 }
+DecoratorHelper.createDecorator(Component, DecoratorType.CLASS);
 
 export class ComponentUtil {
 
-    static getComponentData(target): ComponentData {
+    static getComponentData(target): ComponentDecoratorMetadata {
         if (target) {
-            return target[COMPONENT_DECORATOR_TOKEN];
+            if (DecoratorHelper.hasMetadata(target, Component)) {
+                return <ComponentDecoratorMetadata> DecoratorHelper.getMetadata(target, Component);
+            }
         }
     }
 
@@ -55,28 +66,28 @@ export class ComponentUtil {
         return this.getComponentData(target).aliasTokens;
     }
 
-    static getInjectionData(target): InjectionData {
+    static getInjectionData(target): InjectionDataDecoratorMetadata {
         return this.getComponentData(target).injectionData;
     }
 
     static isController(target): boolean {
-        return !!target[CONTROLLER_DECORATOR_TOKEN];
+        return DecoratorHelper.hasMetadata(target, Controller);
     }
 
     static isInterceptor(target): boolean {
-        return !!target[INTERCEPTOR_DECORATOR_TOKEN];
+        return DecoratorHelper.hasMetadata(target, Interceptor);
     }
 
     static isComponentDefinitionPostProcessor(target): boolean {
-        return !!target[COMPONENT_DEFINITION_POST_PROCESSOR_DECORATOR_TOKEN];
+        return DecoratorHelper.hasMetadata(target, ComponentDefinitionPostProcessor);
     }
 
     static isComponentPostProcessor(target): boolean {
-        return !!target[COMPONENT_POST_PROCESSOR_DECORATOR_TOKEN];
+        return DecoratorHelper.hasMetadata(target, ComponentPostProcessor);
     }
 
     static isAspect(target): boolean {
-        return !!target[ASPECT_DECORATOR_TOKEN];
+        return DecoratorHelper.hasMetadata(target, Aspect);
     }
 
     static throwWhenNotOnComponentClass (decorator: Function, decoratorArgs: Array<any>, rootCause?: Error) {

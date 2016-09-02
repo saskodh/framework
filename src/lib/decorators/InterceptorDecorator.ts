@@ -1,5 +1,7 @@
 import { Component } from "./ComponentDecorator";
 import { DecoratorUtil, DecoratorType } from "../helpers/DecoratorUtils";
+import { StandaloneDecoratorMetadata } from "./common/DecoratorMetadata";
+import { DecoratorHelper } from "./common/DecoratorHelper";
 
 export interface Interceptor {
     preHandle (request, response);
@@ -12,7 +14,13 @@ export const INTERCEPTOR_DECORATOR_TOKEN = Symbol('interceptor_decorator_token')
 export function Interceptor() {
     return function (target) {
         DecoratorUtil.throwOnWrongType(Interceptor, DecoratorType.CLASS, [...arguments]);
+
         Component()(target);
-        target[INTERCEPTOR_DECORATOR_TOKEN] = true;
+        DecoratorHelper.setMetadata(target, Interceptor, new InterceptorDecoratorMetadata());
     };
+}
+DecoratorHelper.createDecorator(Interceptor, DecoratorType.CLASS);
+
+export class InterceptorDecoratorMetadata extends StandaloneDecoratorMetadata<InterceptorDecoratorMetadata> {
+
 }

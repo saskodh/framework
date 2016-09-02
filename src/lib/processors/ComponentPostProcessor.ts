@@ -1,20 +1,26 @@
 import { Component } from "../decorators/ComponentDecorator";
 import { DecoratorType, DecoratorUtil } from "../helpers/DecoratorUtils";
+import { StandaloneDecoratorMetadata } from "../decorators/common/DecoratorMetadata";
+import { DecoratorHelper } from "../decorators/common/DecoratorHelper";
 
 export interface IComponentPostProcessor {
     postProcessBeforeInit (componentConstructor);
     postProcessAfterInit (componentConstructor);
 }
 
-export const COMPONENT_POST_PROCESSOR_DECORATOR_TOKEN =
-    Symbol('component_definition_post_processor_decorator_token');
-
 export function ComponentPostProcessor() {
     return function (target) {
         DecoratorUtil.throwOnWrongType(ComponentPostProcessor, DecoratorType.CLASS, [...arguments]);
         Component()(target);
-        target[COMPONENT_POST_PROCESSOR_DECORATOR_TOKEN] = true;
+        DecoratorHelper
+            .setMetadata(target, ComponentPostProcessor, new PostProcessorDecoratorMetadata());
     };
+}
+DecoratorHelper.createDecorator(ComponentPostProcessor, DecoratorType.CLASS);
+
+export class PostProcessorDecoratorMetadata extends
+    StandaloneDecoratorMetadata<PostProcessorDecoratorMetadata> {
+
 }
 
 export class ComponentPostProcessorUtil {

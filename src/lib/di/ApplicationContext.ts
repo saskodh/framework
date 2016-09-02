@@ -1,4 +1,4 @@
-import { ConfigurationUtil, ConfigurationData } from "../decorators/ConfigurationDecorator";
+import { ConfigurationUtil, ConfigurationDecoratorMetadata } from "../decorators/ConfigurationDecorator";
 import { ComponentUtil } from "../decorators/ComponentDecorator";
 import { Injector } from "./Injector";
 import { Dispatcher } from "../web/Dispatcher";
@@ -37,7 +37,7 @@ export class ApplicationContext {
     private injector: Injector;
     private dispatcher: Dispatcher;
     private environment: Environment;
-    private configurationData: ConfigurationData;
+    private configurationData: ConfigurationDecoratorMetadata;
     private unRegisterExitListenerCallback: Function;
 
     constructor(configurationClass) {
@@ -310,7 +310,7 @@ export class ApplicationContext {
         logger.info('Executing @PostConstruct methods for all components...');
         for (let CompConstructor of this.getActiveComponents()) {
             let componentData = ComponentUtil.getComponentData(CompConstructor);
-            let postConstructMethod = LifeCycleHooksUtil.getConfig(CompConstructor).postConstructMethod;
+            let postConstructMethod = LifeCycleHooksUtil.getPostConstructConfig(CompConstructor).postConstructMethod;
             if (postConstructMethod) {
                 let instance = this.injector.getComponent(componentData.classToken);
                 if (!_.isFunction(instance[postConstructMethod])) {
@@ -330,7 +330,7 @@ export class ApplicationContext {
         logger.info('Executing @PreDestroy methods for all components...');
         for (let CompConstructor of this.getActiveComponents()) {
             let componentData = ComponentUtil.getComponentData(CompConstructor);
-            let preDestroyMethod = LifeCycleHooksUtil.getConfig(CompConstructor).preDestroyMethod;
+            let preDestroyMethod = LifeCycleHooksUtil.getPreDestroyConfig(CompConstructor).preDestroyMethod;
             if (preDestroyMethod) {
                 let instance = this.injector.getComponent(componentData.classToken);
                 if (!_.isFunction(instance[preDestroyMethod])) {

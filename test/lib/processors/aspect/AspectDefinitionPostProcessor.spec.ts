@@ -2,7 +2,7 @@ import {expect} from 'chai';
 import {
     Aspect, Before, After, AdviceType, Pointcut, ProceedingJoinPoint,
     PointcutList, AspectUtil
-} from '../../../../src/lib/decorators/AspectDecorator';
+} from '../../../../src/lib/decorators/aspect/AspectDecorator';
 import { stub, spy, match } from 'sinon';
 import {AspectDefinitionPostProcessor} from '../../../../src/lib/processors/aspect/AspectDefinitionPostProcessor';
 import {ProxyUtils} from '../../../../src/lib/helpers/ProxyUtils';

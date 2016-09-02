@@ -1,10 +1,13 @@
 import { DecoratorUsageError } from "../errors/DecoratorUsageErrors";
 import { DecoratorUtil, DecoratorType } from "../helpers/DecoratorUtils";
+import { StandaloneDecoratorMetadata } from "./common/DecoratorMetadata";
+import { DecoratorHelper } from "./common/DecoratorHelper";
 
-const LIFE_CYCLE_HOOKS_TOKEN = Symbol('life_cycle_hooks_token');
-
-export class LifeCycleHooksConfig {
+export class PostConstructDecoratorMetadata extends StandaloneDecoratorMetadata<PostConstructDecoratorMetadata> {
     postConstructMethod: string;
+}
+
+export class PreDestroyDecoratorMetadata extends StandaloneDecoratorMetadata<PreDestroyDecoratorMetadata> {
     preDestroyMethod: string;
 }
 
@@ -14,7 +17,9 @@ export class LifeCycleHooksConfig {
 export function PostConstruct() {
     return function (target, methodName, descriptor: PropertyDescriptor) {
         DecoratorUtil.throwOnWrongType(PostConstruct, DecoratorType.METHOD, [...arguments]);
-        let conf = LifeCycleHooksUtil.initIfDoesntExist(target);
+
+        let conf = DecoratorHelper.getOwnMetadata(target, PostConstruct, new PostConstructDecoratorMetadata(), true);
+
         if (conf.postConstructMethod) {
             let errorParams = [conf.postConstructMethod, methodName].join(', ');
             let subjectName = DecoratorUtil.getSubjectName([...arguments]);
@@ -22,8 +27,10 @@ export function PostConstruct() {
                 `within a @Component (${subjectName})`);
         }
         conf.postConstructMethod = methodName;
+        DecoratorHelper.setMetadata(target, PostConstruct, conf);
     };
 }
+DecoratorHelper.createDecorator(PostConstruct, DecoratorType.METHOD);
 /**
  * Method decorator for pre destruction of components. The method is called upon exiting the process.
  * Must do applicationContext.registerExitHook() for this to work.
@@ -31,7 +38,9 @@ export function PostConstruct() {
 export function PreDestroy() {
     return function (target, methodName, descriptor: PropertyDescriptor) {
         DecoratorUtil.throwOnWrongType(PreDestroy, DecoratorType.METHOD, [...arguments]);
-        let conf = LifeCycleHooksUtil.initIfDoesntExist(target);
+
+        let conf = DecoratorHelper.getOwnMetadata(target, PreDestroy, new PreDestroyDecoratorMetadata(), true);
+
         if (conf.preDestroyMethod) {
             let errorParams = [conf.preDestroyMethod, methodName].join(', ');
             let subjectName = DecoratorUtil.getSubjectName([...arguments]);
@@ -39,19 +48,18 @@ export function PreDestroy() {
                 `within a @Component (${subjectName})`);
         }
         conf.preDestroyMethod = methodName;
+        DecoratorHelper.setMetadata(target, PreDestroy, conf);
     };
 }
+DecoratorHelper.createDecorator(PreDestroy, DecoratorType.METHOD);
 
 export class LifeCycleHooksUtil {
 
-    static getConfig(target): LifeCycleHooksConfig {
-        return target.prototype[LIFE_CYCLE_HOOKS_TOKEN] || new LifeCycleHooksConfig();
+    static getPostConstructConfig(target): PostConstructDecoratorMetadata {
+        return DecoratorHelper.getMetadata(target, PostConstruct, new PostConstructDecoratorMetadata());
     }
 
-    static initIfDoesntExist(target): LifeCycleHooksConfig {
-        if (!target[LIFE_CYCLE_HOOKS_TOKEN]) {
-            target[LIFE_CYCLE_HOOKS_TOKEN] = new LifeCycleHooksConfig();
-        }
-        return target[LIFE_CYCLE_HOOKS_TOKEN];
-    }
+    static getPreDestroyConfig(target): PreDestroyDecoratorMetadata {
+    return DecoratorHelper.getMetadata(target, PreDestroy, new PreDestroyDecoratorMetadata());
+}
 }

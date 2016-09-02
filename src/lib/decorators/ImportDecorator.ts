@@ -1,8 +1,9 @@
-import { ConfigurationUtil } from "./ConfigurationDecorator";
+import { ConfigurationUtil, Configuration } from "./ConfigurationDecorator";
 import { DecoratorBadArgumentError } from "../errors/BadArgumentErrors";
 import { DecoratorType, DecoratorUtil } from "../helpers/DecoratorUtils";
 import { ComponentUtil } from "./ComponentDecorator";
 import { LoggerFactory } from "../helpers/logging/LoggerFactory";
+import { DecoratorHelper } from "./common/DecoratorHelper";
 
 let logger = LoggerFactory.getInstance();
 
@@ -33,5 +34,6 @@ export function Import(...configurationClasses) {
             targetConfigurationData.propertySourcePaths.push(...configurationData.propertySourcePaths);
             targetConfigurationData.componentScanPaths.push(...configurationData.componentScanPaths);
         }
+        DecoratorHelper.setMetadata(targetConfigurationClass, Configuration, targetConfigurationData);
     };
 }

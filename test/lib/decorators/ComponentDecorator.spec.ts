@@ -3,12 +3,12 @@ import {
     Component, ComponentData,
     ComponentUtil
 } from "../../../src/lib/decorators/ComponentDecorator";
-import { InjectionData } from "../../../src/lib/decorators/InjectionDecorators";
+import { InjectionDataDecoratorMetadata } from "../../../src/lib/decorators/InjectionDecorators";
 import { Controller } from "../../../src/lib/decorators/ControllerDecorator";
 import { Interceptor } from "../../../src/lib/decorators/InterceptorDecorator";
 import { ComponentPostProcessor } from "../../../src/lib/processors/ComponentPostProcessor";
 import { ComponentDefinitionPostProcessor } from "../../../src/lib/processors/ComponentDefinitionPostProcessor";
-import { Aspect } from "../../../src/lib/decorators/AspectDecorator";
+import { Aspect } from "../../../src/lib/decorators/aspect/AspectDecorator";
 import { DecoratorUsageError } from "../../../src/lib/errors/DecoratorUsageErrors";
 
 function SomeDecorator(...args) {} // tslint:disable-line
@@ -34,7 +34,7 @@ describe('ComponentDecorator', function () {
         expect(componentData).to.be.instanceOf(ComponentData);
         expect(componentData.classToken).to.be.a('symbol');
         expect(componentData.aliasTokens).to.be.eql([]);
-        expect(componentData.injectionData).to.be.instanceOf(InjectionData);
+        expect(componentData.injectionData).to.be.instanceOf(InjectionDataDecoratorMetadata);
         expect(componentData.profiles.length).to.be.eq(0);
     });
 
@@ -103,7 +103,7 @@ describe('ComponentUtil', function () {
 
     it('should get the injection data for the given target', function () {
         // given
-        let givenInjectionData = new InjectionData();
+        let givenInjectionData = new InjectionDataDecoratorMetadata();
 
         @Component()
         class A {}
