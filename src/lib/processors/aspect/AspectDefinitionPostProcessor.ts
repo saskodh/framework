@@ -15,7 +15,7 @@ import { LoggerFactory } from "../../helpers/logging/LoggerFactory";
 
 let logger = LoggerFactory.getInstance();
 
-@Order(1)
+@Order(Number.MAX_VALUE)
 @ComponentDefinitionPostProcessor()
 export class AspectDefinitionPostProcessor implements IComponentDefinitionPostProcessor {
 

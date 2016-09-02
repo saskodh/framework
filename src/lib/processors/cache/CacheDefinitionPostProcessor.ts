@@ -7,9 +7,11 @@ import { Injector } from "../../di/Injector";
 import { ICacheProvider, I_CACHE_PROVIDER_TOKEN } from "./ICacheProvider";
 import { LoggerFactory } from "../../helpers/logging/LoggerFactory";
 import { ComponentUtil } from "../../decorators/ComponentDecorator";
+import { Order } from "../../decorators/OrderDecorator";
 
 let logger = LoggerFactory.getInstance();
 
+@Order(Number.MIN_VALUE)
 @ComponentDefinitionPostProcessor()
 export class CacheDefinitionPostProcessor {
 
@@ -129,8 +131,9 @@ export class CacheDefinitionPostProcessor {
                     let key = _.get(actualArgument, keyFragments.slice(1));
                     if (key !== undefined) {
                         keys.push(key);
+                    } else {
+                        logger.warn(`Unable to find value for key ${differentKey}.`);
                     }
-                    logger.warn(`Unable to find value for key ${differentKey}.`);
                 }
             }
         }
