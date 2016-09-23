@@ -22,6 +22,8 @@ import {
 import {DynamicDependencyResolver} from "./DynamicDependencyResolver";
 import { CacheDefinitionPostProcessor } from "../processors/cache/CacheDefinitionPostProcessor";
 import { LoggerFactory } from "../helpers/logging/LoggerFactory";
+import {DecoratorHelper} from "../decorators/common/DecoratorHelper";
+import {EnableCaching} from "../decorators/cache/EnableCachingDecorator";
 
 let logger = LoggerFactory.getInstance();
 
@@ -40,6 +42,8 @@ export class ApplicationContext {
     private configurationData: ConfigurationDecoratorMetadata;
     private unRegisterExitListenerCallback: Function;
 
+    private configurationClass;
+
     constructor(configurationClass) {
         this.state = ApplicationContextState.NOT_INITIALIZED;
         logger.info('Constructing the application context...');
@@ -48,6 +52,8 @@ export class ApplicationContext {
         this.configurationData = ConfigurationUtil.getConfigurationData(configurationClass);
         this.initializeEnvironment();
         this.configurationData.loadAllComponents(this.environment);
+
+        this.configurationClass = configurationClass;
     }
 
     getComponent <T>(componentClass): T {
@@ -112,8 +118,7 @@ export class ApplicationContext {
     }
 
     private wireCacheDefinitionPostProcessor() {
-        if (this.configurationData.componentDefinitionPostProcessorFactory
-                .components.indexOf(CacheDefinitionPostProcessor) !== -1) {
+        if (DecoratorHelper.hasMetadata(this.configurationClass, EnableCaching)){
             let cacheDefinitionPostProcessor = <CacheDefinitionPostProcessor>
                 this.injector.getComponent(ComponentUtil.getClassToken(CacheDefinitionPostProcessor));
             cacheDefinitionPostProcessor.setInjector(this.injector);
@@ -200,6 +205,8 @@ export class ApplicationContext {
         logger.verbose('Initializing component definition post processors...');
         // NOTE: add custom defined component definition post processors
         this.configurationData.componentDefinitionPostProcessorFactory.components.push(AspectDefinitionPostProcessor);
+        if (DecoratorHelper.hasMetadata(this.configurationClass, EnableCaching))
+            this.configurationData.componentDefinitionPostProcessorFactory.components.push(CacheDefinitionPostProcessor);
 
         // NOTE: initialize all component definition post processors
         for (let CompConstructor of this.getActiveDefinitionPostProcessors()) {

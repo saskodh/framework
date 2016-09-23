@@ -26,7 +26,6 @@ export class ProceedingJoinPoint {
     }
 
     async proceed(): Promise<any> {
-        let result = await Promise.race([Reflect.apply(this.methodRef, this.thisArg, this.args)]);
-        return result;
+        return await Promise.race([Reflect.apply(this.methodRef, this.thisArg, this.args)]);
     }
 }

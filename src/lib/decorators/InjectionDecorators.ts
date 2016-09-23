@@ -5,9 +5,7 @@ import { DecoratorType, DecoratorUtil } from "../helpers/DecoratorUtils";
 import "reflect-metadata";
 import { DecoratorHelper } from "./common/DecoratorHelper";
 import { DecoratorMetadata } from "./common/DecoratorMetadata";
-import { Decorator } from "./common/DecoratorDefinition";
 
-const INJECT_DECORATOR_TOKEN = Symbol('injector_decorator_token');
 
 export class DependencyData {
     token: Symbol;
@@ -65,13 +63,13 @@ export function Autowired() {
     };
 }
 
-export function Value(preopertyKey) {
+export function Value(propertyKey) {
     return function (target: any, fieldName: string) {
         DecoratorUtil.throwOnWrongType(Value, DecoratorType.PROPERTY, [...arguments]);
 
-        let injectionData = DecoratorHelper.getOwnMetadata(target, Value, new InjectionDataDecoratorMetadata(), true);
-        injectionData.properties.set(fieldName, preopertyKey);
-        DecoratorHelper.setMetadata(target, Value, injectionData);
+        let injectionData = DecoratorHelper.getOwnMetadata(target, Inject, new InjectionDataDecoratorMetadata(), true);
+        injectionData.properties.set(fieldName, propertyKey);
+        DecoratorHelper.setMetadata(target, Inject, injectionData);
     };
 }
 DecoratorHelper.createDecorator(Value, DecoratorType.PROPERTY);

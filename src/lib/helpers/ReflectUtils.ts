@@ -33,7 +33,8 @@ export class ReflectUtils {
             allSymbols = allSymbols.concat(Object.getOwnPropertySymbols(target));
         } else {
             allSymbols = Object.getOwnPropertySymbols(target);
-            allSymbols = allSymbols.concat(Object.getOwnPropertySymbols(target.prototype));
+            if (target.prototype !== undefined)
+                allSymbols = allSymbols.concat(Object.getOwnPropertySymbols(target.prototype));
         }
         if (allSymbols.indexOf(token) !== -1) {
             return target[token] || target.prototype[token];

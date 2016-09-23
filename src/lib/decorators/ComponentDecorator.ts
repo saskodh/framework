@@ -1,4 +1,4 @@
-import { InjectionDataDecoratorMetadata } from "./InjectionDecorators";
+import {InjectionDataDecoratorMetadata, Inject} from "./InjectionDecorators";
 import { Interceptor } from "./InterceptorDecorator";
 import {
     ComponentDefinitionPostProcessor
@@ -14,7 +14,7 @@ import { DecoratorMetadata } from "./common/DecoratorMetadata";
 export class ComponentDecoratorMetadata extends DecoratorMetadata<ComponentDecoratorMetadata> {
     componentName: string;
     classToken: symbol;
-    aliasTokens: Array<symbol>;
+    aliasTokens: Array<Symbol>;
     injectionData: InjectionDataDecoratorMetadata;
     profiles: Array<string>;
 
@@ -67,7 +67,7 @@ export class ComponentUtil {
     }
 
     static getInjectionData(target): InjectionDataDecoratorMetadata {
-        return this.getComponentData(target).injectionData;
+        return DecoratorHelper.getMetadata(target, Inject, new InjectionDataDecoratorMetadata());
     }
 
     static isController(target): boolean {

@@ -38,7 +38,7 @@ export class Dispatcher {
         logger.debug(`Registering controller ${ComponentUtil.getComponentData(clazz).componentName}.`);
         let controllerMappingPath = RequestMappingUtil.getControllerRequestMappingPath(clazz);
         for (let route of RequestMappingUtil.getValidRoutes(clazz)) {
-            route.requestConfig.path = controllerMappingPath + route.requestConfig.path;
+            // route.requestConfig.path = controllerMappingPath + route.requestConfig.path;
             this.routerConfigurer.registerHandler(route, instance);
         }
     }

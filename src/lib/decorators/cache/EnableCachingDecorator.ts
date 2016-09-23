@@ -1,6 +1,7 @@
 import {ConfigurationUtil} from "../ConfigurationDecorator";
-import {CacheDefinitionPostProcessor} from '../../processors/cache/CacheDefinitionPostProcessor';
 import { DecoratorType, DecoratorUtil } from "../../helpers/DecoratorUtils";
+import {StandaloneDecoratorMetadata} from "../common/DecoratorMetadata";
+import {DecoratorHelper} from "../common/DecoratorHelper";
 
 /**
  *
@@ -12,7 +13,11 @@ export function EnableCaching() {
         DecoratorUtil.throwOnWrongType(EnableCaching, DecoratorType.CLASS, [...arguments]);
         ConfigurationUtil.throwWhenNotOnConfigurationClass(EnableCaching, [...arguments]);
 
-        ConfigurationUtil.getConfigurationData(target).componentDefinitionPostProcessorFactory.components
-            .push(CacheDefinitionPostProcessor);
+        DecoratorHelper.setMetadata(target, EnableCaching, new EnableCacheDecoratorMetadata());
     };
+}
+DecoratorHelper.createDecorator(EnableCaching, DecoratorType.CLASS);
+
+export class EnableCacheDecoratorMetadata extends StandaloneDecoratorMetadata<EnableCacheDecoratorMetadata> {
+
 }
