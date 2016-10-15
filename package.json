@@ -1,6 +1,6 @@
 {
   "name": "@sklechko/framework",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Lightweight web framework inspired by Spring framework.",
   "author": "Sashe Klechkovski <sasko_dh@hotmail.com>",
   "repository": {
