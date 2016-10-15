@@ -11,7 +11,7 @@
   "keywords": [],
   "scripts": {
     "clean": "rm -rf dist",
-    "disable_zonejs_typings": "ts-node ./scripts/disable_zonejs_typings.ts",
+    "disable_zonejs_typings": "node ./scripts/disable_zonejs_typings.js",
     "build": "npm run clean && tsc && npm run lint && npm run test && npm run prepare",
     "test:clean": "rm -rf coverage",
     "test:run": "istanbul cover node_modules/mocha/bin/_mocha --report none -- --recursive ./dist",
