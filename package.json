@@ -20,7 +20,7 @@
     "test:coverage": "npm run test:coverage:lcov && npm run test:coverage:html",
     "test": "tsc && npm run test:clean && npm run test:run && npm run test:coverage",
     "lint": "tslint ./src/**/*.ts",
-    "prepare": "cp package.json README.md ./dist/src",
+    "prepare": "cp package.json README.md ./scripts -R ./dist/src",
     "_prepublish": "npm run build",
     "postinstall": "npm run disable_zonejs_typings"
   },
