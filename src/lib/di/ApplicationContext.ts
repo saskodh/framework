@@ -80,7 +80,7 @@ export class ApplicationContext {
     /**
      * Starts the application context by initializing the DI components container.
      * */
-    async start() {
+    async start(): Promise<ApplicationContext> {
         if (this.state !== ApplicationContextState.NOT_INITIALIZED) {
             logger.warn("Application context was already initialized or it is initializing at the moment.");
         }
@@ -102,6 +102,7 @@ export class ApplicationContext {
         await this.postProcessAfterInit();
 
         this.state = ApplicationContextState.READY;
+        return this;
     }
 
     private wireAspectDefinitionPostProcessor() {
