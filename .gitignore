@@ -4,7 +4,6 @@
 
 # non source files
 node_modules
-typings
 dist
 coverage
 
