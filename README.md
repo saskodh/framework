@@ -1,4 +1,4 @@
-[![Build Status](https://travis-ci.org/saskodh/framework.svg?branch=master)](https://travis-ci.org/saskodh/framework)
+﻿[![Build Status](https://travis-ci.org/saskodh/framework.svg?branch=master)](https://travis-ci.org/saskodh/framework)
 [![Coverage Status](https://coveralls.io/repos/github/saskodh/framework/badge.svg?branch=master)](https://coveralls.io/github/saskodh/framework?branch=master)
 [![Join the chat at https://gitter.im/saskodh/framework](https://badges.gitter.im/saskodh/framework.svg)](https://gitter.im/saskodh/framework?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
 
@@ -6,7 +6,7 @@
 
 ## [Getting started](#getting-started)
 
-Assuming that you already installed [Node.js](https://nodejs.org/en/) (^6.x.x) create a directory to hold your application, and make that your working directory.
+Assuming that you have already installed [Node.js](https://nodejs.org/en/) (^6.x.x) create a directory for the application, and make it your current working directory.
 ```bash
 $ mkdir framework-demo
 $ cd framework-demo
@@ -15,7 +15,7 @@ Use the npm init command to create a package.json file for your application. For
 ```bash
 $ npm init
 ```
-Now when your npm project is ready let's add some dependencies. First of all we will install and configure the TypeScript compiler. [TypeScript](http://www.typescriptlang.org/) is a typed superset of the EcmaScript specification that compiles to plain JavaScript and provides us with really cool features. Make sure that you check their [documentation](http://www.typescriptlang.org/docs/tutorial.html) and get familiar with it. 
+When the npm project is ready we should add some dependencies. First of all we will install and configure the TypeScript compiler. [TypeScript](http://www.typescriptlang.org/) is a typed superset of the EcmaScript specification that compiles to plain JavaScript and provides us with really cool features. Make sure that you check their [documentation](http://www.typescriptlang.org/docs/tutorial.html) and get familiar with it. 
 ```bash
 $ npm install typescript --save-dev
 ```
