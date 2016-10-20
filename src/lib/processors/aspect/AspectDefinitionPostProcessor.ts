@@ -5,7 +5,6 @@ import {
 } from "../ComponentDefinitionPostProcessor";
 import { Injector } from "../../di/Injector";
 import { ReflectUtils } from "../../helpers/ReflectUtils";
-import { Order } from "../../decorators/OrderDecorator";
 import { ComponentUtil } from "../../decorators/ComponentDecorator";
 import {
     BeforeAdviceError, AfterReturningAdviceError, AfterAdviceError, AspectErrorInfo, AfterThrowingAdviceError
@@ -18,7 +17,6 @@ import { AdviceType } from "../../decorators/aspect/AdviceType";
 
 let logger = LoggerFactory.getInstance();
 
-@Order(1)
 @ComponentDefinitionPostProcessor()
 export class AspectDefinitionPostProcessor implements IComponentDefinitionPostProcessor {
 
@@ -38,7 +36,7 @@ export class AspectDefinitionPostProcessor implements IComponentDefinitionPostPr
             let aspectToken = ComponentUtil.getClassToken(AspectConstructor);
             for (let adviceType of AdviceType.getAllAdviceTypes()) {
                 let adviceDecoratorMetadata: AdviceDecoratorMetadata = DecoratorHelper
-                    .getMetadata(AspectConstructor, adviceType.adviceDecorator, new AdviceDecoratorMetadata());
+                    .getMetadataOrDefault(AspectConstructor, adviceType.adviceDecorator, new AdviceDecoratorMetadata());
                 for (let pointcut of adviceDecoratorMetadata.pointcuts) {
                     let componentName = ComponentUtil.getComponentData(componentConstructor).componentName;
                     if (componentName.match(<any> pointcut.pointcutConfig.classRegex) !== null) {

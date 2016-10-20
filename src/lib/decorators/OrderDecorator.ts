@@ -5,7 +5,8 @@ import { StandaloneDecoratorMetadata } from "./common/DecoratorMetadata";
 
 export function Order(orderValue: number) {
     return function(target) {
-        let orderDecoratorMetadata = DecoratorHelper.getOwnMetadata(target, Order, new OrderDecoratorMetadata());
+        let orderDecoratorMetadata = DecoratorHelper.getOwnMetadata(target, Order,
+            new OrderDecoratorMetadata());
         orderDecoratorMetadata.orderValue = orderValue;
         DecoratorHelper.setMetadata(target, Order, orderDecoratorMetadata);
     };

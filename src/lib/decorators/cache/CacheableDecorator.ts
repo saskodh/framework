@@ -17,7 +17,8 @@ export function Cacheable(cacheConfiguration: ICacheConfigCache) {
     return function (target, method) {
         DecoratorUtil.throwOnWrongType(Cacheable, DecoratorType.METHOD, [...arguments]);
 
-        let cacheableDecoratorMetadata = DecoratorHelper.getOwnMetadata(target, Cacheable, new CacheDecoratorMetadata(), true);
+        let cacheableDecoratorMetadata = DecoratorHelper.getOwnMetadata(target, Cacheable,
+            new CacheDecoratorMetadata());
         cacheableDecoratorMetadata.methods
             .push({ cacheName: cacheConfiguration.cacheName, method: method, key: cacheConfiguration.key });
         DecoratorHelper.setMetadata(target, Cacheable, cacheableDecoratorMetadata);

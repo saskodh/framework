@@ -9,11 +9,9 @@ import { ComponentUtil } from "../../decorators/ComponentDecorator";
 import { DecoratorHelper } from "../../decorators/common/DecoratorHelper";
 import { CacheDecoratorMetadata, CacheConfigItem } from "../../decorators/cache/CacheClasses";
 import { CacheDecoratorType } from "../../decorators/cache/CacheDecoratorType";
-import { Order } from "../../decorators/OrderDecorator";
 
 let logger = LoggerFactory.getInstance();
 
-@Order(-1)
 @ComponentDefinitionPostProcessor()
 export class CacheDefinitionPostProcessor {
 
@@ -42,7 +40,7 @@ export class CacheDefinitionPostProcessor {
 
         for (let cacheDecoratorType of CacheDecoratorType.getAllCacheDecoratorTypes()) {
             let cacheConfigArray = DecoratorHelper
-                .getMetadata(CacheProxy, cacheDecoratorType.cacheDecorator, new CacheDecoratorMetadata());
+                .getMetadataOrDefault(CacheProxy, cacheDecoratorType.cacheDecorator, new CacheDecoratorMetadata());
             for (let cacheConfig of cacheConfigArray.methods) {
                 let originalMethod = CacheProxy.prototype[cacheConfig.method];
                 logger.debug(`Setting ${cacheDecoratorType.cacheTypeName} proxy on ${ComponentUtil

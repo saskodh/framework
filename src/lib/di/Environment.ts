@@ -2,9 +2,10 @@ import * as _ from "lodash";
 import { ProcessHandler } from "../helpers/ProcessHandler";
 import { Component } from "../decorators/ComponentDecorator";
 import { PropertySourceUtil } from "../decorators/PropertySourceDecorator";
-import { ProfiledPath } from "../decorators/ConfigurationDecorator";
 import { BadArgumentError } from "../errors/BadArgumentErrors";
 import { LoggerFactory } from "../helpers/logging/LoggerFactory";
+import {DecoratorHelper} from "../decorators/common/DecoratorHelper";
+import {ProfileDecoratorMetadata, Profile} from "../decorators/ProfileDecorators";
 
 let logger = LoggerFactory.getInstance();
 
@@ -87,12 +88,15 @@ export class Environment {
         this.activeProfiles = _.uniq(this.activeProfiles);
     }
 
-    setApplicationProperties(propertySourcePaths: Array<ProfiledPath>) {
+    setApplicationProperties(propertySourcePaths: Array<string>, configurationClass) {
         logger.verbose('Importing application properties.');
         let isActiveProfilesPropertySet = (!_.isUndefined(this.getProperty(this.ACTIVE_PROFILES_PROPERTY_KEY)));
-        let viablePaths = _.map(_.filter(propertySourcePaths, (profiledPath: ProfiledPath) =>
-                (profiledPath.profiles.length === 0 || this.acceptsProfiles(...profiledPath.profiles))),
-            (profiledPath: ProfiledPath) => profiledPath.path);
+        let viablePaths = _.map(_.filter(propertySourcePaths, (profiledPath: string) => {
+                let profiles = DecoratorHelper.getMetadataOrDefault(configurationClass, Profile,
+                    new ProfileDecoratorMetadata()).profiles;
+                return profiles.length === 0 || this.acceptsProfiles(...profiles)
+            }),
+            (profiledPath: string) => profiledPath);
         PropertySourceUtil.getPropertiesFromPaths(...viablePaths)
             .forEach((value, prop) => {
                 this.applicationProperties.set(prop, value);

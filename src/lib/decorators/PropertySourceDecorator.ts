@@ -1,12 +1,27 @@
 import * as _ from "lodash";
-import { ConfigurationUtil } from "./ConfigurationDecorator";
+import {ConfigurationUtil} from "./ConfigurationDecorator";
 import { GeneralUtils } from "../helpers/GeneralUtils";
 import {RequireUtils} from "../helpers/RequireUtils";
 import { DecoratorType, DecoratorUtil } from "../helpers/DecoratorUtils";
 import { BadArgumentError } from "../errors/BadArgumentErrors";
 import { LoggerFactory } from "../helpers/logging/LoggerFactory";
+import {DecoratorMetadata} from "./common/DecoratorMetadata";
+import {DecoratorHelper} from "./common/DecoratorHelper";
 
 let logger = LoggerFactory.getInstance();
+
+export class PropertySourceDecoratorMetadata extends DecoratorMetadata<PropertySourceDecoratorMetadata> {
+    propertySourcePaths: Array<string>;
+
+    constructor() {
+        super();
+        this.propertySourcePaths = [];
+    }
+
+    mergeMetadata(decoratorMetadata: PropertySourceDecoratorMetadata) {
+        this.propertySourcePaths.concat(decoratorMetadata.propertySourcePaths);
+    }
+}
 
 /**
  * A decorator for defining a JSON property source for the configuration properties.
@@ -17,9 +32,14 @@ export function PropertySource(path: string) {
     return function (target) {
         DecoratorUtil.throwOnWrongType(PropertySource, DecoratorType.CLASS, [...arguments]);
         ConfigurationUtil.throwWhenNotOnConfigurationClass(PropertySource, [...arguments]);
-        ConfigurationUtil.addPropertySourcePath(target, path);
+
+        let propertySourceDecoratorMetadata = DecoratorHelper.getOwnMetadata(target, PropertySource,
+            new PropertySourceDecoratorMetadata());
+        propertySourceDecoratorMetadata.propertySourcePaths.push(path);
+        DecoratorHelper.setMetadata(target, PropertySource, propertySourceDecoratorMetadata);
     };
 }
+DecoratorHelper.createDecorator(PropertySource, DecoratorType.CLASS);
 
 export class PropertySourceUtil {
 

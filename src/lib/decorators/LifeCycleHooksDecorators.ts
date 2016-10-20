@@ -18,7 +18,7 @@ export function PostConstruct() {
     return function (target, methodName, descriptor: PropertyDescriptor) {
         DecoratorUtil.throwOnWrongType(PostConstruct, DecoratorType.METHOD, [...arguments]);
 
-        let conf = DecoratorHelper.getOwnMetadata(target, PostConstruct, new PostConstructDecoratorMetadata(), true);
+        let conf = DecoratorHelper.getOwnMetadata(target, PostConstruct, new PostConstructDecoratorMetadata());
 
         if (conf.postConstructMethod) {
             let errorParams = [conf.postConstructMethod, methodName].join(', ');
@@ -39,7 +39,7 @@ export function PreDestroy() {
     return function (target, methodName, descriptor: PropertyDescriptor) {
         DecoratorUtil.throwOnWrongType(PreDestroy, DecoratorType.METHOD, [...arguments]);
 
-        let conf = DecoratorHelper.getOwnMetadata(target, PreDestroy, new PreDestroyDecoratorMetadata(), true);
+        let conf = DecoratorHelper.getOwnMetadata(target, PreDestroy, new PreDestroyDecoratorMetadata());
 
         if (conf.preDestroyMethod) {
             let errorParams = [conf.preDestroyMethod, methodName].join(', ');
@@ -52,14 +52,3 @@ export function PreDestroy() {
     };
 }
 DecoratorHelper.createDecorator(PreDestroy, DecoratorType.METHOD);
-
-export class LifeCycleHooksUtil {
-
-    static getPostConstructConfig(target): PostConstructDecoratorMetadata {
-        return DecoratorHelper.getMetadata(target, PostConstruct, new PostConstructDecoratorMetadata());
-    }
-
-    static getPreDestroyConfig(target): PreDestroyDecoratorMetadata {
-    return DecoratorHelper.getMetadata(target, PreDestroy, new PreDestroyDecoratorMetadata());
-}
-}

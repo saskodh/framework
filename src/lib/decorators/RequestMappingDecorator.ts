@@ -27,7 +27,6 @@ const CLASS_ROUTER_CONFIG = Symbol('class_router_config');
 export class RouterConfigItem {
     requestConfig: RequestMappingConfig;
     methodHandler: string;
-    view: string;
 
     constructor(requestConfig: RequestMappingConfig, handler: string) {
         this.requestConfig = requestConfig;
@@ -52,13 +51,6 @@ export class RequestMappingDecoratorMetadata extends StandaloneDecoratorMetadata
         this.path = "";
         this.routes = [];
     }
-
-    setPath(path: string) {
-        this.routes.forEach((value, index) => {
-            let routePath = path + value.requestConfig.path;
-            value.requestConfig.path = routePath;
-        });
-    }
 }
 
 export function RequestMapping(config: RequestMappingConfig) {
@@ -72,21 +64,16 @@ export function RequestMapping(config: RequestMappingConfig) {
                         (`When using @${RequestMapping.name} on methods you must provide the request method type`);
             }
             let method = args[1];
-            let routerConfig = DecoratorHelper.getOwnMetadata(target, RequestMapping, new RequestMappingDecoratorMetadata(), true);
-            let routeConfig = _.find(routerConfig.routes, {methodHandler: method});
+            let routerConfig = DecoratorHelper.getOwnMetadata(target, RequestMapping,
+                new RequestMappingDecoratorMetadata());
             // TODO: Override bug #51
-            if (routeConfig) {
-                routeConfig.requestConfig = config;
-            } else {
-                routerConfig.routes.push(new RouterConfigItem(config, method));
-            }
+            routerConfig.routes.push(new RouterConfigItem(config, method));
             DecoratorHelper.setMetadata(target, RequestMapping, routerConfig);
         } else if (type === DecoratorType.CLASS) {
             // TODO: refactor when new options are added on @RequestMapping for classes
             let decoratorMetadata: RequestMappingDecoratorMetadata =
                 DecoratorHelper.getOwnMetadata(target, RequestMapping, new RequestMappingDecoratorMetadata());
             decoratorMetadata.path = config.path;
-            decoratorMetadata.setPath(config.path);
             DecoratorHelper.setMetadata(target, RequestMapping, decoratorMetadata);
         } else {
             let subjectName = DecoratorUtil.getSubjectName(args);
@@ -99,11 +86,8 @@ DecoratorHelper.createDecorator(RequestMapping, DecoratorType.CLASS, DecoratorTy
 export class RequestMappingUtil {
 
     static getValidRoutes(target): Array<RouterConfigItem> {
-        let routerConfig = DecoratorHelper.getMetadata(target, RequestMapping, new RequestMappingDecoratorMetadata());
+        let routerConfig = DecoratorHelper.getMetadataOrDefault(target, RequestMapping,
+            new RequestMappingDecoratorMetadata(), DecoratorType.METHOD);
         return _.filter(routerConfig.routes, (route) => route.isValid());
-    }
-
-    static getControllerRequestMappingPath(target) {
-        return DecoratorHelper.getMetadata(target, RequestMapping, new RequestMappingDecoratorMetadata());
     }
 }

@@ -18,7 +18,8 @@ export function CacheEvict(cacheConfiguration: ICacheConfigEvict) {
     return function (target, method) {
         DecoratorUtil.throwOnWrongType(CacheEvict, DecoratorType.METHOD, [...arguments]);
 
-        let cacheEvictDecoratorMetadata = DecoratorHelper.getOwnMetadata(target, CacheEvict, new CacheDecoratorMetadata(), true);
+        let cacheEvictDecoratorMetadata = DecoratorHelper.getOwnMetadata(target, CacheEvict,
+            new CacheDecoratorMetadata());
         cacheEvictDecoratorMetadata.methods
             .push({ cacheName: cacheConfiguration.cacheName, method: method, allEntries: cacheConfiguration.allEntries,
                 key: cacheConfiguration.key });

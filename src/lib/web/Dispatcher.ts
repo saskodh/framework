@@ -1,8 +1,15 @@
 import { Router } from "express";
 import { ComponentUtil } from "../decorators/ComponentDecorator";
 import { RouterConfigurer } from "./RouterConfigurer";
-import { RequestMappingUtil } from "../decorators/RequestMappingDecorator";
+import {
+    RequestMappingUtil, RequestMappingDecoratorMetadata,
+    RequestMapping
+} from "../decorators/RequestMappingDecorator";
 import { LoggerFactory } from "../helpers/logging/LoggerFactory";
+import {DecoratorHelper} from "../decorators/common/DecoratorHelper";
+import {Interceptor} from "../decorators/InterceptorDecorator";
+import {Controller} from "../decorators/ControllerDecorator";
+import {DecoratorType} from "../helpers/DecoratorUtils";
 
 let logger = LoggerFactory.getInstance();
 
@@ -21,10 +28,10 @@ export class Dispatcher {
     }
 
     processAfterInit(clazz, instance) {
-        if (ComponentUtil.isInterceptor(clazz)) {
+        if (DecoratorHelper.hasMetadata(clazz, Interceptor)) {
             this.routerConfigurer.registerInterceptor(instance);
         }
-        if (ComponentUtil.isController(clazz)) {
+        if (DecoratorHelper.hasMetadata(clazz, Controller)) {
             this.registerController(clazz, instance);
         }
     }
@@ -36,9 +43,11 @@ export class Dispatcher {
 
     private registerController(clazz, instance) {
         logger.debug(`Registering controller ${ComponentUtil.getComponentData(clazz).componentName}.`);
-        let controllerMappingPath = RequestMappingUtil.getControllerRequestMappingPath(clazz);
+        let controllerMappingPath = DecoratorHelper.getMetadataOrDefault(clazz, RequestMapping,
+            new RequestMappingDecoratorMetadata(), DecoratorType.CLASS).path;
         for (let route of RequestMappingUtil.getValidRoutes(clazz)) {
-            // route.requestConfig.path = controllerMappingPath + route.requestConfig.path;
+            route.requestConfig.path = controllerMappingPath + route.requestConfig.path;
+
             this.routerConfigurer.registerHandler(route, instance);
         }
     }

@@ -6,6 +6,8 @@ import { RequestContextInitializer } from "./context/RequestContextInitializer";
 import { RouteHandlerError, InterceptorError } from "../errors/WebErrors";
 import { LoggerFactory } from "../helpers/logging/LoggerFactory";
 import { ComponentUtil } from "../decorators/ComponentDecorator";
+import {DecoratorHelper} from "../decorators/common/DecoratorHelper";
+import {View, ViewDecoratorMetadata, ViewData} from "../decorators/ViewDecorator";
 
 let logger = LoggerFactory.getInstance();
 
@@ -90,8 +92,17 @@ export class RouterConfigurer {
                     return;
                 }
                 // TODO #3 saskodh: Check whether is more convenient to store in the request zone or pass on next
+                let viewDecoratorMetadata = DecoratorHelper.getMetadataOrDefault(handler.constructor, View,
+                    new ViewDecoratorMetadata()).methodViews;
+                let viewData: ViewData = _.find(viewDecoratorMetadata, (item) => {
+                    return item.methodName === route.methodHandler;
+                });
+                let viewName;
+                if (viewData) {
+                    viewName = viewData.viewName;
+                }
                 response.$$frameworkData = {
-                    view: route.view,
+                    view: viewName,
                     model: result
                 };
                 next();

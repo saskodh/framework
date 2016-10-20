@@ -1,14 +1,30 @@
 import * as _ from "lodash";
 import * as fileSystem from "fs";
 import * as path_module from "path";
-import { ConfigurationUtil, ProfiledPath } from "./ConfigurationDecorator";
+import { ConfigurationUtil } from "./ConfigurationDecorator";
 import { ComponentUtil } from "./ComponentDecorator";
 import { RequireUtils } from "../helpers/RequireUtils";
 import { Environment } from "../di/Environment";
 import { DecoratorType, DecoratorUtil } from "../helpers/DecoratorUtils";
 import { LoggerFactory } from "../helpers/logging/LoggerFactory";
+import {DecoratorMetadata} from "./common/DecoratorMetadata";
+import {DecoratorHelper} from "./common/DecoratorHelper";
+import {Profile, ProfileDecoratorMetadata} from "./ProfileDecorators";
 
 let logger = LoggerFactory.getInstance();
+
+export class ComponentScanDecoratorMetadata extends DecoratorMetadata<ComponentScanDecoratorMetadata> {
+    componentScanPaths: Array<string>;
+
+    constructor() {
+        super();
+        this.componentScanPaths = [];
+    }
+
+    mergeMetadata(decoratorMetadata: ComponentScanDecoratorMetadata) {
+        this.componentScanPaths.concat(decoratorMetadata.componentScanPaths);
+    }
+}
 
 /**
  *A decorator for setting up project files to be component-scanned.
@@ -19,17 +35,24 @@ export function ComponentScan(path) {
     return function (target) {
         DecoratorUtil.throwOnWrongType(ComponentScan, DecoratorType.CLASS, [...arguments]);
         ConfigurationUtil.throwWhenNotOnConfigurationClass(ComponentScan, [...arguments]);
-        ConfigurationUtil.addComponentScanPath(target, path);
+
+        let componentScanDecoratorMetadata = DecoratorHelper.getOwnMetadata(target, ComponentScan,
+            new ComponentScanDecoratorMetadata());
+        componentScanDecoratorMetadata.componentScanPaths.push(path);
+        DecoratorHelper.setMetadata(target, ComponentScan, componentScanDecoratorMetadata);
     };
 }
+DecoratorHelper.createDecorator(ComponentScan, DecoratorType.CLASS);
 
 export class ComponentScanUtil {
 
-    static getComponentsFromPaths(paths: Array<ProfiledPath>, environment: Environment): Set<any> {
+    static getComponentsFromPaths(paths: Array<string>, environment: Environment, configurationClass): Set<any> {
         let result = new Set<any>();
         for (let path of paths) {
-            if (path.profiles.length === 0 || environment.acceptsProfiles(...path.profiles)) {
-                for (let module of this.getModulesStartingFrom(path.path)) {
+            let profiles = DecoratorHelper.getMetadataOrDefault(configurationClass, Profile,
+                new ProfileDecoratorMetadata()).profiles;
+            if (profiles.length === 0 || environment.acceptsProfiles(...profiles)) {
+                for (let module of this.getModulesStartingFrom(path)) {
                     for (let component of this.getComponentsFromModule(module)) {
                         result.add(component);
                     }

@@ -7,7 +7,8 @@ export function Around(config: PointcutConfig) {
     return function(target, targetMethod) {
         DecoratorUtil.throwOnWrongType(Around, DecoratorType.METHOD, [...arguments]);
 
-        let aroundDecoratorMetadata = DecoratorHelper.getOwnMetadata(target, Around, new AdviceDecoratorMetadata(), true);
+        let aroundDecoratorMetadata = DecoratorHelper.getOwnMetadata(target, Around,
+            new AdviceDecoratorMetadata());
         aroundDecoratorMetadata.pointcuts.push(new Pointcut(config, targetMethod));
         DecoratorHelper.setMetadata(target, Around, aroundDecoratorMetadata);
     };

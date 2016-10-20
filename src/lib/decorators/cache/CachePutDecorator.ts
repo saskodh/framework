@@ -15,7 +15,8 @@ export function CachePut(cacheConfiguration: ICacheConfigCache) {
     return function (target, method) {
         DecoratorUtil.throwOnWrongType(CachePut, DecoratorType.METHOD, [...arguments]);
 
-        let cachePutDecoratorMetadata = DecoratorHelper.getOwnMetadata(target, CachePut, new CacheDecoratorMetadata(), true);
+        let cachePutDecoratorMetadata = DecoratorHelper.getOwnMetadata(target, CachePut,
+            new CacheDecoratorMetadata());
         cachePutDecoratorMetadata.methods
             .push({ cacheName: cacheConfiguration.cacheName, method: method, key: cacheConfiguration.key });
         DecoratorHelper.setMetadata(target, CachePut, cachePutDecoratorMetadata);

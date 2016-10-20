@@ -8,7 +8,7 @@ export function AfterThrowing(config: PointcutConfig) {
         DecoratorUtil.throwOnWrongType(AfterThrowing, DecoratorType.METHOD, [...arguments]);
 
         let afterThrowingDecoratorMetadata =
-            DecoratorHelper.getOwnMetadata(target, AfterThrowing, new AdviceDecoratorMetadata(), true);
+            DecoratorHelper.getOwnMetadata(target, AfterThrowing, new AdviceDecoratorMetadata());
         afterThrowingDecoratorMetadata.pointcuts.push(new Pointcut(config, targetMethod));
         DecoratorHelper.setMetadata(target, AfterThrowing, afterThrowingDecoratorMetadata);
     };

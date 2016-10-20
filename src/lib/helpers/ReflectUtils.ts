@@ -1,5 +1,4 @@
 import * as _ from "lodash";
-import { DecoratorType } from "./DecoratorUtils";
 
 export class ReflectUtils {
 
@@ -26,24 +25,9 @@ export class ReflectUtils {
         return prototypeChain;
     }
 
-    static getOwnSymbol(target: any, token: symbol, decoratorType: Array<DecoratorType>) {
-        let allSymbols: Array<any> = [];
-        if (decoratorType.indexOf(DecoratorType.CLASS) === -1) {
-            allSymbols = Object.getOwnPropertySymbols(target.prototype);
-            allSymbols = allSymbols.concat(Object.getOwnPropertySymbols(target));
-        } else {
-            allSymbols = Object.getOwnPropertySymbols(target);
-            if (target.prototype !== undefined)
-                allSymbols = allSymbols.concat(Object.getOwnPropertySymbols(target.prototype));
-        }
-        if (allSymbols.indexOf(token) !== -1) {
-            return target[token] || target.prototype[token];
-        }
-    }
-
-    static getOwnSymbolBeforeInit(target: any, token: symbol, decoratorType: Array<DecoratorType>) {
-        let allSymbols: Array<any> =  Object.getOwnPropertySymbols(target);
-        if (allSymbols.indexOf(token) !== -1) {
+    static getOwnSymbol(target: any, token: symbol) {
+        let ownTokens = Object.getOwnPropertySymbols(target);
+        if (_.includes(ownTokens, token)) {
             return target[token];
         }
     }
